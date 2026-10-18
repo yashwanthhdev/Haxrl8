@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import haxlr8LogoDark from '../assets/logo/haxlr8-logo-dark.png';
 import { sendAccountWelcomeEmail, sendLoginNotificationEmail } from '../lib/emailService';
+import { recordUserActivity } from '../lib/userTrackingService';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export default function AuthPage() {
             email: data.session.user.email,
             role: 'team_leader'
           }));
+          recordUserActivity(data.session.user, 'session').catch(() => {});
         } catch (e) {}
         navigate('/dashboard');
       }
@@ -111,6 +113,11 @@ export default function AuthPage() {
           localStorage.removeItem('haxlr8_submissions_db');
         } catch (e) {}
 
+        // Track user login activity in central registry
+        if (data?.user) {
+          recordUserActivity(data.user, 'email').catch(err => console.warn('Record user login notice:', err));
+        }
+
         // Successfully logged in! Dispatch automated email notification
         sendLoginNotificationEmail({
           recipientEmail: cleanEmail,
@@ -151,6 +158,11 @@ export default function AuthPage() {
         } catch (e) {}
 
         localStorage.setItem('haxlr8_leader_confirmed', 'true');
+
+        // Track registered account activity in central registry
+        if (data?.user) {
+          recordUserActivity(data.user, 'email').catch(err => console.warn('Record user registration notice:', err));
+        }
 
         // Automated Account Creation Welcome Email
         sendAccountWelcomeEmail({

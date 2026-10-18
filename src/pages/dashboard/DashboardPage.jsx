@@ -12,6 +12,7 @@ import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
 import { filterRealAnnouncements } from '../../lib/announcementsService';
 import { resolveDomain } from '../../lib/domainUtils';
+import { recordUserActivity } from '../../lib/userTrackingService';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -149,6 +150,12 @@ export default function DashboardPage() {
           role: 'team_leader'
         }));
       } catch (e) {}
+
+      // Record user activity for central admin accounts tracking
+      try {
+        const detectedProvider = isOAuth ? 'google' : (activeUser.app_metadata?.provider || 'email');
+        recordUserActivity(activeUser, detectedProvider).catch(e => console.warn('Record user session notice:', e));
+      } catch (trackErr) {}
 
       // Clean up OAuth tokens from URL if present
       if (typeof window !== 'undefined') {
