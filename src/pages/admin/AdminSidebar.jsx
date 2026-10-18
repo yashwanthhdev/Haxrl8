@@ -1,5 +1,5 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Home, Users, Flag, CheckSquare, Bell, LayoutDashboard, LogOut, FileText, TrendingUp, Shield, X, Camera, UserCheck, FileUp } from 'lucide-react';
+import { Home, Users, Flag, CheckSquare, Bell, LayoutDashboard, LogOut, FileText, TrendingUp, Shield, X, Camera, UserCheck, FileUp, Mail } from 'lucide-react';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import { useAdminAuth } from './AdminAuthGate';
@@ -16,6 +16,7 @@ const navItems = [
   { icon: Home, label: 'Command Deck', subPath: '' },
   { icon: Flag, label: 'Squads & Teams', subPath: '/teams' },
   { icon: Users, label: 'Participants', subPath: '/users' },
+  { icon: Mail, label: 'Logged-in Accounts', subPath: '/logins' },
   { icon: FileText, label: 'Squad Payments', subPath: '/submissions' },
   { icon: CheckSquare, label: 'Finale Check-in', subPath: '/evaluations' },
   { icon: FileText, label: 'Master Export', subPath: '/jury' },

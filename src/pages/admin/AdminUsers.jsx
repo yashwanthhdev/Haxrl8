@@ -1,15 +1,12 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { isOrganizerAuthorized } from './adminAuth';
-import { syncLocalDataToSupabase } from '../../lib/syncService';
+import * as XLSX from 'xlsx';
 import { 
   Users, Flag, BookOpen, Shield, Search, ChevronDown, Download, ChevronRight, 
-  Plus, ChevronLeft, Eye, CheckCircle, X, Clock, Trash2, Mail, AlertCircle, 
-  RefreshCw, Copy, Check, ExternalLink, Activity, Crown, Sparkles, Filter, UserX,
-  ArrowUpRight, CheckCircle2
+  Plus, ChevronLeft, Eye, CheckCircle, X, Clock, Trash2, CheckCircle2 
 } from 'lucide-react';
-import { fetchRegisteredAccountsData, exportRegisteredUsersCSV } from '../../lib/userTrackingService';
 
 const S = {
   bg: '#F8FAFC', card: '#FFFFFF', border: '#E5E7EB', primary: '#6C4EFF',
@@ -21,29 +18,11 @@ export default function AdminUsers() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [members, setMembers] = useState([]);
   const [teams, setTeams] = useState([]);
   
-  // Primary View Switcher: 'registered_accounts' (Mails & Logins) or 'team_roster' (Participants & ID Cards)
-  const [activeView, setActiveView] = useState('registered_accounts');
-
-  // Registered Accounts & Logins Tracking State
-  const [accounts, setAccounts] = useState([]);
-  const [accountsStats, setAccountsStats] = useState({
-    totalRegistered: 0,
-    withTeamCount: 0,
-    withoutTeamCount: 0,
-    totalLogins: 0,
-    squadsCount: 0,
-  });
-  const [accountsLoading, setAccountsLoading] = useState(false);
-  const [accountsSearch, setAccountsSearch] = useState('');
-  const [accountsFilter, setAccountsFilter] = useState('all'); // 'all' | 'no_team' | 'has_team' | 'google' | 'email'
-  const [accountsPage, setAccountsPage] = useState(1);
-  const [copiedEmail, setCopiedEmail] = useState(null);
-  const accountsPerPage = 10;
-
-  // Filters and Pagination for Team Members Roster
+  // Filters and Pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [teamFilter, setTeamFilter] = useState('All Teams');
@@ -61,7 +40,6 @@ export default function AdminUsers() {
   const [verifying, setVerifying] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
 
-  // Fetch Team Members Table Data
   const fetchData = useCallback(async () => {
     try {
       const { count: total } = await supabase.from('team_members').select('*', { count: 'exact', head: true });
@@ -73,78 +51,18 @@ export default function AdminUsers() {
     }
   }, []);
 
-  // Fetch All Registered Accounts & Login Activity
-  const loadAccounts = useCallback(async () => {
-    setAccountsLoading(true);
-    try {
-      const res = await fetchRegisteredAccountsData();
-      if (res?.accountsList) {
-        setAccounts(res.accountsList);
-        setAccountsStats(res.stats);
-      }
-    } catch (err) {
-      console.warn('Load accounts notice:', err);
-    } finally {
-      setAccountsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     const checkAuth = async () => {
       const authorized = await isOrganizerAuthorized();
       if (authorized) {
         setIsAdmin(true);
         fetchData();
-        loadAccounts();
       } else {
         window.dispatchEvent(new Event('haxlr8_organizer_logout'));
       }
     };
     checkAuth();
-  }, [fetchData, loadAccounts]);
-
-  // Real-time synchronization event listener
-  useEffect(() => {
-    const handleRegistryUpdate = () => {
-      loadAccounts();
-    };
-    window.addEventListener('haxlr8_accounts_registry_updated', handleRegistryUpdate);
-    return () => window.removeEventListener('haxlr8_accounts_registry_updated', handleRegistryUpdate);
-  }, [loadAccounts]);
-
-  const handleCopyEmail = (email) => {
-    if (!email) return;
-    try {
-      navigator.clipboard?.writeText(email);
-      setCopiedEmail(email);
-      setTimeout(() => setCopiedEmail(null), 2200);
-    } catch (e) {}
-  };
-
-  // Filtered & Paginated Accounts
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter(u => {
-      if (accountsFilter === 'no_team' && u.hasTeam) return false;
-      if (accountsFilter === 'has_team' && !u.hasTeam) return false;
-      if (accountsFilter === 'google' && !u.provider?.toLowerCase().includes('google')) return false;
-      if (accountsFilter === 'email' && u.provider?.toLowerCase().includes('google')) return false;
-
-      if (accountsSearch) {
-        const s = accountsSearch.toLowerCase().trim();
-        const email = (u.email || '').toLowerCase();
-        const name = (u.fullName || '').toLowerCase();
-        const team = (u.teamName || '').toLowerCase();
-        return email.includes(s) || name.includes(s) || team.includes(s);
-      }
-      return true;
-    });
-  }, [accounts, accountsFilter, accountsSearch]);
-
-  const totalAccountsPages = Math.ceil(filteredAccounts.length / accountsPerPage) || 1;
-  const paginatedAccounts = useMemo(() => {
-    const from = (accountsPage - 1) * accountsPerPage;
-    return filteredAccounts.slice(from, from + accountsPerPage);
-  }, [filteredAccounts, accountsPage, accountsPerPage]);
+  }, [fetchData]);
 
   const getIsLeader = (member) => {
     return member.is_leader === true;
@@ -209,7 +127,6 @@ export default function AdminUsers() {
     }
   };
 
-
   const buildQuery = async (isExport = false) => {
     let query = supabase.from('team_members').select('*', { count: 'exact' });
     
@@ -267,6 +184,108 @@ export default function AdminUsers() {
     fetchPage();
   }, [loading, isAdmin, currentPage, searchTerm, roleFilter, teamFilter, yearFilter, collegeFilter]);
 
+  /**
+   * Export Excel with exact columns requested:
+   * Sl No | Team Name | Team Members with (Team Lead) in bracket | Phone Number | College Name | Signature
+   */
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      // 1. Fetch all teams and members
+      const [{ data: allTeams }, { data: allMembers }] = await Promise.all([
+        supabase.from('teams').select('id, team_name, created_at').order('created_at', { ascending: true }),
+        supabase.from('team_members').select('*').order('created_at', { ascending: true })
+      ]);
+
+      const teamsList = allTeams || [];
+      const membersList = allMembers || [];
+
+      if (teamsList.length === 0 && membersList.length === 0) {
+        alert('No participant records found to export.');
+        setExporting(false);
+        return;
+      }
+
+      // 2. Build rows: Sl No, Team Name, Team Members (with (Team Lead) in bracket), Phone Number, College Name, Signature
+      const excelRows = teamsList.map((t, idx) => {
+        const teamMems = membersList.filter(m => m.team_id === t.id);
+        const lead = teamMems.find(m => m.is_leader === true) || teamMems[0];
+        
+        // Format team members string with lead indicated in brackets
+        const formattedMembers = teamMems.map(m => {
+          const isLead = m.is_leader === true || m.id === lead?.id;
+          return isLead ? `${m.full_name || 'Leader'} (Team Lead)` : (m.full_name || 'Member');
+        }).filter(Boolean).join(', ');
+
+        const phone = lead?.phone_number || teamMems.find(m => m.phone_number)?.phone_number || '—';
+        const college = lead?.college_name || teamMems.find(m => m.college_name)?.college_name || '—';
+
+        return {
+          "Sl No": idx + 1,
+          "Team Name": t.team_name || '—',
+          "Team Members": formattedMembers || (lead?.full_name ? `${lead.full_name} (Team Lead)` : '—'),
+          "Phone Number": phone,
+          "College Name": college,
+          "Signature": "" // Blank space for physical attendance signature
+        };
+      });
+
+      // 3. Create Workbook and Sheets
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Teams & Members Roster (with Signatures)
+      const wsTeams = XLSX.utils.json_to_sheet(excelRows);
+      wsTeams['!cols'] = [
+        { wch: 8 },  // Sl No
+        { wch: 26 }, // Team Name
+        { wch: 54 }, // Team Members (with (Team Lead) in bracket)
+        { wch: 18 }, // Phone Number
+        { wch: 38 }, // College Name
+        { wch: 22 }, // Signature
+      ];
+      XLSX.utils.book_append_sheet(wb, wsTeams, "Teams & Signatures");
+
+      // Sheet 2: Individual Participants Roster
+      const individualRows = membersList.map((m, idx) => {
+        const t = teamsList.find(team => team.id === m.team_id);
+        const isLeader = m.is_leader === true;
+        return {
+          "Sl No": idx + 1,
+          "Participant Name": m.full_name || '—',
+          "Role": isLeader ? "Team Lead" : "Member",
+          "Team Name": t?.team_name || "—",
+          "Phone Number": m.phone_number || "—",
+          "Email": m.email || "—",
+          "College Name": m.college_name || "—",
+          "Year": m.year || "—",
+          "Signature": ""
+        };
+      });
+
+      const wsIndividuals = XLSX.utils.json_to_sheet(individualRows);
+      wsIndividuals['!cols'] = [
+        { wch: 8 },  // Sl No
+        { wch: 24 }, // Participant Name
+        { wch: 14 }, // Role
+        { wch: 24 }, // Team Name
+        { wch: 18 }, // Phone Number
+        { wch: 30 }, // Email
+        { wch: 36 }, // College Name
+        { wch: 8 },  // Year
+        { wch: 22 }, // Signature
+      ];
+      XLSX.utils.book_append_sheet(wb, wsIndividuals, "All Participants");
+
+      // 4. Download Excel File
+      XLSX.writeFile(wb, `haxlr8_teams_and_participants_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      console.error('Export Excel error:', err);
+      alert('Failed to generate Excel file: ' + (err.message || err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:S.bg}}><div style={{width:40,height:40,border:'3px solid '+S.primary,borderTopColor:'transparent',borderRadius:'50%',animation:'spin 1s linear infinite'}}/></div>;
   if (!isAdmin) {
     return (
@@ -279,7 +298,7 @@ export default function AdminUsers() {
     );
   }
 
-  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
+  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage) || 1;
   const currentMembers = members;
 
   const getPageNumbers = () => {
@@ -307,74 +326,10 @@ export default function AdminUsers() {
   };
 
   const stats = [
-    { 
-      title: 'Total Registered Mails', 
-      value: accountsStats.totalRegistered || totalUsersDB, 
-      subtitle: 'From starting to now',
-      trend: `${accountsStats.totalRegistered || totalUsersDB} emails`, 
-      c: '#6C4EFF', 
-      bg: '#EEE8FF', 
-      icon: Mail,
-      action: () => { setActiveView('registered_accounts'); setAccountsFilter('all'); }
-    },
-    { 
-      title: 'Squads Formed', 
-      value: accountsStats.withTeamCount, 
-      subtitle: `${accountsStats.squadsCount} Active squads`,
-      trend: `${accountsStats.withTeamCount} in squads`, 
-      c: '#059669', 
-      bg: '#D1FAE5', 
-      icon: Users,
-      action: () => { setActiveView('registered_accounts'); setAccountsFilter('has_team'); }
-    },
-    { 
-      title: 'No Team Details Yet', 
-      value: accountsStats.withoutTeamCount, 
-      subtitle: accountsStats.withoutTeamCount > 0 ? '⚠️ Action needed: squad pending' : 'All accounts linked to teams',
-      trend: accountsStats.withoutTeamCount > 0 ? 'Pending' : '0 Pending', 
-      c: accountsStats.withoutTeamCount > 0 ? '#DC2626' : '#D97706', 
-      bg: accountsStats.withoutTeamCount > 0 ? '#FEE2E2' : '#FEF3C7', 
-      icon: accountsStats.withoutTeamCount > 0 ? AlertCircle : UserX,
-      isAlert: accountsStats.withoutTeamCount > 0,
-      action: () => { setActiveView('registered_accounts'); setAccountsFilter('no_team'); }
-    },
-    { 
-      title: 'Total Logins Recorded', 
-      value: accountsStats.totalLogins, 
-      subtitle: 'Telemetry from launch',
-      trend: 'Active', 
-      c: '#0284C7', 
-      bg: '#E0F2FE', 
-      icon: Activity,
-      action: () => { setActiveView('registered_accounts'); setAccountsFilter('all'); }
-    },
+    { title: 'Total Participants', value: totalUsersDB, trend: '12.8%', c: S.primary, bg: S.activeBg, icon: Users },
+    { title: 'Squad Leads', value: teams.length, trend: '10.6%', c: '#D97706', bg: '#FEF3C7', icon: BookOpen },
+    { title: 'Admins', value: '2', trend: '0%', c: '#9333EA', bg: '#F3E8FF', icon: Shield },
   ];
-
-  const exportCSV = async () => {
-    if (activeView === 'registered_accounts') {
-      exportRegisteredUsersCSV(filteredAccounts);
-      return;
-    }
-
-    const query = await buildQuery(true);
-    const { data } = await query;
-    if (!data) return;
-    
-    const teamIds = [...new Set(data.map(m => m.team_id))];
-    const { data: exportTeams } = await supabase.from('teams').select('id, team_name').in('id', teamIds);
-    
-    let csv = "data:text/csv;charset=utf-8,User,Role,Team,Email,College,Location,Year,Registered On\n";
-    data.forEach(m => {
-      const t = exportTeams?.find(team => team.id === m.team_id);
-      const isLeader = getIsLeader(m);
-      const role = isLeader ? 'Team Lead' : 'Member';
-      csv += `"${m.full_name || ''}","${role}","${t ? t.team_name : ''}","${m.email || ''}","${m.college_name || ''}","${m.location || m.city || ''}","${m.year || ''}","${new Date(m.created_at).toLocaleString()}"\n`;
-    });
-    const a = document.createElement("a");
-    a.href = encodeURI(csv);
-    a.download = "participants_roster_export.csv";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  };
 
   return (
     <>
@@ -382,7 +337,7 @@ export default function AdminUsers() {
           <div style={{ display:'flex', alignItems:'center', gap:16 }}>
             <div>
               <h1 style={{ fontSize:18, fontWeight:700, margin:0, color:S.t1 }}>Dashboard</h1>
-              <div style={{ fontSize:11, fontWeight:500, color:S.t2, display:'flex', alignItems:'center', gap:4 }}>Home <ChevronRight size={12}/> <span style={{color:S.t1}}>Users & Telemetry</span></div>
+              <div style={{ fontSize:11, fontWeight:500, color:S.t2, display:'flex', alignItems:'center', gap:4 }}>Home <ChevronRight size={12}/> <span style={{color:S.t1}}>Participants</span></div>
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:20 }}>
@@ -401,461 +356,43 @@ export default function AdminUsers() {
 
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:14 }}>
               <div>
-                <h2 style={{ fontSize:20, fontWeight:700, margin:0, color:S.t1 }}>Users & Registered Accounts</h2>
-                <p style={{ fontSize:13, color:S.t2, margin:'4px 0 0' }}>
-                  Track all registered emails, login frequency, squad formations, and pending registrations.
-                </p>
+                <h2 style={{ fontSize:20, fontWeight:700, margin:0, color:S.t1 }}>Participants Roster</h2>
+                <p style={{ fontSize:13, color:S.t2, margin:'4px 0 0' }}>Manage all registered participants, teams, and ID card verifications.</p>
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <button 
-                  onClick={() => {
-                    loadAccounts();
-                    fetchData();
+                  onClick={exportExcel} 
+                  disabled={exporting}
+                  style={{ 
+                    display:'flex', alignItems:'center', gap:6, 
+                    background:'#16A34A', color:'#FFFFFF', border:'none', 
+                    padding:'10px 18px', borderRadius:10, fontSize:13, fontWeight:700, 
+                    cursor: exporting ? 'not-allowed' : 'pointer', 
+                    boxShadow:'0 2px 6px rgba(22,163,74,.25)',
+                    transition:'all 0.15s'
                   }}
-                  disabled={accountsLoading}
-                  style={{ display:'flex', alignItems:'center', gap:6, background:S.card, color:S.t1, border:'1px solid '+S.border, padding:'9px 14px', borderRadius:10, fontSize:12.5, fontWeight:600, cursor: accountsLoading ? 'not-allowed' : 'pointer', boxShadow:'0 1px 2px rgba(0,0,0,.04)' }}
-                  title="Synchronize live database"
+                  title="Export Excel with Sl No, Team Name, Team Members (with Lead in bracket), Phone, College, and Signature"
                 >
-                  <RefreshCw size={14} style={{ animation: accountsLoading ? 'spin 1s linear infinite' : 'none', color:'#0284c7' }}/>
-                  <span>{accountsLoading ? 'Syncing...' : 'Sync Data'}</span>
-                </button>
-                <button 
-                  onClick={exportCSV} 
-                  style={{ display:'flex', alignItems:'center', gap:6, background:'#6C4EFF', color:'#FFFFFF', border:'none', padding:'9px 16px', borderRadius:10, fontSize:12.5, fontWeight:700, cursor:'pointer', boxShadow:'0 2px 4px rgba(108,78,255,.2)' }}
-                >
-                  <Download size={15}/> Export {activeView === 'registered_accounts' ? 'Emails Activity CSV' : 'Roster CSV'}
+                  <Download size={16}/> {exporting ? 'Generating Excel...' : 'Export Excel'}
                 </button>
               </div>
             </div>
 
-            {/* STATS CARDS */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:S.gap, minWidth:0 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:S.gap, minWidth:0 }}>
               {stats.map((c, i) => (
-                <div 
-                  key={i} 
-                  onClick={c.action}
-                  style={{ 
-                    background:S.card, 
-                    border: c.isAlert ? '1.5px solid #FCA5A5' : '1px solid '+S.border, 
-                    borderRadius:S.radius, 
-                    padding:'18px 20px', 
-                    boxShadow:'0 1px 3px rgba(0,0,0,.04)', 
-                    display:'flex', 
-                    gap:14, 
-                    alignItems:'flex-start',
-                    cursor:'pointer',
-                    transition:'all 0.2s',
-                  }}
-                  title="Click to view corresponding list"
-                >
-                  <div style={{ width:42, height:42, borderRadius:12, background:c.bg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <c.icon size={21}/>
+                <div key={i} style={{ background:S.card, border:'1px solid '+S.border, borderRadius:S.radius, padding:'20px', boxShadow:'0 1px 3px rgba(0,0,0,.04)', display:'flex', gap:16, alignItems:'flex-start' }}>
+                  <div style={{ width:40, height:40, borderRadius:10, background:c.bg, color:c.c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <c.icon size={20}/>
                   </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:12, fontWeight:600, color:S.t2, marginBottom:3, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span>{c.title}</span>
-                      {c.isAlert && (
-                        <span style={{ background:'#DC2626', color:'#fff', padding:'1px 6px', borderRadius:10, fontSize:10, fontWeight:800 }}>ALERT</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize:26, fontWeight:800, color: c.isAlert ? '#DC2626' : S.t1, marginBottom:3, letterSpacing:'-0.02em' }}>
-                      {c.value}
-                    </div>
-                    <div style={{ fontSize:11, color:S.t3, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {c.subtitle}
-                    </div>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:600, color:S.t2, marginBottom:4 }}>{c.title}</div>
+                    <div style={{ fontSize:24, fontWeight:800, color:S.t1, marginBottom:4 }}>{c.value}</div>
+                    <div style={{ fontSize:11, fontWeight:600, color:S.green }}>↑ {c.trend} <span style={{ color:S.t3, fontWeight:400, marginLeft:4 }}>vs last 7 days</span></div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* TAB SELECTOR */}
-            <div style={{ display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid '+S.border, paddingBottom:4, overflowX:'auto' }}>
-              <button
-                onClick={() => setActiveView('registered_accounts')}
-                style={{
-                  padding:'10px 18px',
-                  borderRadius:10,
-                  border: activeView === 'registered_accounts' ? '2px solid #6C4EFF' : '1px solid transparent',
-                  background: activeView === 'registered_accounts' ? '#EEE8FF' : 'transparent',
-                  color: activeView === 'registered_accounts' ? '#6C4EFF' : S.t2,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Mail size={16}/>
-                <span>All Registered Accounts & Activity</span>
-                <span style={{
-                  background: activeView === 'registered_accounts' ? '#6C4EFF' : '#F1F5F9',
-                  color: activeView === 'registered_accounts' ? '#fff' : S.t1,
-                  padding: '2px 8px',
-                  borderRadius: 10,
-                  fontSize: 11,
-                  fontWeight: 800
-                }}>
-                  {accountsStats.totalRegistered}
-                </span>
-                {accountsStats.withoutTeamCount > 0 && (
-                  <span style={{
-                    background: '#DC2626',
-                    color: '#fff',
-                    padding: '2px 7px',
-                    borderRadius: 10,
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                  }} title={`${accountsStats.withoutTeamCount} accounts have registered without team details!`}>
-                    {accountsStats.withoutTeamCount} Pending
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveView('team_roster')}
-                style={{
-                  padding:'10px 18px',
-                  borderRadius:10,
-                  border: activeView === 'team_roster' ? '2px solid #6C4EFF' : '1px solid transparent',
-                  background: activeView === 'team_roster' ? '#EEE8FF' : 'transparent',
-                  color: activeView === 'team_roster' ? '#6C4EFF' : S.t2,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s'
-                }}
-              >
-                <Users size={16}/>
-                <span>Squad Participants Roster & ID Cards</span>
-                <span style={{
-                  background: activeView === 'team_roster' ? '#6C4EFF' : '#F1F5F9',
-                  color: activeView === 'team_roster' ? '#fff' : S.t1,
-                  padding: '2px 8px',
-                  borderRadius: 10,
-                  fontSize: 11,
-                  fontWeight: 800
-                }}>
-                  {totalUsersDB}
-                </span>
-              </button>
-            </div>
-
-            {/* CONDITIONAL TAB 1: REGISTERED ACCOUNTS & LOGIN ACTIVITY */}
-            {activeView === 'registered_accounts' && (
-              <div style={{ background:S.card, border:'1px solid '+S.border, borderRadius:S.radius, boxShadow:'0 1px 3px rgba(0,0,0,.04)', display:'flex', flexDirection:'column', minWidth: 0 }}>
-                
-                {/* FILTER & SEARCH BAR */}
-                <div style={{ padding:'16px 20px', borderBottom:'1px solid '+S.border, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:260, flexWrap:'wrap' }}>
-                    <div style={{ position:'relative', minWidth:220, flex:1 }}>
-                      <Search size={16} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:S.t3 }}/>
-                      <input 
-                        placeholder="Search email, name, or squad..." 
-                        value={accountsSearch} 
-                        onChange={(e) => { setAccountsSearch(e.target.value); setAccountsPage(1); }}
-                        style={{ paddingLeft:36, paddingRight:16, paddingTop:9, paddingBottom:9, background:S.card, border:'1px solid '+S.border, borderRadius:8, fontSize:13, width:'100%', outline:'none', color:S.t1 }}
-                      />
-                    </div>
-
-                    {/* Filter Pills */}
-                    <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                      {[
-                        { id: 'all', label: `All Mails (${accounts.length})` },
-                        { id: 'no_team', label: `⚠️ No Team Details (${accountsStats.withoutTeamCount})`, highlight: accountsStats.withoutTeamCount > 0 },
-                        { id: 'has_team', label: `✅ Squad Formed (${accountsStats.withTeamCount})` },
-                        { id: 'google', label: `Google SSO (${accounts.filter(u => u.provider?.toLowerCase().includes('google')).length})` },
-                        { id: 'email', label: `Email / Pass (${accounts.filter(u => !u.provider?.toLowerCase().includes('google')).length})` },
-                      ].map(f => (
-                        <button
-                          key={f.id}
-                          onClick={() => { setAccountsFilter(f.id); setAccountsPage(1); }}
-                          style={{
-                            padding:'6px 12px',
-                            borderRadius:8,
-                            fontSize:12,
-                            fontWeight:700,
-                            cursor:'pointer',
-                            border: accountsFilter === f.id ? '1.5px solid #6C4EFF' : '1px solid ' + (f.highlight ? '#FCA5A5' : S.border),
-                            background: accountsFilter === f.id ? '#EEE8FF' : (f.highlight ? '#FEF2F2' : '#F8FAFC'),
-                            color: accountsFilter === f.id ? '#6C4EFF' : (f.highlight ? '#DC2626' : S.t2),
-                            display:'flex',
-                            alignItems:'center',
-                            gap:4
-                          }}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                    {(accountsSearch || accountsFilter !== 'all') && (
-                      <span 
-                        onClick={() => { setAccountsSearch(''); setAccountsFilter('all'); setAccountsPage(1); }} 
-                        style={{ fontSize:12.5, fontWeight:600, color:S.t2, cursor:'pointer', textDecoration:'underline' }}
-                      >
-                        Clear Filters
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* TABLE */}
-                <div style={{ overflowX:'auto' }}>
-                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13, tableLayout:'auto' }}>
-                    <thead>
-                      <tr style={{ background:'#FAFAFA', borderBottom:'1px solid '+S.border }}>
-                        {['#', 'Registered User & Email', 'Auth Provider', 'Squad / Team Status', 'Login Frequency', 'Last Login Activity', 'Registered On', 'Actions'].map(h => (
-                          <th key={h} style={{ padding:'14px 16px', fontWeight:600, color:S.t2, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accountsLoading ? (
-                        <tr>
-                          <td colSpan="8" style={{ padding:40, textAlign:'center', color:S.t2 }}>
-                            <div style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
-                              <div style={{ width:18, height:18, border:'2px solid '+S.primary, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 1s linear infinite' }}/>
-                              <span>Loading registered accounts & activity telemetry...</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : paginatedAccounts.length === 0 ? (
-                        <tr>
-                          <td colSpan="8" style={{ padding:40, textAlign:'center', color:S.t3 }}>
-                            No registered accounts match the selected filter.
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedAccounts.map((u, index) => {
-                          const sNo = (accountsPage - 1) * accountsPerPage + index + 1;
-                          const isGoogle = u.provider?.toLowerCase().includes('google');
-                          const isCopied = copiedEmail === u.email;
-
-                          return (
-                            <tr 
-                              key={u.email} 
-                              style={{ 
-                                borderBottom:'1px solid #F8FAFC',
-                                background: !u.hasTeam ? '#FFFDF5' : 'transparent',
-                                transition:'background 0.15s'
-                              }}
-                            >
-                              {/* S.No */}
-                              <td style={{ padding:'14px 16px', color:S.t2, fontSize:12, fontWeight:600 }}>
-                                {sNo}
-                              </td>
-
-                              {/* User & Email */}
-                              <td style={{ padding:'14px 16px' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                                  <div style={{ 
-                                    width:36, height:36, borderRadius:'50%', 
-                                    background: !u.hasTeam ? '#FEF3C7' : '#EEE8FF', 
-                                    color: !u.hasTeam ? '#D97706' : '#6C4EFF', 
-                                    display:'flex', alignItems:'center', justifyContent:'center', 
-                                    fontWeight:700, fontSize:13, flexShrink:0 
-                                  }}>
-                                    {u.fullName?.charAt(0)?.toUpperCase() || u.email.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div>
-                                    <div style={{ fontWeight:700, color:S.t1, display:'flex', alignItems:'center', gap:6 }}>
-                                      <span>{u.fullName || 'Registered User'}</span>
-                                      {u.isLeader && (
-                                        <span style={{ background:'#FEF3C7', color:'#D97706', padding:'2px 6px', borderRadius:6, fontSize:10, fontWeight:800, display:'inline-flex', alignItems:'center', gap:3 }}>
-                                          <Crown size={10}/> Leader
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:2 }}>
-                                      <span style={{ fontSize:12, color:'#475569', fontFamily:'monospace' }}>{u.email}</span>
-                                      <button
-                                        onClick={() => handleCopyEmail(u.email)}
-                                        style={{ background:'none', border:'none', cursor:'pointer', padding:2, color: isCopied ? '#16A34A' : S.t3, display:'inline-flex', alignItems:'center' }}
-                                        title="Copy email address"
-                                      >
-                                        {isCopied ? <Check size={12}/> : <Copy size={12}/>}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* Auth Provider */}
-                              <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
-                                <span style={{
-                                  display:'inline-flex', alignItems:'center', gap:5,
-                                  padding:'4px 9px', borderRadius:6, fontSize:11, fontWeight:700,
-                                  background: isGoogle ? '#F0FDF4' : '#F1F5F9',
-                                  color: isGoogle ? '#15803D' : '#475569',
-                                  border: '1px solid ' + (isGoogle ? '#BBF7D0' : '#E2E8F0')
-                                }}>
-                                  <span style={{ width:6, height:6, borderRadius:'50%', background: isGoogle ? '#22C55E' : '#64748B' }}/>
-                                  {isGoogle ? 'Google SSO' : 'Email / Password'}
-                                </span>
-                              </td>
-
-                              {/* Squad / Team Details */}
-                              <td style={{ padding:'14px 16px' }}>
-                                {u.hasTeam ? (
-                                  <div>
-                                    <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#DCFCE7', color:'#166534', padding:'4px 10px', borderRadius:6, fontSize:11.5, fontWeight:700 }}>
-                                      <Flag size={11} color="#166534"/>
-                                      <span>{u.teamName}</span>
-                                    </div>
-                                    {u.collegeName && u.collegeName !== '-' && (
-                                      <div style={{ fontSize:11, color:S.t2, marginTop:3 }}>
-                                        {u.collegeName}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <span style={{
-                                      display:'inline-flex', alignItems:'center', gap:5,
-                                      background:'#FEF2F2', color:'#DC2626',
-                                      border:'1px solid #FECACA',
-                                      padding:'4px 10px', borderRadius:6, fontSize:11.5, fontWeight:800
-                                    }}>
-                                      <AlertCircle size={12} color="#DC2626"/>
-                                      <span>No Team Details Yet</span>
-                                    </span>
-                                    <div style={{ fontSize:11, color:'#DC2626', fontWeight:600, marginTop:3 }}>
-                                      Pending Squad Setup
-                                    </div>
-                                  </div>
-                                )}
-                              </td>
-
-                              {/* Login Frequency */}
-                              <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
-                                <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#EEE8FF', color:'#6C4EFF', padding:'4px 10px', borderRadius:8, fontSize:12, fontWeight:800 }}>
-                                  <Activity size={12}/>
-                                  <span>{u.loginCount || 1} {(u.loginCount || 1) === 1 ? 'Login' : 'Logins'}</span>
-                                </div>
-                              </td>
-
-                              {/* Last Login Activity */}
-                              <td style={{ padding:'14px 16px', color:S.t2, fontSize:12, whiteSpace:'nowrap' }}>
-                                {u.lastLoginAt ? (
-                                  <div>
-                                    <div style={{ fontWeight:600, color:S.t1 }}>
-                                      {new Date(u.lastLoginAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
-                                    </div>
-                                    <div style={{ fontSize:11, color:S.t3 }}>
-                                      {new Date(u.lastLoginAt).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' })}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span style={{ color:S.t3 }}>—</span>
-                                )}
-                              </td>
-
-                              {/* Registered On */}
-                              <td style={{ padding:'14px 16px', color:S.t2, fontSize:12, whiteSpace:'nowrap' }}>
-                                {u.registeredAt ? (
-                                  <div>
-                                    <div>{new Date(u.registeredAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}</div>
-                                    <span style={{ fontSize:11, color:S.t3 }}>{new Date(u.registeredAt).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' })}</span>
-                                  </div>
-                                ) : (
-                                  <span style={{ color:S.t3 }}>—</span>
-                                )}
-                              </td>
-
-                              {/* Actions */}
-                              <td style={{ padding:'14px 16px', whiteSpace:'nowrap' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                                  <button
-                                    onClick={() => handleCopyEmail(u.email)}
-                                    style={{
-                                      padding:'6px 10px', borderRadius:8,
-                                      background:'#F8FAFC', border:'1px solid '+S.border,
-                                      fontSize:12, fontWeight:600, color: isCopied ? '#16A34A' : S.t1,
-                                      cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4
-                                    }}
-                                    title="Copy Email"
-                                  >
-                                    {isCopied ? <Check size={12}/> : <Copy size={12}/>}
-                                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                                  </button>
-
-                                  {!u.hasTeam && (
-                                    <a
-                                      href={`mailto:${u.email}?subject=HAXLR8%203.0%20-%20Complete%20Your%20Squad%20Registration&body=Hello%20${encodeURIComponent(u.fullName || 'Captain')},%0A%0AWe%20noticed%20that%20you%20registered%20your%20account%20on%20the%20HAXLR8%203.0%20Space%20Flight%20platform,%20but%20haven't%20added%20your%20team%20details%20yet.%0A%0APlease%20log%20in%20to%20complete%20your%20squad%20roster:%0Ahttps://haxlr8.live/dashboard%0A%0ABest%20regards,%0AHAXLR8%20Organizing%20Committee`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{
-                                        padding:'6px 10px', borderRadius:8,
-                                        background:'#FEF2F2', border:'1px solid #FECACA',
-                                        fontSize:12, fontWeight:700, color:'#DC2626',
-                                        textDecoration:'none', display:'inline-flex', alignItems:'center', gap:4
-                                      }}
-                                      title="Send reminder to complete team setup"
-                                    >
-                                      <Mail size={12}/> Remind
-                                    </a>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* PAGINATION */}
-                <div style={{ padding:'16px 20px', borderTop:'1px solid '+S.border, display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13, flexWrap:'wrap', gap:10 }}>
-                  <div style={{ color:S.t2, fontWeight:500 }}>
-                    Showing {filteredAccounts.length === 0 ? 0 : (accountsPage - 1) * accountsPerPage + 1} to {Math.min(accountsPage * accountsPerPage, filteredAccounts.length)} of {filteredAccounts.length} registered accounts
-                  </div>
-                  {totalAccountsPages > 1 && (
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <button 
-                        onClick={() => setAccountsPage(p => Math.max(1, p - 1))} 
-                        disabled={accountsPage === 1} 
-                        style={{ background:S.card, border:'1px solid '+S.border, borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', color: accountsPage === 1 ? S.border : S.t3, cursor: accountsPage === 1 ? 'default' : 'pointer' }}
-                      >
-                        <ChevronLeft size={14}/>
-                      </button>
-                      
-                      {Array.from({ length: totalAccountsPages }, (_, i) => i + 1).map(p => (
-                        <button 
-                          key={p} 
-                          onClick={() => setAccountsPage(p)} 
-                          style={{ background: accountsPage === p ? '#EEE8FF' : S.card, border: accountsPage === p ? 'none' : '1px solid '+S.border, borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', color: accountsPage === p ? S.primary : S.t2, fontWeight: accountsPage === p ? 700 : 600, cursor:'pointer' }}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                      
-                      <button 
-                        onClick={() => setAccountsPage(p => Math.min(totalAccountsPages, p + 1))} 
-                        disabled={accountsPage === totalAccountsPages} 
-                        style={{ background:S.card, border:'1px solid '+S.border, borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', color: accountsPage === totalAccountsPages ? S.border : S.t3, cursor: accountsPage === totalAccountsPages ? 'default' : 'pointer' }}
-                      >
-                        <ChevronRight size={14}/>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            )}
-
-            {/* CONDITIONAL TAB 2: SQUAD PARTICIPANTS ROSTER (UNCHANGED) */}
-            {activeView === 'team_roster' && (
             <div style={{ background:S.card, border:'1px solid '+S.border, borderRadius:S.radius, boxShadow:'0 1px 3px rgba(0,0,0,.04)', display:'flex', flexDirection:'column', minWidth: 0 }}>
               
               <div style={{ padding:'16px 20px', borderBottom:'1px solid '+S.border, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
@@ -1015,7 +552,6 @@ export default function AdminUsers() {
               </div>
 
             </div>
-            )}
           </div>
         </div>
 

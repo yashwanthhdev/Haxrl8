@@ -220,8 +220,8 @@ export async function fetchRegisteredAccountsData() {
   const mergedAccounts = { ...cloudAccounts };
   let hasNewBackfill = false;
 
-  // 3. Backfill all team_members from the database from the beginning
-  teamMembers.forEach(m => {
+  // 3. Backfill team leaders who logged in to register squads from the start
+  teamMembers.filter(m => m.is_leader === true).forEach(m => {
     if (!m.email) return;
     const cleanEmail = m.email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) return;

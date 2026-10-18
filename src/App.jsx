@@ -18,6 +18,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/DashboardPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminLogins = lazy(() => import('./pages/admin/AdminLogins'));
 const AdminTeams = lazy(() => import('./pages/admin/AdminTeams'));
 const AdminEvaluations = lazy(() => import('./pages/admin/AdminEvaluations'));
 const AdminEvaluateSubmission = lazy(() => import('./pages/admin/AdminEvaluateSubmission'));
@@ -119,6 +120,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="logins" element={<AdminLogins />} />
             <Route path="teams" element={<AdminTeams />} />
             <Route path="evaluations" element={<AdminEvaluations />} />
             <Route path="evaluations/:id" element={<AdminEvaluateSubmission />} />
@@ -134,6 +136,7 @@ function App() {
           <Route path="/udview" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="logins" element={<AdminLogins />} />
             <Route path="teams" element={<AdminTeams />} />
             <Route path="evaluations" element={<AdminEvaluations />} />
             <Route path="evaluations/:id" element={<AdminEvaluateSubmission />} />

@@ -237,8 +237,13 @@ export default function AdminTeams() {
         const utrMatch = sub?.project_description?.match(/UTR:\s*([A-Za-z0-9_-]+)/i);
         const utr = t.payment_utr || t.transaction_id || (utrMatch ? utrMatch[1] : (sub?.pdf_url ? 'Verified' : 'N/A'));
 
-        const memberNames = teamMems.map(mem => mem.full_name).filter(Boolean).join(', ');
+        const memberNames = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          return isLead ? `${mem.full_name || 'Leader'} (Team Lead)` : (mem.full_name || 'Member');
+        }).filter(Boolean).join(', ');
+
         const phone = lead?.phone_number || lead?.phone || t.phone || 'N/A';
+        const college = lead?.college_name || teamMems.find(mem => mem.college_name)?.college_name || 'N/A';
         const regDateTime = t.created_at ? new Date(t.created_at).toLocaleString('en-IN', {
           day: '2-digit',
           month: 'short',
@@ -254,11 +259,13 @@ export default function AdminTeams() {
           "Team Name": t.team_name || 'N/A',
           "Domain": resolveDomain(t, sub, null, 'General Innovation'),
           "Team Lead": lead?.full_name || 'N/A',
-          "Team Members": memberNames || lead?.full_name || 'N/A',
+          "Team Members": memberNames || (lead?.full_name ? `${lead.full_name} (Team Lead)` : 'N/A'),
           "Members Count": teamMems.length || 1,
           "Payment Transaction ID": utr,
-          "Phone": phone,
-          "Date and Time of Registration": regDateTime
+          "Phone Number": phone,
+          "College Name": college,
+          "Date and Time of Registration": regDateTime,
+          "Signature": ""
         };
       });
 
