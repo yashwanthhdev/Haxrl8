@@ -9,6 +9,9 @@ const REGISTRY_TITLE = 'HAXLR8 Registered Accounts Registry';
  */
 export function getLocalAccountsRegistry() {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return { accounts: {}, lastUpdated: null };
+    }
     const raw = localStorage.getItem(REGISTRY_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -31,8 +34,8 @@ export function setLocalAccountsRegistry(registryData) {
       accounts: registryData?.accounts || {},
       lastUpdated: new Date().toISOString(),
     };
-    localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(safeData));
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(safeData));
       window.dispatchEvent(new CustomEvent('haxlr8_accounts_registry_updated', { detail: safeData }));
     }
     return safeData;
@@ -56,14 +59,16 @@ export async function recordUserActivity(user, provider = 'email') {
   const sessionDebounceKey = `haxlr8_session_recorded_${cleanEmail}`;
   let isNewSession = true;
   try {
-    const lastSessionTime = sessionStorage.getItem(sessionDebounceKey);
-    if (lastSessionTime) {
-      const diffMs = Date.now() - Number(lastSessionTime);
-      if (diffMs < 5 * 60 * 1000) {
-        isNewSession = false;
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      const lastSessionTime = sessionStorage.getItem(sessionDebounceKey);
+      if (lastSessionTime) {
+        const diffMs = Date.now() - Number(lastSessionTime);
+        if (diffMs < 5 * 60 * 1000) {
+          isNewSession = false;
+        }
       }
+      sessionStorage.setItem(sessionDebounceKey, String(Date.now()));
     }
-    sessionStorage.setItem(sessionDebounceKey, String(Date.now()));
   } catch (e) {
     // Ignore sessionStorage errors
   }
@@ -322,6 +327,7 @@ export async function fetchRegisteredAccountsData() {
  * Export registered users report to CSV
  */
 export function exportRegisteredUsersCSV(users) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
   if (!Array.isArray(users) || users.length === 0) return;
 
   let csv = 'data:text/csv;charset=utf-8,S.No,Full Name,Email,Auth Provider,Team Status,Squad Name,Role,Login Count,Last Login,Registered On,College,Phone\n';
