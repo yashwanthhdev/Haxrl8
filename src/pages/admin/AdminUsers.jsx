@@ -207,6 +207,7 @@ export default function AdminUsers() {
       }
 
       // 2. Build rows: Sl No, Team Name, Team Members (with (Team Lead) in bracket), Phone Number, College Name, Signature
+      // 2. Build rows: Sl No, Team Name, Team Members, College of Each Member, Phone Numbers, Signature
       const excelRows = teamsList.map((t, idx) => {
         const teamMems = membersList.filter(m => m.team_id === t.id);
         const lead = teamMems.find(m => m.is_leader === true) || teamMems[0];
@@ -217,15 +218,29 @@ export default function AdminUsers() {
           return isLead ? `${m.full_name || 'Leader'} (Team Lead)` : (m.full_name || 'Member');
         }).filter(Boolean).join(', ');
 
-        const phone = lead?.phone_number || teamMems.find(m => m.phone_number)?.phone_number || '—';
-        const college = lead?.college_name || teamMems.find(m => m.college_name)?.college_name || '—';
+        // College of each member
+        const collegesOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.college_name || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
+        // Phone numbers of each member
+        const phoneNumbersOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.phone_number || mem.phone || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
+        const leadCollege = lead?.college_name || teamMems.find(m => m.college_name)?.college_name || '—';
+        const leadPhone = lead?.phone_number || teamMems.find(m => m.phone_number)?.phone_number || '—';
 
         return {
           "Sl No": idx + 1,
           "Team Name": t.team_name || '—',
           "Team Members": formattedMembers || (lead?.full_name ? `${lead.full_name} (Team Lead)` : '—'),
-          "Phone Number": phone,
-          "College Name": college,
+          "College of Each Member": collegesOfEachMember || leadCollege,
+          "Phone Numbers": phoneNumbersOfEachMember || leadPhone,
           "Signature": "" // Blank space for physical attendance signature
         };
       });
@@ -237,11 +252,11 @@ export default function AdminUsers() {
       const wsTeams = XLSX.utils.json_to_sheet(excelRows);
       wsTeams['!cols'] = [
         { wch: 8 },  // Sl No
-        { wch: 26 }, // Team Name
-        { wch: 54 }, // Team Members (with (Team Lead) in bracket)
-        { wch: 18 }, // Phone Number
-        { wch: 38 }, // College Name
-        { wch: 22 }, // Signature
+        { wch: 28 }, // Team Name
+        { wch: 55 }, // Team Members (with (Team Lead) in bracket)
+        { wch: 75 }, // College of Each Member
+        { wch: 60 }, // Phone Numbers
+        { wch: 26 }, // Signature
       ];
       XLSX.utils.book_append_sheet(wb, wsTeams, "Teams & Signatures");
 

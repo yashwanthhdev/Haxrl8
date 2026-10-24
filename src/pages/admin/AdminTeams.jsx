@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { isOrganizerAuthorized } from './adminAuth';
 import { syncLocalDataToSupabase } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
-import { Users, Flag, CheckSquare, Search, ChevronDown, Download, ChevronRight, MoreVertical, ChevronLeft, Trophy, Trash2, Eye, Receipt, X, ExternalLink, Image } from 'lucide-react';
+import { Users, Flag, CheckSquare, Search, ChevronDown, Download, ChevronRight, MoreVertical, ChevronLeft, Trophy, Trash2, Eye, Receipt, X, ExternalLink, Image, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const S = {
@@ -28,18 +28,49 @@ export default function AdminTeams() {
 
   // Filters and Pagination
   const [searchTerm, setSearchTerm] = useState('');
-  const [trackFilter, setTrackFilter] = useState('All Tracks');
-  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [paymentFilter, setPaymentFilter] = useState('ALL'); // 'ALL' | 'DONE' | 'PENDING'
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const [totalTeamsDB, setTotalTeamsDB] = useState(0);
   const [totalFilteredCount, setTotalFilteredCount] = useState(0);
+  const [paymentStats, setPaymentStats] = useState({ all: 0, done: 0, pending: 0 });
 
   const fetchData = useCallback(async () => {
     try {
-      const { count: total } = await supabase.from('teams').select('*', { count: 'exact', head: true });
-      setTotalTeamsDB(total || 0);
+      const [{ count: total, data: allTeams }, { data: allSubs }] = await Promise.all([
+        supabase.from('teams').select('id', { count: 'exact' }),
+        supabase.from('submissions').select('team_id, pdf_url')
+      ]);
+
+      const teamsList = allTeams || [];
+      const subsList = allSubs || [];
+
+      // Find teams that have submitted a valid payment proof
+      const teamsWithProof = new Set(
+        subsList
+          .filter(s => s.pdf_url && typeof s.pdf_url === 'string' && s.pdf_url.trim().length > 10)
+          .map(s => s.team_id)
+      );
+
+      const totalCount = total || teamsList.length;
+      let doneCount = 0;
+      let pendingCount = 0;
+
+      teamsList.forEach(t => {
+        if (teamsWithProof.has(t.id)) {
+          doneCount++;
+        } else {
+          pendingCount++;
+        }
+      });
+
+      setTotalTeamsDB(totalCount);
+      setPaymentStats({
+        all: totalCount,
+        done: doneCount,
+        pending: pendingCount
+      });
     } catch (e) {
       console.warn('Fetch teams notice:', e);
     } finally {
@@ -60,12 +91,37 @@ export default function AdminTeams() {
     checkAuth();
   }, [fetchData]);
 
-  const buildQuery = (isExport = false) => {
+  const buildQuery = async (isExport = false, filterVal = paymentFilter) => {
     let query = supabase.from('teams').select('*', { count: 'exact' });
     if (searchTerm) {
       const safeTerm = searchTerm.replace(/[%_\*()]/g, '');
       query = query.ilike('team_name', `%${safeTerm}%`);
     }
+
+    if (filterVal === 'DONE' || filterVal === 'PENDING') {
+      const { data: allSubs } = await supabase
+        .from('submissions')
+        .select('team_id, pdf_url');
+
+      const verifiedTeamIds = Array.from(new Set(
+        (allSubs || [])
+          .filter(s => s.pdf_url && typeof s.pdf_url === 'string' && s.pdf_url.trim().length > 10)
+          .map(s => s.team_id)
+      ));
+
+      if (filterVal === 'DONE') {
+        if (verifiedTeamIds.length > 0) {
+          query = query.in('id', verifiedTeamIds);
+        } else {
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      } else if (filterVal === 'PENDING') {
+        if (verifiedTeamIds.length > 0) {
+          query = query.not('id', 'in', `(${verifiedTeamIds.join(',')})`);
+        }
+      }
+    }
+
     if (!isExport) {
       const from = (currentPage - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
@@ -77,7 +133,7 @@ export default function AdminTeams() {
   useEffect(() => {
     if (loading || !isAdmin) return;
     const fetchPage = async () => {
-      const query = buildQuery(false);
+      const query = await buildQuery(false, paymentFilter);
       const { data: pageTeams, count } = await query;
       if (pageTeams) {
         setTeams(pageTeams);
@@ -96,7 +152,7 @@ export default function AdminTeams() {
       if (count !== null) setTotalFilteredCount(count);
     };
     fetchPage();
-  }, [loading, isAdmin, currentPage, searchTerm]);
+  }, [loading, isAdmin, currentPage, searchTerm, paymentFilter]);
 
   // Permanently delete a squad and all its related records from DB
   const handleDeleteTeam = async (teamId, teamName) => {
@@ -216,63 +272,123 @@ export default function AdminTeams() {
 
   const exportExcel = async () => {
     try {
-      const query = buildQuery(true);
+      const query = await buildQuery(true, paymentFilter);
       const { data } = await query;
       if (!data || data.length === 0) {
-        alert("No squad records found to export.");
+        alert("No squad records found to export for the selected filter.");
         return;
       }
 
       const teamIds = data.map(t => t.id);
       const [{ data: m }, { data: s }] = await Promise.all([
-        supabase.from('team_members').select('*').in('team_id', teamIds),
+        supabase.from('team_members').select('*').in('team_id', teamIds).order('created_at', { ascending: true }),
         supabase.from('submissions').select('*').in('team_id', teamIds)
       ]);
 
+      const allMembers = m || [];
+      const allSubs = s || [];
+
+      // Sheet 1: Squads & Teams Roster
       const excelRows = data.map((t, i) => {
-        const teamMems = (m || []).filter(mem => mem.team_id === t.id);
+        const teamMems = allMembers.filter(mem => mem.team_id === t.id);
         const lead = teamMems.find(mem => mem.is_leader === true) || teamMems[0];
-        const sub = (s || []).find(subItem => subItem.team_id === t.id);
+        const sub = allSubs.find(subItem => subItem.team_id === t.id);
+        const hasReceipt = Boolean(sub?.pdf_url && typeof sub.pdf_url === 'string' && sub.pdf_url.trim().length > 10);
 
-        const utrMatch = sub?.project_description?.match(/UTR:\s*([A-Za-z0-9_-]+)/i);
-        const utr = t.payment_utr || t.transaction_id || (utrMatch ? utrMatch[1] : (sub?.pdf_url ? 'Verified' : 'N/A'));
-
+        // Team members formatted with (Team Lead) in bracket
         const memberNames = teamMems.map(mem => {
           const isLead = mem.is_leader === true || mem.id === lead?.id;
           return isLead ? `${mem.full_name || 'Leader'} (Team Lead)` : (mem.full_name || 'Member');
         }).filter(Boolean).join(', ');
 
-        const phone = lead?.phone_number || lead?.phone || t.phone || 'N/A';
-        const college = lead?.college_name || teamMems.find(mem => mem.college_name)?.college_name || 'N/A';
-        const regDateTime = t.created_at ? new Date(t.created_at).toLocaleString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true
-        }) : 'N/A';
+        // College of each member
+        const collegesOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.college_name || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
+        // Phone numbers of each member
+        const phoneNumbersOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.phone_number || mem.phone || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
+        const leadCollege = lead?.college_name || teamMems.find(mem => mem.college_name)?.college_name || 'N/A';
+        const leadPhone = lead?.phone_number || lead?.phone || 'N/A';
+        const paymentStatus = hasReceipt ? 'Payment Done (Proof Submitted)' : 'Not Submitted (Pending)';
 
         return {
           "Sl No": i + 1,
           "Team Name": t.team_name || 'N/A',
-          "Domain": resolveDomain(t, sub, null, 'General Innovation'),
-          "Team Lead": lead?.full_name || 'N/A',
           "Team Members": memberNames || (lead?.full_name ? `${lead.full_name} (Team Lead)` : 'N/A'),
-          "Members Count": teamMems.length || 1,
-          "Payment Transaction ID": utr,
-          "Phone Number": phone,
-          "College Name": college,
-          "Date and Time of Registration": regDateTime,
-          "Signature": ""
+          "College of Each Member": collegesOfEachMember || leadCollege,
+          "Phone Numbers": phoneNumbersOfEachMember || leadPhone,
+          "Payment Status": paymentStatus,
+          "Signature": "" // Blank space for physical attendance signature
         };
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(excelRows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Teams Roster");
-      XLSX.writeFile(workbook, "haxlr8_teams_registered.xlsx");
+      // Sheet 2: Individual Participants Check-in Roster
+      const individualRows = [];
+      let indIndex = 1;
+      data.forEach(t => {
+        const teamMems = allMembers.filter(mem => mem.team_id === t.id);
+        const lead = teamMems.find(mem => mem.is_leader === true) || teamMems[0];
+        const sub = allSubs.find(subItem => subItem.team_id === t.id);
+        const hasReceipt = Boolean(sub?.pdf_url && typeof sub.pdf_url === 'string' && sub.pdf_url.trim().length > 10);
+
+        teamMems.forEach(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          individualRows.push({
+            "Sl No": indIndex++,
+            "Team Name": t.team_name || 'N/A',
+            "Participant Name": mem.full_name || 'N/A',
+            "Role": isLead ? "Team Lead" : "Crew Member",
+            "College Name": mem.college_name || 'N/A',
+            "Phone Number": mem.phone_number || mem.phone || 'N/A',
+            "Email Address": mem.email || 'N/A',
+            "Payment Status": hasReceipt ? "Payment Done" : "Not Submitted",
+            "Signature": "" // Blank space for physical attendance signature
+          });
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+
+      // Append Sheet 1
+      const wsTeams = XLSX.utils.json_to_sheet(excelRows);
+      wsTeams['!cols'] = [
+        { wch: 8 },   // Sl No
+        { wch: 28 },  // Team Name
+        { wch: 55 },  // Team Members
+        { wch: 75 },  // College of Each Member
+        { wch: 60 },  // Phone Numbers
+        { wch: 32 },  // Payment Status
+        { wch: 26 },  // Signature
+      ];
+      XLSX.utils.book_append_sheet(wb, wsTeams, "Squads Attendance & Roster");
+
+      // Append Sheet 2
+      if (individualRows.length > 0) {
+        const wsIndividuals = XLSX.utils.json_to_sheet(individualRows);
+        wsIndividuals['!cols'] = [
+          { wch: 8 },   // Sl No
+          { wch: 28 },  // Team Name
+          { wch: 26 },  // Participant Name
+          { wch: 14 },  // Role
+          { wch: 42 },  // College Name
+          { wch: 18 },  // Phone Number
+          { wch: 32 },  // Email Address
+          { wch: 18 },  // Payment Status
+          { wch: 24 },  // Signature
+        ];
+        XLSX.utils.book_append_sheet(wb, wsIndividuals, "Individual Signatures");
+      }
+
+      const fileSuffix = paymentFilter === 'DONE' ? '_payment_done' : (paymentFilter === 'PENDING' ? '_payment_pending' : '');
+      XLSX.writeFile(wb, `haxlr8_squads_attendance${fileSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (err) {
       console.error('Export error:', err);
       alert('Failed to export Excel sheet: ' + err.message);
@@ -316,21 +432,128 @@ export default function AdminTeams() {
               </div>
             </div>
 
+            {/* PAYMENT STATUS FILTER CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14 }}>
+              <div 
+                onClick={() => { setPaymentFilter('ALL'); setCurrentPage(1); }}
+                style={{
+                  background: S.card,
+                  border: `2px solid ${paymentFilter === 'ALL' ? S.primary : S.border}`,
+                  borderRadius: S.radius,
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  boxShadow: paymentFilter === 'ALL' ? '0 4px 12px rgba(108, 78, 255, 0.12)' : '0 1px 3px rgba(0,0,0,.04)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ width: 42, height: 42, borderRadius: 10, background: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Flag size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: S.t3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>All Squads</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: S.t1, marginTop: 2 }}>{paymentStats.all || totalTeamsDB}</div>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => { setPaymentFilter('DONE'); setCurrentPage(1); }}
+                style={{
+                  background: S.card,
+                  border: `2px solid ${paymentFilter === 'DONE' ? '#16A34A' : S.border}`,
+                  borderRadius: S.radius,
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  boxShadow: paymentFilter === 'DONE' ? '0 4px 12px rgba(22, 163, 74, 0.12)' : '0 1px 3px rgba(0,0,0,.04)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ width: 42, height: 42, borderRadius: 10, background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: S.t3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Payment Done</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#16A34A', marginTop: 2 }}>{paymentStats.done}</div>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => { setPaymentFilter('PENDING'); setCurrentPage(1); }}
+                style={{
+                  background: S.card,
+                  border: `2px solid ${paymentFilter === 'PENDING' ? '#DC2626' : S.border}`,
+                  borderRadius: S.radius,
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  boxShadow: paymentFilter === 'PENDING' ? '0 4px 12px rgba(220, 38, 38, 0.12)' : '0 1px 3px rgba(0,0,0,.04)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ width: 42, height: 42, borderRadius: 10, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: S.t3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Not Submitted</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#DC2626', marginTop: 2 }}>{paymentStats.pending}</div>
+                </div>
+              </div>
+            </div>
+
             <div style={{ background:S.card, border:'1px solid '+S.border, borderRadius:S.radius, boxShadow:'0 1px 3px rgba(0,0,0,.04)', display:'flex', flexDirection:'column' }}>
               
-              <div style={{ padding:'20px', borderBottom:'1px solid '+S.border, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
+              <div style={{ padding:'16px 20px', borderBottom:'1px solid '+S.border, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:14 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, flexWrap:'wrap' }}>
-                  <div style={{ position:'relative', minWidth:260 }}>
+                  <div style={{ position:'relative', minWidth:260, flex: '1 1 260px' }}>
                     <Search size={16} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:S.t3 }}/>
                     <input 
                       placeholder="Search squads by name..." 
-                      value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ paddingLeft:36, paddingRight:16, paddingTop:10, paddingBottom:10, background:S.card, border:'1px solid '+S.border, borderRadius:8, fontSize:13, width:'100%', outline:'none', color:S.t1 }}
+                      value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                      style={{ paddingLeft:36, paddingRight:16, paddingTop:9, paddingBottom:9, background:S.card, border:'1.5px solid '+S.border, borderRadius:8, fontSize:13, width:'100%', outline:'none', color:S.t1, boxSizing: 'border-box' }}
                     />
                   </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Filter size={15} style={{ color: S.t2 }} />
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: S.t2 }}>Payment Filter:</span>
+                    <select
+                      value={paymentFilter}
+                      onChange={(e) => { setPaymentFilter(e.target.value); setCurrentPage(1); }}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1.5px solid ' + S.border,
+                        borderRadius: 8,
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: S.t1,
+                        background: '#FFFFFF',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="ALL">All Squads ({paymentStats.all || totalTeamsDB})</option>
+                      <option value="DONE">Payment Done / Submitted ({paymentStats.done})</option>
+                      <option value="PENDING">Payment Not Submitted ({paymentStats.pending})</option>
+                    </select>
+                  </div>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-                  <span onClick={() => { setSearchTerm(''); setCurrentPage(1); }} style={{ fontSize:13, fontWeight:600, color:S.primary, cursor:'pointer' }}>Clear Filters</span>
+
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  {(searchTerm || paymentFilter !== 'ALL') && (
+                    <button 
+                      onClick={() => { setSearchTerm(''); setPaymentFilter('ALL'); setCurrentPage(1); }} 
+                      style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, color: S.t1, cursor: 'pointer' }}
+                    >
+                      Clear Filters ✕
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -409,15 +632,21 @@ export default function AdminTeams() {
                           {/* Payment / QR Proof Column */}
                           <td style={{ padding:'16px 20px' }}>
                             {hasReceipt ? (
-                              <button 
-                                onClick={() => setSelectedReceipt({ teamId: t.id, teamName: t.team_name, domain: track, sub })}
-                                style={{ padding:'5px 12px', borderRadius:8, background:'#ECFDF5', border:'1px solid #A7F3D0', color:'#059669', fontWeight:700, fontSize:12, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5, transition:'all 0.15s' }}
-                              >
-                                <Receipt size={13} /> View Proof
-                              </button>
+                              <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                                <span style={{ padding:'4px 9px', borderRadius:6, background:'#DCFCE7', border:'1px solid #86EFAC', color:'#15803D', fontWeight:700, fontSize:11, display:'inline-flex', alignItems:'center', gap:4 }}>
+                                  <CheckCircle2 size={12} /> Payment Done
+                                </span>
+                                <button 
+                                  onClick={() => setSelectedReceipt({ teamId: t.id, teamName: t.team_name, domain: track, sub })}
+                                  style={{ padding:'4px 10px', borderRadius:6, background:'#F0FDF4', border:'1px solid #BBF7D0', color:'#16A34A', fontWeight:700, fontSize:11, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:4, transition:'all 0.15s' }}
+                                  title="Inspect uploaded payment proof"
+                                >
+                                  <Receipt size={12} /> View Proof
+                                </button>
+                              </div>
                             ) : (
-                              <span style={{ padding:'4px 10px', borderRadius:8, background:'#F1F5F9', border:'1px solid #E2E8F0', color:'#94A3B8', fontWeight:600, fontSize:11 }}>
-                                No Receipt
+                              <span style={{ padding:'4px 9px', borderRadius:6, background:'#FEF2F2', border:'1px solid #FECACA', color:'#DC2626', fontWeight:700, fontSize:11, display:'inline-flex', alignItems:'center', gap:4 }}>
+                                <AlertCircle size={12} /> Not Submitted
                               </span>
                             )}
                           </td>
