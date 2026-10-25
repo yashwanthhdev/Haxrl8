@@ -211,7 +211,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
         return;
       }
       if (isLikelyPhone(val)) {
-        setUsnModalError(`"${val}" looks like a 10-digit mobile number for ${m.full_name}. Please enter your official college USN (e.g. 4PS24EC076).`);
+        setUsnModalError(`Please enter your college USN or university seat number for ${m.full_name} (e.g. 4PS24EC076).`);
         return;
       }
     }
@@ -337,7 +337,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
         return "Phone number must be exactly 10 digits.";
       }
       if (isLikelyPhone(member.reg_no)) {
-        return `USN / University Seat Number cannot be a mobile number for ${member.full_name || 'this member'}. Please enter the official college USN (e.g. 4PS24EC076).`;
+        return `Please enter your college USN or university seat number for ${member.full_name || 'this member'} (e.g. 4PS24EC076).`;
       }
       if (member.dept === 'Other' && !member.dept_other?.trim()) {
         return "Please specify your department.";
@@ -715,16 +715,11 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
               type="text" 
               value={member.reg_no} 
               onChange={e => updateMember('reg_no', e.target.value.toUpperCase())} 
-              style={{
-                ...styles.input,
-                borderColor: isLikelyPhone(member.reg_no) ? '#dc2626' : (member.reg_no ? '#0284c7' : '#cbd5e1')
-              }} 
+              style={styles.input} 
               placeholder="e.g. 4PS24EC076 or KUB24ECE147" 
             />
-            <div style={{ fontSize: 11.5, color: isLikelyPhone(member.reg_no) ? '#dc2626' : '#64748b', marginTop: 4, fontWeight: 700 }}>
-              {isLikelyPhone(member.reg_no) 
-                ? '⚠️ Mobile number detected! Please enter your college USN / Seat Number.' 
-                : '🎓 Enter your college USN / University Seat Number. (Do NOT enter mobile number).'}
+            <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
+              🎓 Enter your college USN or university seat number.
             </div>
           </div>
           <div>
@@ -1058,7 +1053,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
         </div>
       </div>
 
-      {/* Action Banner if any member has mobile number as USN */}
+      {/* Action Banner to update USN */}
       {(teamMembers || []).some(m => isLikelyPhone(m.reg_no)) && (
         <div style={{
           background: '#fffbeb',
@@ -1073,13 +1068,13 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
           boxShadow: '0 2px 10px rgba(245, 158, 11, 0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 260 }}>
-            <div style={{ fontSize: 26, lineHeight: 1 }}>⚠️</div>
+            <div style={{ fontSize: 26, lineHeight: 1 }}>🎓</div>
             <div>
               <div style={{ fontSize: 14.5, fontWeight: 900, color: '#92400e' }}>
-                Action Requested: Update College USN / University Seat Number
+                Update College USN / University Seat Number
               </div>
               <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 3, lineHeight: 1.4 }}>
-                One or more members entered a 10-digit mobile number in place of their college registration number. Please click below to enter your authentic college USN (e.g. <strong>4PS24EC076</strong>) so your certificates and entry passes are verified correctly.
+                Please enter your college USN or university seat number (e.g. <strong>4PS24EC076</strong>).
               </div>
             </div>
           </div>
@@ -1168,10 +1163,10 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                       justifyContent: 'space-between',
                       flexWrap: 'wrap', 
                       gap: 8, 
-                      background: hasPhoneWarning ? '#fef2f2' : '#f8fafc', 
+                      background: '#f8fafc', 
                       padding: '6px 12px', 
                       borderRadius: 8, 
-                      border: `1.5px solid ${hasPhoneWarning ? '#fca5a5' : '#e2e8f0'}`,
+                      border: '1.5px solid #e2e8f0',
                       width: '100%',
                       boxSizing: 'border-box'
                     }}>
@@ -1182,16 +1177,11 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                         <span style={{ 
                           fontSize: 13, 
                           fontWeight: 900, 
-                          color: hasPhoneWarning ? '#dc2626' : '#0284c7', 
+                          color: '#0284c7', 
                           fontFamily: 'monospace' 
                         }}>
                           {m.reg_no || 'Not Set'}
                         </span>
-                        {hasPhoneWarning && (
-                          <span style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: 4 }}>
-                            ⚠️ Phone No Entered
-                          </span>
-                        )}
                       </div>
                       <button
                         onClick={() => openUsnModal(m.id)}
@@ -1370,7 +1360,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                   Update USN / University Seat Numbers
                 </h3>
                 <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-                  Enter the official University Seat Number (USN / Reg No) assigned by your college or university (e.g. <strong>4PS24EC076</strong> or <strong>4MH25EC079</strong>). <strong>Do NOT enter phone/mobile numbers.</strong>
+                  Enter your college USN or university seat number (e.g. <strong>4PS24EC076</strong> or <strong>KUB24ECE147</strong>).
                 </p>
               </div>
               <button
@@ -1393,12 +1383,11 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
               {(teamMembers || []).map((m, idx) => {
                 const isLeader = m.id === teamData?.leader_id || m.email === user?.email;
                 const currentVal = usnEditMap[m.id] ?? m.reg_no ?? '';
-                const hasPhoneWarning = isLikelyPhone(currentVal);
 
                 return (
                   <div key={m.id || idx} style={{
                     background: '#f8fafc',
-                    border: `1.5px solid ${hasPhoneWarning ? '#fca5a5' : '#e2e8f0'}`,
+                    border: '1.5px solid #e2e8f0',
                     borderRadius: 14,
                     padding: '14px 16px'
                   }}>
@@ -1437,7 +1426,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                           width: '100%',
                           padding: '11px 14px',
                           borderRadius: 10,
-                          border: `1.5px solid ${hasPhoneWarning ? '#dc2626' : (currentVal ? '#0284c7' : '#cbd5e1')}`,
+                          border: `1.5px solid ${currentVal ? '#0284c7' : '#cbd5e1'}`,
                           background: '#ffffff',
                           fontSize: 14,
                           fontFamily: 'monospace',
@@ -1447,12 +1436,9 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                           boxSizing: 'border-box'
                         }}
                       />
-                      {hasPhoneWarning && (
-                        <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <AlertCircle size={13} />
-                          <span>This is a mobile number. Please enter your college USN (e.g. 4PS24EC076).</span>
-                        </div>
-                      )}
+                      <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
+                        🎓 Enter your college USN or university seat number.
+                      </div>
                     </div>
                   </div>
                 );

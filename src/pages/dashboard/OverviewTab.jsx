@@ -215,7 +215,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
                 Action Required: Update College USN / Seat Number
               </div>
               <div style={{ fontSize: 13, color: '#c2410c', fontWeight: 600, marginTop: 2, lineHeight: 1.4 }}>
-                One or more crew members currently have a 10-digit mobile number entered instead of their official University Seat Number (USN). Please update to your valid college USN (e.g. <strong>4PS24EC076</strong>).
+                Please enter your college USN or university seat number (e.g. <strong>4PS24EC076</strong>).
               </div>
             </div>
           </div>
