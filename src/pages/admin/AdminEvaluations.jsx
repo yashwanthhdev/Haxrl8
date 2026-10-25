@@ -402,7 +402,7 @@ export default function AdminEvaluations() {
                     <span style={{ fontSize:11, color:'#64748B' }}>{m.dept || 'Engineering'} · {m.year || '3rd Year'}</span>
                   </div>
                   <div style={{ fontSize:12, color:'#475569' }}>📧 {m.email} · 📱 {m.phone_number || 'N/A'}</div>
-                  <div style={{ fontSize:11, color:'#94A3B8', marginTop:3 }}>🏛️ {m.college_name || 'N/A'} · Reg No: {m.reg_no || 'N/A'}</div>
+                  <div style={{ fontSize:11, color:'#94A3B8', marginTop:3 }}>🏛️ {m.college_name || 'N/A'} · USN: {m.reg_no || 'N/A'}</div>
                 </div>
               ))}
             </div>

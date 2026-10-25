@@ -383,7 +383,7 @@ export default function TicketTab({
                       <span>{leader?.phone_number || leader?.phone || 'Contact provided on manifest'}</span>
                     </div>
                     <div style={{ fontSize: 11.5, color: '#64748b' }}>
-                      {leader?.college_name || 'Undergraduate'} · {leader?.dept || 'Engineering'}
+                      {leader?.college_name || 'Undergraduate'} · {leader?.dept || 'Engineering'}{leader?.reg_no ? ` · USN: ${leader.reg_no}` : ''}
                     </div>
                   </div>
 
@@ -409,7 +409,7 @@ export default function TicketTab({
                         <span>{cm.phone_number || cm.phone || 'Contact provided on manifest'}</span>
                       </div>
                       <div style={{ fontSize: 11.5, color: '#64748b' }}>
-                        {cm.college_name || 'Undergraduate'} · {cm.dept || 'Engineering'}
+                        {cm.college_name || 'Undergraduate'} · {cm.dept || 'Engineering'}{cm.reg_no ? ` · USN: ${cm.reg_no}` : ''}
                       </div>
                     </div>
                   ))}

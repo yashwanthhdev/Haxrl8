@@ -301,6 +301,13 @@ export default function AdminTeams() {
           return isLead ? `${mem.full_name || 'Leader'} (Team Lead)` : (mem.full_name || 'Member');
         }).filter(Boolean).join(', ');
 
+        // USN of each member
+        const usnsOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.reg_no || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
         // College of each member
         const collegesOfEachMember = teamMems.map(mem => {
           const isLead = mem.is_leader === true || mem.id === lead?.id;
@@ -323,6 +330,7 @@ export default function AdminTeams() {
           "Sl No": i + 1,
           "Team Name": t.team_name || 'N/A',
           "Team Members": memberNames || (lead?.full_name ? `${lead.full_name} (Team Lead)` : 'N/A'),
+          "USN / Seat No": usnsOfEachMember || (lead?.reg_no || 'N/A'),
           "College of Each Member": collegesOfEachMember || leadCollege,
           "Phone Numbers": phoneNumbersOfEachMember || leadPhone,
           "Payment Status": paymentStatus,
@@ -346,6 +354,7 @@ export default function AdminTeams() {
             "Team Name": t.team_name || 'N/A',
             "Participant Name": mem.full_name || 'N/A',
             "Role": isLead ? "Team Lead" : "Crew Member",
+            "USN / Seat No": mem.reg_no || 'N/A',
             "College Name": mem.college_name || 'N/A',
             "Phone Number": mem.phone_number || mem.phone || 'N/A',
             "Email Address": mem.email || 'N/A',
@@ -363,6 +372,7 @@ export default function AdminTeams() {
         { wch: 8 },   // Sl No
         { wch: 28 },  // Team Name
         { wch: 55 },  // Team Members
+        { wch: 50 },  // USN / Seat No
         { wch: 75 },  // College of Each Member
         { wch: 60 },  // Phone Numbers
         { wch: 32 },  // Payment Status
@@ -378,6 +388,7 @@ export default function AdminTeams() {
           { wch: 28 },  // Team Name
           { wch: 26 },  // Participant Name
           { wch: 14 },  // Role
+          { wch: 20 },  // USN / Seat No
           { wch: 42 },  // College Name
           { wch: 18 },  // Phone Number
           { wch: 32 },  // Email Address
@@ -840,7 +851,7 @@ export default function AdminTeams() {
                         📧 {m.email} {m.phone_number ? `· 📱 ${m.phone_number}` : ''}
                       </div>
                       <div style={{ fontSize:11, color:'#94A3B8', marginTop:2 }}>
-                        🏛️ {m.college_name || 'College N/A'} {m.reg_no ? `· Reg: ${m.reg_no}` : ''}
+                        🏛️ {m.college_name || 'College N/A'} {m.reg_no ? `· USN: ${m.reg_no}` : ''}
                       </div>
                     </div>
                     <div>

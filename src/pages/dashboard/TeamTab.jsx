@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import { sanitizeInput } from '../../lib/security';
-import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2, X, Edit2 } from 'lucide-react';
 import { sendParticipantWelcomeEmail } from '../../lib/emailService';
 import { ensureUUID, isUUID } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
@@ -59,6 +59,12 @@ const DEPARTMENTS = [
   "Data Science",
   "Other"
 ];
+
+export const isLikelyPhone = (val) => {
+  if (!val || typeof val !== 'string') return false;
+  const clean = val.replace(/[\s\-\+\(\)]/g, '');
+  return /^\d{10}$/.test(clean) || /^91\d{10}$/.test(clean);
+};
 
 const defaultMember = {
   full_name: '', email: '', phone_number: '',
@@ -177,6 +183,79 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   const [showIdPopup, setShowIdPopup] = useState(false);
   const [deadlinePassed, setDeadlinePassed] = useState(false);
 
+  // Dedicated USN / University Seat Number Editing State
+  const [showUsnEditModal, setShowUsnEditModal] = useState(false);
+  const [usnEditMap, setUsnEditMap] = useState({});
+  const [savingUsn, setSavingUsn] = useState(false);
+  const [usnModalError, setUsnModalError] = useState('');
+
+  const openUsnModal = (focusMemberId = null) => {
+    const map = {};
+    (teamMembers || []).forEach(m => {
+      map[m.id] = m.reg_no || '';
+    });
+    setUsnEditMap(map);
+    setUsnModalError('');
+    setShowUsnEditModal(true);
+  };
+
+  const handleSaveUsnUpdates = async () => {
+    setUsnModalError('');
+    const membersList = teamMembers || [];
+
+    // Validation
+    for (const m of membersList) {
+      const val = (usnEditMap[m.id] ?? m.reg_no ?? '').trim();
+      if (!val) {
+        setUsnModalError(`Please enter a USN / University Seat Number for ${m.full_name}.`);
+        return;
+      }
+      if (isLikelyPhone(val)) {
+        setUsnModalError(`"${val}" looks like a 10-digit mobile number for ${m.full_name}. Please enter your official college USN (e.g. 4PS24EC076).`);
+        return;
+      }
+    }
+
+    setSavingUsn(true);
+    try {
+      const updatePromises = [];
+      const updatedMembersList = membersList.map(m => {
+        const newUsn = (usnEditMap[m.id] ?? m.reg_no ?? '').trim();
+        if (newUsn !== m.reg_no) {
+          updatePromises.push(
+            supabase.from('team_members').update({ reg_no: newUsn }).eq('id', m.id)
+          );
+        }
+        return { ...m, reg_no: newUsn };
+      });
+
+      if (updatePromises.length > 0) {
+        const results = await Promise.all(updatePromises);
+        const errResult = results.find(r => r.error);
+        if (errResult) throw errResult.error;
+      }
+
+      if (setTeamMembers) {
+        setTeamMembers(updatedMembersList);
+      }
+
+      try {
+        if (user?.id) {
+          localStorage.setItem(`haxlr8_members_${user.id}`, JSON.stringify(updatedMembersList));
+        }
+      } catch (e) {}
+
+      setShowUsnEditModal(false);
+      setToastMsg('✓ USN / University Seat Numbers updated successfully!');
+      setTimeout(() => setToastMsg(''), 4000);
+    } catch (err) {
+      console.error('Save USN error:', err);
+      setUsnModalError('Failed to save USN: ' + (err.message || err));
+    } finally {
+      setSavingUsn(false);
+    }
+  };
+
   useEffect(() => {
     // Official Registration Deadline: October 28, 2026 at 23:59:59 IST
     const deadline = new Date('2026-10-28T23:59:59+05:30');
@@ -256,6 +335,9 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
       }
       if (!/^\d{10}$/.test(member.phone_number)) {
         return "Phone number must be exactly 10 digits.";
+      }
+      if (isLikelyPhone(member.reg_no)) {
+        return `USN / University Seat Number cannot be a mobile number for ${member.full_name || 'this member'}. Please enter the official college USN (e.g. 4PS24EC076).`;
       }
       if (member.dept === 'Other' && !member.dept_other?.trim()) {
         return "Please specify your department.";
@@ -624,12 +706,26 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
 
           {/* Academic Details */}
           <div>
-            <label style={styles.label}>College / Organization</label>
+            <label style={styles.label}>College / Organization *</label>
             <input type="text" value={member.college_name} onChange={e => updateMember('college_name', e.target.value)} style={styles.input} placeholder="E.g., MIT Mysore" />
           </div>
           <div>
-            <label style={styles.label}>Register Number</label>
-            <input type="text" value={member.reg_no} onChange={e => updateMember('reg_no', e.target.value)} style={styles.input} placeholder="Registration Number" />
+            <label style={styles.label}>USN / University Seat Number *</label>
+            <input 
+              type="text" 
+              value={member.reg_no} 
+              onChange={e => updateMember('reg_no', e.target.value.toUpperCase())} 
+              style={{
+                ...styles.input,
+                borderColor: isLikelyPhone(member.reg_no) ? '#dc2626' : (member.reg_no ? '#0284c7' : '#cbd5e1')
+              }} 
+              placeholder="e.g. 4PS24EC076 or KUB24ECE147" 
+            />
+            <div style={{ fontSize: 11.5, color: isLikelyPhone(member.reg_no) ? '#dc2626' : '#64748b', marginTop: 4, fontWeight: 700 }}>
+              {isLikelyPhone(member.reg_no) 
+                ? '⚠️ Mobile number detected! Please enter your college USN / Seat Number.' 
+                : '🎓 Enter your college USN / University Seat Number. (Do NOT enter mobile number).'}
+            </div>
           </div>
           <div>
             <label style={styles.label}>Department</label>
@@ -962,17 +1058,89 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
         </div>
       </div>
 
+      {/* Action Banner if any member has mobile number as USN */}
+      {(teamMembers || []).some(m => isLikelyPhone(m.reg_no)) && (
+        <div style={{
+          background: '#fffbeb',
+          border: '2px solid #fde68a',
+          borderRadius: 18,
+          padding: '16px 22px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 14,
+          boxShadow: '0 2px 10px rgba(245, 158, 11, 0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 260 }}>
+            <div style={{ fontSize: 26, lineHeight: 1 }}>⚠️</div>
+            <div>
+              <div style={{ fontSize: 14.5, fontWeight: 900, color: '#92400e' }}>
+                Action Requested: Update College USN / University Seat Number
+              </div>
+              <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 3, lineHeight: 1.4 }}>
+                One or more members entered a 10-digit mobile number in place of their college registration number. Please click below to enter your authentic college USN (e.g. <strong>4PS24EC076</strong>) so your certificates and entry passes are verified correctly.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => openUsnModal()}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#d97706',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <Edit2 size={14} /> Update USN Now →
+          </button>
+        </div>
+      )}
+
       <div className="dash-grid-2 team-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'stretch' }}>
 
         {/* Left Column: Team Members */}
         <div style={{ ...styles.card, height: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', margin: 0 }}>Crew Roster ({teamMembers.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', margin: 0 }}>Crew Roster ({teamMembers.length})</h3>
+              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Official college USN & credentials</div>
+            </div>
+            <button
+              onClick={() => openUsnModal()}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 10,
+                background: '#e0f2fe',
+                border: '1.5px solid #7dd3fc',
+                color: '#0284c7',
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s ease'
+              }}
+              title="Edit college USN / seat numbers for team members"
+            >
+              <Edit2 size={13} /> Edit USN / Seat No
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {teamMembers.map((m, idx) => {
               const isLeader = m.id === teamData.leader_id || m.email === user.email;
+              const hasPhoneWarning = isLikelyPhone(m.reg_no);
+
               return (
                 <div key={m.id || idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 0', borderBottom: idx !== teamMembers.length - 1 ? '1px solid #f1e7db' : 'none' }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isLeader ? '#0284c7' : '#0284c7', fontWeight: 900, fontSize: 16, flexShrink: 0, background: isLeader ? '#e0f2fe' : '#eff6ff', border: `2px solid ${isLeader ? '#7dd3fc' : '#bfdbfe'}`, boxShadow: isLeader ? '0 2px 10px rgba(2, 132, 199, 0.2)' : 'none' }}>
@@ -991,6 +1159,57 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                     <div style={{ fontSize: 12.5, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
                       📞 +91 {m.phone_number}
                     </div>
+
+                    {/* USN / University Seat Number Display Badge */}
+                    <div style={{ 
+                      marginTop: 8, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap', 
+                      gap: 8, 
+                      background: hasPhoneWarning ? '#fef2f2' : '#f8fafc', 
+                      padding: '6px 12px', 
+                      borderRadius: 8, 
+                      border: `1.5px solid ${hasPhoneWarning ? '#fca5a5' : '#e2e8f0'}`,
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          🎓 USN:
+                        </span>
+                        <span style={{ 
+                          fontSize: 13, 
+                          fontWeight: 900, 
+                          color: hasPhoneWarning ? '#dc2626' : '#0284c7', 
+                          fontFamily: 'monospace' 
+                        }}>
+                          {m.reg_no || 'Not Set'}
+                        </span>
+                        {hasPhoneWarning && (
+                          <span style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: 4 }}>
+                            ⚠️ Phone No Entered
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => openUsnModal(m.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#0284c7',
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          padding: 0,
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Edit USN
+                      </button>
+                    </div>
+
                   </div>
                 </div>
               );
@@ -1116,6 +1335,174 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
           {isPaid ? 'View Payment Receipt →' : 'Proceed to Payment & Verification (₹1,200) →'}
         </button>
       </div>
+
+      {/* EDIT USN / UNIVERSITY SEAT NUMBER MODAL */}
+      {showUsnEditModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 16
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 22,
+            maxWidth: 580,
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px 24px',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            border: '2px solid #7dd3fc',
+            fontFamily: "'Plus Jakarta Sans', sans-serif"
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, borderBottom: '1.5px solid #f1e7db', paddingBottom: 14 }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                  🎓 College Registration Credentials
+                </div>
+                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: '#0f172a' }}>
+                  Update USN / University Seat Numbers
+                </h3>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+                  Enter the official University Seat Number (USN / Reg No) assigned by your college or university (e.g. <strong>4PS24EC076</strong> or <strong>4MH25EC079</strong>). <strong>Do NOT enter phone/mobile numbers.</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { if (!savingUsn) setShowUsnEditModal(false); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#64748b', borderRadius: 8 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {usnModalError && (
+              <div style={{ marginBottom: 16, background: '#fef2f2', border: '1.5px solid #fecaca', color: '#b91c1c', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={18} />
+                <span>{usnModalError}</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+              {(teamMembers || []).map((m, idx) => {
+                const isLeader = m.id === teamData?.leader_id || m.email === user?.email;
+                const currentVal = usnEditMap[m.id] ?? m.reg_no ?? '';
+                const hasPhoneWarning = isLikelyPhone(currentVal);
+
+                return (
+                  <div key={m.id || idx} style={{
+                    background: '#f8fafc',
+                    border: `1.5px solid ${hasPhoneWarning ? '#fca5a5' : '#e2e8f0'}`,
+                    borderRadius: 14,
+                    padding: '14px 16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14.5, color: '#0f172a' }}>
+                        {m.full_name}
+                      </div>
+                      <span style={{
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        color: isLeader ? '#0284c7' : '#64748b',
+                        background: isLeader ? '#e0f2fe' : '#e2e8f0',
+                        padding: '2px 8px',
+                        borderRadius: 6
+                      }}>
+                        {isLeader ? 'FLIGHT CAPTAIN' : `CREWMATE ${idx}`}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#64748b', marginBottom: 10 }}>
+                      🏛️ {m.college_name || 'College'} · {m.dept || 'Engineering'}
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', display: 'block', marginBottom: 5 }}>
+                        USN / University Seat Number *
+                      </label>
+                      <input
+                        type="text"
+                        value={currentVal}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          setUsnEditMap(prev => ({ ...prev, [m.id]: val }));
+                        }}
+                        placeholder="e.g. 4PS24EC076 or KUB24ECE147"
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px',
+                          borderRadius: 10,
+                          border: `1.5px solid ${hasPhoneWarning ? '#dc2626' : (currentVal ? '#0284c7' : '#cbd5e1')}`,
+                          background: '#ffffff',
+                          fontSize: 14,
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                      {hasPhoneWarning && (
+                        <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <AlertCircle size={13} />
+                          <span>This is a mobile number. Please enter your college USN (e.g. 4PS24EC076).</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1.5px solid #f1e7db', paddingTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => { if (!savingUsn) setShowUsnEditModal(false); }}
+                disabled={savingUsn}
+                style={{
+                  padding: '11px 20px',
+                  borderRadius: 10,
+                  background: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  color: '#475569',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: savingUsn ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveUsnUpdates}
+                disabled={savingUsn}
+                style={{
+                  padding: '11px 24px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: savingUsn ? '#94a3b8' : '#0284c7',
+                  color: '#ffffff',
+                  fontSize: 13.5,
+                  fontWeight: 800,
+                  cursor: savingUsn ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                {savingUsn ? 'Saving to Database...' : 'Save & Update USN 🚀'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {toastMsg && (

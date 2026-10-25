@@ -218,6 +218,13 @@ export default function AdminUsers() {
           return isLead ? `${m.full_name || 'Leader'} (Team Lead)` : (m.full_name || 'Member');
         }).filter(Boolean).join(', ');
 
+        // USN of each member
+        const usnsOfEachMember = teamMems.map(mem => {
+          const isLead = mem.is_leader === true || mem.id === lead?.id;
+          const roleTag = isLead ? ' (Lead)' : '';
+          return `${mem.full_name || 'Member'}${roleTag}: ${mem.reg_no || 'N/A'}`;
+        }).filter(Boolean).join(' | ');
+
         // College of each member
         const collegesOfEachMember = teamMems.map(mem => {
           const isLead = mem.is_leader === true || mem.id === lead?.id;
@@ -239,6 +246,7 @@ export default function AdminUsers() {
           "Sl No": idx + 1,
           "Team Name": t.team_name || '—',
           "Team Members": formattedMembers || (lead?.full_name ? `${lead.full_name} (Team Lead)` : '—'),
+          "USN / Seat No": usnsOfEachMember || (lead?.reg_no || '—'),
           "College of Each Member": collegesOfEachMember || leadCollege,
           "Phone Numbers": phoneNumbersOfEachMember || leadPhone,
           "Signature": "" // Blank space for physical attendance signature
@@ -254,6 +262,7 @@ export default function AdminUsers() {
         { wch: 8 },  // Sl No
         { wch: 28 }, // Team Name
         { wch: 55 }, // Team Members (with (Team Lead) in bracket)
+        { wch: 50 }, // USN / Seat No
         { wch: 75 }, // College of Each Member
         { wch: 60 }, // Phone Numbers
         { wch: 26 }, // Signature
@@ -268,6 +277,7 @@ export default function AdminUsers() {
           "Sl No": idx + 1,
           "Participant Name": m.full_name || '—',
           "Role": isLeader ? "Team Lead" : "Member",
+          "USN / Seat No": m.reg_no || '—',
           "Team Name": t?.team_name || "—",
           "Phone Number": m.phone_number || "—",
           "Email": m.email || "—",
@@ -282,6 +292,7 @@ export default function AdminUsers() {
         { wch: 8 },  // Sl No
         { wch: 24 }, // Participant Name
         { wch: 14 }, // Role
+        { wch: 20 }, // USN / Seat No
         { wch: 24 }, // Team Name
         { wch: 18 }, // Phone Number
         { wch: 30 }, // Email
@@ -469,7 +480,9 @@ export default function AdminUsers() {
                               </div>
                               <div>
                                 <div style={{ fontWeight:700, color:S.t1 }}>{m.full_name || 'N/A'}</div>
-                                <div style={{ fontSize:11, color:S.t3, marginTop:1 }}>@{m.full_name?.toLowerCase().replace(/\s+/g,'') || 'user'}</div>
+                                <div style={{ fontSize:11, color:S.t3, marginTop:1 }}>
+                                  {m.reg_no ? `USN: ${m.reg_no}` : `@${m.full_name?.toLowerCase().replace(/\s+/g,'') || 'user'}`}
+                                </div>
                               </div>
                             </div>
                           </td>

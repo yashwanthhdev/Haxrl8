@@ -192,6 +192,55 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
       {/* Cosmic Event Timeline */}
       <EventTimeline steps={TIMELINE_STEPS} currentStepIndex={currentStepIndex} />
 
+      {/* Action Required: USN Correction Advisory */}
+      {hasTeam && (teamMembers || []).some(m => m.reg_no && /^\d{10}$/.test(String(m.reg_no).replace(/[\s\-\+]/g, ''))) && (
+        <div style={{
+          background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+          border: '2px solid #f97316',
+          borderRadius: 16,
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 14,
+          boxShadow: '0 8px 24px rgba(234, 88, 12, 0.12)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 26, background: '#ffedd5', width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #fed7aa', flexShrink: 0 }}>
+              🎓
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Action Required: Update College USN / Seat Number
+              </div>
+              <div style={{ fontSize: 13, color: '#c2410c', fontWeight: 600, marginTop: 2, lineHeight: 1.4 }}>
+                One or more crew members currently have a 10-digit mobile number entered instead of their official University Seat Number (USN). Please update to your valid college USN (e.g. <strong>4PS24EC076</strong>).
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab && setActiveTab('team')}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 10,
+              background: '#ea580c',
+              border: 'none',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            Update USN Now →
+          </button>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="dash-overview-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
         

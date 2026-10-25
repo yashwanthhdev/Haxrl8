@@ -187,7 +187,7 @@ export default function AdminEvaluateSubmission() {
                       {m.full_name} {m.is_leader && <span style={{ background: '#FEF3C7', color: '#B45309', padding: '2px 8px', borderRadius: 8, fontSize: 10, fontWeight: 800, marginLeft: 6 }}>Commander</span>}
                     </div>
                     <div style={{ fontSize: 12, color: S.t2, marginTop: 2 }}>
-                      {m.dept || 'Engineering'} · {m.year || '3rd Year'} · Reg No: {m.reg_no || 'N/A'}
+                      {m.dept || 'Engineering'} · {m.year || '3rd Year'} · USN: {m.reg_no || 'N/A'}
                     </div>
                   </div>
                 </div>
