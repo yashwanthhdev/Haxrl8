@@ -238,7 +238,7 @@ export default function DashboardPage() {
               supabase
                 .from('team_members')
                 .select('team_id')
-                .eq('email', activeUser.email.toLowerCase().trim())
+                .ilike('email', activeUser.email.trim())
                 .eq('is_leader', true)
                 .order('created_at', { ascending: false })
                 .limit(1),
@@ -263,7 +263,7 @@ export default function DashboardPage() {
               supabase
                 .from('team_members')
                 .select('team_id')
-                .eq('email', activeUser.email.toLowerCase().trim())
+                .ilike('email', activeUser.email.trim())
                 .order('created_at', { ascending: false })
                 .limit(1),
               5000
@@ -359,7 +359,7 @@ export default function DashboardPage() {
               const phoneMatch = paidSub.project_description?.match(/\(([0-9]+)\)/);
               const autoPaymentRecord = {
                 transaction_id: paymentUtr,
-                payer_name: nameMatch ? nameMatch[1].trim() : (activeUser.user_metadata?.full_name || 'Leader'),
+                payer_name: nameMatch ? nameMatch[1].trim() : (resolvedMembers.find(m => m.is_leader)?.full_name || activeUser.user_metadata?.full_name || 'Leader'),
                 payer_phone: phoneMatch ? phoneMatch[1].trim() : '',
                 amount: 1200,
                 screenshot_url: paidSub.pdf_url || '',
@@ -651,7 +651,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} hasTeam={hasTeam} announcements={announcements} user={user}>
+    <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} hasTeam={hasTeam} announcements={announcements} user={user} teamData={teamData} teamMembers={teamMembers}>
       {activeTab === 'overview'   && <OverviewTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} announcements={announcements} />}
       {activeTab === 'team'       && <TeamTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setTeamMembers={setTeamMembers} setTeamData={setTeamData} setHasTeam={setHasTeam} setActiveTab={setActiveTab} />}
       {activeTab === 'payment'    && <PaymentTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} onPaymentUpdated={(p) => { if (teamData) setTeamData({ ...teamData, payment_status: 'submitted', payment_utr: p.transaction_id }); }} />}

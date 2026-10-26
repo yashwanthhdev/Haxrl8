@@ -12,6 +12,7 @@ import {
   resolveDisplaySquadrons, 
   subscribeToSquadronsConfig 
 } from '../../lib/crewSquadronsService';
+import { resolveDomain, formatDomainWithBadge } from '../../lib/domainUtils';
 
 const TIMELINE_STEPS = [
   { title: 'Registration', date: 'Oct 09' },
@@ -152,24 +153,71 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
     if (paidSub) isPaid = true;
   }
 
+  // Authoritative Leader resolution
+  const leader = teamMembers?.find(m => m.is_leader) || teamMembers?.find(m => m.id === teamData?.leader_id) || teamMembers?.[0];
+  const isCurrentUserLeader = Boolean(
+    (teamData?.leader_id && user?.id && teamData.leader_id === user.id) ||
+    (leader?.email && user?.email && leader.email.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+    (teamMembers?.find(m => m.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim())?.is_leader)
+  );
+  const currentDomain = resolveDomain(teamData, submissions?.[0], user, 'Healthcare');
+
   const overallProgress = hasTeam ? (isPaid ? 100 : 60) : 25; 
-  const currentStepIndex = isPaid ? 3 : (hasTeam ? 1 : 0);
+  // Timeline indices: 0: Registration, 1: Squad Lock, 2: Fee Verify, 3: Pass Issued, 4: Grand Finale
+  // Once squad is registered (hasTeam=true), Squad Lock is COMPLETED, and Fee Verify is ACTIVE.
+  const currentStepIndex = isPaid ? 3 : (hasTeam ? 2 : 1);
 
   const now = new Date();
-  const milestones = [
-    { title: 'Registration & Squad Lock', dateStr: '2026-11-02T23:59:59', icon: '🚀', desc: 'Lock in 3–4 crew members & ₹1,200 fee' },
-    { title: 'Flight Passes & Venue Briefing', dateStr: '2026-11-03T12:00:00', icon: '🎫', desc: 'Official checkpoint passes & instructions' },
-    { title: 'Grand Finale (MIT Mysore)', dateStr: '2026-11-06T09:00:00', icon: '🏆', desc: '24-hour hackathon & ₹40,000 bounty' }
-  ];
-
-  const upcomingMilestones = milestones.filter(m => new Date(m.dateStr) > now);
-  const nextMilestone = upcomingMilestones.length > 0 ? upcomingMilestones[0] : milestones[milestones.length - 1];
-
   const getDaysLeft = (targetDate) => {
     const diff = new Date(targetDate) - now;
     if (diff < 0) return 0;
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
+
+  let nextMilestone = null;
+  let upcomingMilestonesList = [];
+
+  if (hasTeam && isPaid) {
+    nextMilestone = { 
+      title: 'Flight Passes & Venue Briefing', 
+      dateStr: '2026-11-03T12:00:00', 
+      icon: '🎫', 
+      desc: 'Official checkpoint passes & campus briefing' 
+    };
+    upcomingMilestonesList = [
+      { title: 'Squad Manifest Lock', desc: `${teamData?.team_name || 'Squad'} · ${memberCount} crew members locked`, icon: '🚀', statusText: 'Completed ✓', statusColor: '#16a34a', statusBg: '#dcfce7' },
+      { title: 'Payment Verification', desc: '₹1,200 team fee clearance verified', icon: '💳', statusText: 'Verified ✓', statusColor: '#16a34a', statusBg: '#dcfce7' },
+      { title: 'Flight Passes & Venue Briefing', desc: 'Official checkpoint passes & campus briefing', icon: '🎫', statusText: 'Releases Nov 03', statusColor: '#0284c7', statusBg: '#e0f2fe' },
+      { title: 'Grand Finale (MIT Mysore)', desc: '24-hour hackathon & ₹40,000 bounty', icon: '🏆', statusText: 'Nov 06–07', statusColor: '#ea580c', statusBg: '#ffedd5' }
+    ];
+  } else if (hasTeam && !isPaid) {
+    nextMilestone = { 
+      title: 'Payment Verification (₹1,200)', 
+      dateStr: '2026-11-02T23:59:59', 
+      icon: '💳', 
+      desc: 'Submit ₹1,200 UPI transaction for clearance' 
+    };
+    upcomingMilestonesList = [
+      { title: 'Squad Manifest Lock', desc: `${teamData?.team_name || 'Squad'} · ${memberCount} crew members locked`, icon: '🚀', statusText: 'Completed ✓', statusColor: '#16a34a', statusBg: '#dcfce7' },
+      { title: 'Payment Verification', desc: 'Submit ₹1,200 UPI payment & UTR in Payment tab', icon: '💳', statusText: 'In Progress · Due Nov 02', statusColor: '#ea580c', statusBg: '#ffedd5' },
+      { title: 'Flight Passes & Venue Briefing', desc: 'Unlocks upon payment verification', icon: '🎫', statusText: 'Releases Nov 03', statusColor: '#64748b', statusBg: '#f1f5f9' },
+      { title: 'Grand Finale (MIT Mysore)', desc: '24-hour hackathon & ₹40,000 bounty', icon: '🏆', statusText: 'Nov 06–07', statusColor: '#64748b', statusBg: '#f1f5f9' }
+    ];
+  } else {
+    nextMilestone = { 
+      title: 'Registration & Squad Lock', 
+      dateStr: '2026-11-02T23:59:59', 
+      icon: '🚀', 
+      desc: 'Lock in 3–4 crew members & ₹1,200 fee' 
+    };
+    upcomingMilestonesList = [
+      { title: 'Registration & Squad Lock', desc: 'Assemble 3–4 crew members & lock domain', icon: '🚀', statusText: 'In Progress · Due Nov 02', statusColor: '#ea580c', statusBg: '#ffedd5' },
+      { title: 'Payment Verification', desc: '₹1,200 team fee via official UPI / Google Form', icon: '💳', statusText: 'Upcoming', statusColor: '#64748b', statusBg: '#f1f5f9' },
+      { title: 'Flight Passes & Venue Briefing', desc: 'Official checkpoint passes & instructions', icon: '🎫', statusText: 'Nov 03', statusColor: '#64748b', statusBg: '#f1f5f9' },
+      { title: 'Grand Finale (MIT Mysore)', desc: '24-hour hackathon & ₹40,000 bounty', icon: '🏆', statusText: 'Nov 06–07', statusColor: '#64748b', statusBg: '#f1f5f9' }
+    ];
+  }
+
   const daysToNext = getDaysLeft(nextMilestone.dateStr);
   const displaySquadrons = resolveDisplaySquadrons(totalTeams, squadronsConfig);
 
@@ -179,9 +227,16 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
       {/* Priority Mission Broadcast Banner */}
       {showNotification && (
         <div style={{ background: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14, overflow: 'hidden', boxShadow: '0 4px 14px rgba(2, 132, 199, 0.08)' }}>
-          <AmongUsCrewmate color="red" size={32} speechText="Registrations live tomorrow!" />
+          <AmongUsCrewmate color={isPaid ? "green" : hasTeam ? "cyan" : "red"} size={32} speechText={isPaid ? "Payment Verified!" : hasTeam ? "Squad Locked!" : "Registrations live!"} />
           <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0369a1', flex: 1, letterSpacing: '0.01em', lineHeight: 1.5 }}>
-            <strong>STARSHIP MISSION ADVISORY:</strong> Registrations open tomorrow evening (Oct 09). Registration fee is <strong>₹1,200 per team</strong> (3–4 members). Final roster &amp; payment lock on <strong>November 02, 2026 at 11:59 PM IST</strong>.
+            <strong>STARSHIP MISSION ADVISORY:</strong>{' '}
+            {hasTeam && isPaid ? (
+              <>Squad <strong>"{teamData?.team_name}"</strong> ({formatDomainWithBadge(currentDomain)}) is locked and payment is verified! Checkpoint flight passes &amp; venue arrival briefing will release on <strong>November 03, 2026</strong>.</>
+            ) : hasTeam && !isPaid ? (
+              <>Squad <strong>"{teamData?.team_name}"</strong> manifest ({memberCount} crew members) is locked in! Complete your squad's <strong>₹1,200 payment verification</strong> before <strong>November 02, 2026 at 11:59 PM IST</strong> to unlock flight passes &amp; verified receipt.</>
+            ) : (
+              <>Registrations are live! Assemble your 3–4 crew members and complete the ₹1,200 registration fee before <strong>November 02, 2026 at 11:59 PM IST</strong>.</>
+            )}
           </div>
           <button onClick={() => setShowNotification(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#0369a1', opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity='1'} onMouseLeave={e => e.currentTarget.style.opacity='0.7'}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -191,6 +246,111 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
 
       {/* Cosmic Event Timeline */}
       <EventTimeline steps={TIMELINE_STEPS} currentStepIndex={currentStepIndex} />
+
+      {/* Active Squad Quick Status Card (for registered squads & teammates) */}
+      {hasTeam && teamData && (
+        <div style={{
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          borderRadius: 20,
+          border: '2px solid #fed7aa',
+          padding: '18px 22px',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontSize: 22,
+              fontWeight: 900,
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
+              flexShrink: 0
+            }}>
+              🚀
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  Squad: {teamData.team_name}
+                </h2>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '3px 10px',
+                  borderRadius: 100,
+                  background: '#e0f2fe',
+                  color: '#0284c7',
+                  border: '1px solid #bae6fd'
+                }}>
+                  {formatDomainWithBadge(currentDomain)}
+                </span>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '3px 10px',
+                  borderRadius: 100,
+                  background: isCurrentUserLeader ? '#fef3c7' : '#eff6ff',
+                  color: isCurrentUserLeader ? '#b45309' : '#0284c7',
+                  border: isCurrentUserLeader ? '1px solid #fde68a' : '1px solid #bfdbfe',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em'
+                }}>
+                  {isCurrentUserLeader ? '👑 Flight Captain' : '🧑‍🚀 Crewmate'}
+                </span>
+              </div>
+              <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4, display: 'flex', gap: 16, flexWrap: 'wrap', fontWeight: 600 }}>
+                <span>Captain: <strong>{leader?.full_name || 'Team Lead'}</strong></span>
+                <span>Manifest: <strong>{memberCount} Members</strong></span>
+                <span>Payment: <strong style={{ color: isPaid ? '#16a34a' : '#ea580c' }}>{isPaid ? 'Verified ✓' : 'Verification Required'}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setActiveTab && setActiveTab('team')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 10,
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: '#334155',
+                cursor: 'pointer'
+              }}
+            >
+              View Crew Manifest →
+            </button>
+            <button
+              onClick={() => setActiveTab && setActiveTab(isPaid ? 'ticket' : 'payment')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 10,
+                background: isPaid ? '#16a34a' : '#0284c7',
+                border: 'none',
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: '#ffffff',
+                cursor: 'pointer',
+                boxShadow: isPaid ? '0 2px 8px rgba(22, 163, 74, 0.25)' : '0 2px 8px rgba(2, 132, 199, 0.25)'
+              }}
+            >
+              {isPaid ? 'View Payment Receipt →' : 'Submit Fee Verification →'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Action Required: USN Correction Advisory */}
       {hasTeam && (teamMembers || []).some(m => m.reg_no && /^\d{10}$/.test(String(m.reg_no).replace(/[\s\-\+]/g, ''))) && (
@@ -383,7 +543,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
-            {milestones.map((m, idx) => (
+            {upcomingMilestonesList.map((m, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#f8fafc', borderRadius: 14, border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 20 }}>{m.icon}</span>
@@ -393,8 +553,16 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#0284c7', background: '#e0f2fe', border: '1px solid #bae6fd', padding: '3px 8px', borderRadius: 100 }}>
-                    {getDaysLeft(m.dateStr)}d left
+                  <span style={{ 
+                    fontSize: 11, 
+                    fontWeight: 800, 
+                    color: m.statusColor || '#0284c7', 
+                    background: m.statusBg || '#e0f2fe', 
+                    border: `1px solid ${m.statusColor ? m.statusColor + '40' : '#bae6fd'}`, 
+                    padding: '3px 8px', 
+                    borderRadius: 100 
+                  }}>
+                    {m.statusText}
                   </span>
                 </div>
               </div>

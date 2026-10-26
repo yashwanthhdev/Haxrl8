@@ -60,16 +60,16 @@ export default function TicketTab({
     }
   }
 
-  const isVerified = Boolean(paymentRecord?.transaction_id);
+  const isVerified = Boolean(paymentRecord?.transaction_id || teamData?.payment_status === 'submitted' || teamData?.payment_utr);
 
-  // Leader & Crew
-  const leader = teamMembers?.find(m => m.id === teamData?.leader_id) || 
-                 teamMembers?.find(m => m.email === user?.email) || 
+  // Authoritative Leader & Crew Resolution
+  const leader = teamMembers?.find(m => m.is_leader) || 
+                 teamMembers?.find(m => m.id === teamData?.leader_id) || 
                  teamMembers?.[0] || 
                  { full_name: user?.user_metadata?.full_name || 'Team Leader', email: user?.email };
 
-  const crew = teamMembers?.filter(m => m.id !== leader?.id && m.email !== leader?.email) || [];
-  const domain = resolveDomain(teamData, submissions?.[0], user);
+  const crew = teamMembers?.filter(m => !m.is_leader && m.id !== leader?.id && m.email !== leader?.email) || [];
+  const domain = resolveDomain(teamData, submissions?.[0], user, 'Healthcare');
 
   const handlePrint = () => {
     window.print();
@@ -373,7 +373,18 @@ export default function TicketTab({
                     gap: 6
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <strong style={{ color: '#0f172a', fontSize: 14.5 }}>{leader?.full_name}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {leader?.id_card_front_url ? (
+                          <img src={leader.id_card_front_url} alt={leader.full_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (leader?.email?.toLowerCase() === user?.email?.toLowerCase() && (user?.user_metadata?.avatar_url || user?.user_metadata?.picture)) ? (
+                          <img src={user.user_metadata.avatar_url || user.user_metadata.picture} alt={leader.full_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#dbeafe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13 }}>
+                            {leader?.full_name ? leader.full_name[0].toUpperCase() : '👑'}
+                          </div>
+                        )}
+                        <strong style={{ color: '#0f172a', fontSize: 14.5 }}>{leader?.full_name}</strong>
+                      </div>
                       <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0284c7', background: '#dbeafe', padding: '2px 8px', borderRadius: 6 }}>
                         TEAM LEAD
                       </span>
@@ -399,7 +410,18 @@ export default function TicketTab({
                       gap: 6
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <strong style={{ color: '#0f172a', fontSize: 14 }}>{cm.full_name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {cm?.id_card_front_url ? (
+                            <img src={cm.id_card_front_url} alt={cm.full_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (cm?.email?.toLowerCase() === user?.email?.toLowerCase() && (user?.user_metadata?.avatar_url || user?.user_metadata?.picture)) ? (
+                            <img src={user.user_metadata.avatar_url || user.user_metadata.picture} alt={cm.full_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12 }}>
+                              {cm?.full_name ? cm.full_name[0].toUpperCase() : (idx + 1)}
+                            </div>
+                          )}
+                          <strong style={{ color: '#0f172a', fontSize: 14 }}>{cm.full_name}</strong>
+                        </div>
                         <span style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: 6 }}>
                           MEMBER {idx + 1}
                         </span>

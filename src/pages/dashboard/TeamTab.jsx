@@ -265,8 +265,8 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   }, []);
 
   const startEditTeam = (stepToOpen = 0) => {
-    const leader = teamMembers?.find(m => m.id === teamData?.leader_id) || teamMembers?.find(m => m.email === user?.email);
-    const teammates = teamMembers?.filter(m => m.id !== leader?.id) || [];
+    const leader = teamMembers?.find(m => m.is_leader) || teamMembers?.find(m => m.id === teamData?.leader_id) || teamMembers?.[0];
+    const teammates = teamMembers?.filter(m => !m.is_leader && m.id !== leader?.id && m.email !== leader?.email) || [];
 
     const parseLocation = (loc) => {
       if (!loc) return { state: '', city: '' };
@@ -1133,13 +1133,19 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {teamMembers.map((m, idx) => {
-              const isLeader = m.id === teamData.leader_id || m.email === user.email;
+              const isLeader = Boolean(m.is_leader);
               const hasPhoneWarning = isLikelyPhone(m.reg_no);
 
               return (
                 <div key={m.id || idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 0', borderBottom: idx !== teamMembers.length - 1 ? '1px solid #f1e7db' : 'none' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isLeader ? '#0284c7' : '#0284c7', fontWeight: 900, fontSize: 16, flexShrink: 0, background: isLeader ? '#e0f2fe' : '#eff6ff', border: `2px solid ${isLeader ? '#7dd3fc' : '#bfdbfe'}`, boxShadow: isLeader ? '0 2px 10px rgba(2, 132, 199, 0.2)' : 'none' }}>
-                    {m.full_name ? m.full_name[0].toUpperCase() : '?'}
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7', fontWeight: 900, fontSize: 16, flexShrink: 0, background: isLeader ? '#e0f2fe' : '#eff6ff', border: `2px solid ${isLeader ? '#7dd3fc' : '#bfdbfe'}`, boxShadow: isLeader ? '0 2px 10px rgba(2, 132, 199, 0.2)' : 'none', overflow: 'hidden' }}>
+                    {m.id_card_front_url ? (
+                      <img src={m.id_card_front_url} alt={m.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (m.email?.toLowerCase() === user?.email?.toLowerCase() && (user?.user_metadata?.avatar_url || user?.user_metadata?.picture)) ? (
+                      <img src={user.user_metadata.avatar_url || user.user_metadata.picture} alt={m.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      m.full_name ? m.full_name[0].toUpperCase() : '?'
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <span style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 12, background: isLeader ? '#e0f2fe' : '#eff6ff', color: isLeader ? '#0284c7' : '#0284c7', border: `1px solid ${isLeader ? '#bae6fd' : '#bfdbfe'}`, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -1381,7 +1387,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
               {(teamMembers || []).map((m, idx) => {
-                const isLeader = m.id === teamData?.leader_id || m.email === user?.email;
+                const isLeader = Boolean(m.is_leader);
                 const currentVal = usnEditMap[m.id] ?? m.reg_no ?? '';
 
                 return (

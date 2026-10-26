@@ -146,7 +146,7 @@ export default function PaymentTab({
           const phoneMatch = paidSub.project_description?.match(/\(([0-9]+)\)/);
           const record = {
             transaction_id: utrMatch ? utrMatch[1] : (paidSub.pdf_url ? 'VERIFIED' : 'VERIFIED'),
-            payer_name: payerMatch ? payerMatch[1].trim() : (user?.user_metadata?.full_name || ''),
+            payer_name: payerMatch ? payerMatch[1].trim() : (teamMembers?.find(m => m.is_leader)?.full_name || user?.user_metadata?.full_name || ''),
             payer_phone: phoneMatch ? phoneMatch[1].trim() : '',
             screenshot_url: paidSub.pdf_url || '',
             amount: REGISTRATION_FEE_INR,
@@ -166,7 +166,7 @@ export default function PaymentTab({
     } catch (e) {
       console.warn('Error reading payment state:', e);
     }
-  }, [user, teamData, submissions]);
+  }, [user, teamData, submissions, teamMembers]);
 
   const [copiedUrl, setCopiedUrl] = useState(false);
   const copyFormUrl = () => {

@@ -19,11 +19,18 @@ const NAV = [
   { id:'announcements', icon: Bell,            label:'Announcements',  shortLabel:'Alerts'   },
 ];
 
-export default function DashboardLayout({ activeTab, setActiveTab, children, hasTeam, announcements, user }) {
+export default function DashboardLayout({ activeTab, setActiveTab, children, hasTeam, announcements, user, teamData, teamMembers }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+
+  const userPhoto = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const isLeader = Boolean(
+    (teamData?.leader_id && user?.id && teamData.leader_id === user.id) ||
+    (teamMembers?.find(m => m.is_leader)?.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim())
+  );
+  const userRole = hasTeam ? (isLeader ? 'Flight Captain' : 'Crewmate') : 'Participant';
 
   const handleLogout = async () => {
     try {
@@ -223,11 +230,15 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
                 transition:'all 0.2s',
               }}
             >
-              <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg, #e0f2fe, #bae6fd)', border:'1.5px solid #7dd3fc', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(2, 132, 199, 0.25)', overflow:'visible' }}>
-                <AmongUsKingCharacter size={26} />
+              <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg, #e0f2fe, #bae6fd)', border:'1.5px solid #7dd3fc', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(2, 132, 199, 0.25)', overflow:'hidden' }}>
+                {userPhoto ? (
+                  <img src={userPhoto} alt="Profile" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                ) : (
+                  <AmongUsKingCharacter size={26} />
+                )}
               </div>
               <span style={{ fontSize:12, fontWeight:800, color:'#15803d' }}>
-                {user?.user_metadata?.full_name?.split(' ')[0] || 'Leader'}
+                {user?.user_metadata?.full_name?.split(' ')[0] || (user?.email ? user.email.split('@')[0] : 'Profile')}
               </span>
             </div>
           </div>
@@ -292,14 +303,18 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
           <div style={{ background:'#ffffff', border:'2px solid #fed7aa', borderRadius:24, width:'100%', maxWidth:520, overflow:'hidden', boxShadow:'0 24px 60px rgba(0,0,0,0.15)', position:'relative' }}>
             <div style={{ padding:'20px 24px', borderBottom:'1.5px solid #f1e7db', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#fffaf3' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, fontSize:18, fontWeight:900, color:'#0f172a' }}>
-                <AmongUsKingCharacter size={24} />
-                <span>Squad Commander Profile</span>
+                {userPhoto ? (
+                  <img src={userPhoto} alt="Profile" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:'1.5px solid #7dd3fc' }} />
+                ) : (
+                  <AmongUsKingCharacter size={24} />
+                )}
+                <span>{userRole} Profile</span>
               </div>
               <button onClick={() => setShowProfile(false)} style={{ background:'none', border:'none', fontSize:24, cursor:'pointer', color:'#94a3b8' }}>&times;</button>
             </div>
             <div style={{ padding:'24px', display:'flex', flexDirection:'column', gap:16, maxHeight:'75vh', overflowY:'auto' }}>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                <label style={{ fontSize:12, fontWeight:800, color:'#64748b', textTransform:'uppercase' }}>Leader Full Name</label>
+                <label style={{ fontSize:12, fontWeight:800, color:'#64748b', textTransform:'uppercase' }}>{userRole} Full Name</label>
                 <div style={{ display:'flex', alignItems:'center', border:'1.5px solid #e2e8f0', borderRadius:12, padding:'10px 14px', gap:10, background:'#f8fafc' }}>
                   <span style={{ color:'#0284c7' }}>👤</span>
                   <input type="text" defaultValue={user?.user_metadata?.full_name || ''} placeholder="Full Name" readOnly style={{ border:'none', outline:'none', width:'100%', fontSize:13.5, background:'transparent', color:'#0f172a', fontWeight:600, cursor:'not-allowed' }}/>
@@ -307,7 +322,7 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
               </div>
 
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                <label style={{ fontSize:12, fontWeight:800, color:'#64748b', textTransform:'uppercase' }}>Leader College Email</label>
+                <label style={{ fontSize:12, fontWeight:800, color:'#64748b', textTransform:'uppercase' }}>{userRole} College Email</label>
                 <div style={{ display:'flex', alignItems:'center', border:'1.5px solid #e2e8f0', borderRadius:12, padding:'10px 14px', gap:10, background:'#f8fafc' }}>
                   <span style={{ color:'#0284c7' }}>✉️</span>
                   <input type="email" defaultValue={user?.email || ''} readOnly style={{ border:'none', outline:'none', width:'100%', fontSize:13.5, background:'transparent', color:'#0f172a', fontWeight:600, cursor:'not-allowed' }}/>
