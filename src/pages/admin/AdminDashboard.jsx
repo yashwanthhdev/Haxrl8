@@ -17,6 +17,13 @@ const S = {
 
 const DASHBOARD_CACHE_KEY = 'haxlr8_admin_dashboard_cache';
 
+const withTimeout = (promise, ms = 7500) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Telemetry request timed out')), ms))
+  ]);
+};
+
 const getCachedDashboard = () => {
   try {
     const raw = localStorage.getItem(DASHBOARD_CACHE_KEY);
@@ -40,10 +47,16 @@ export default function AdminDashboard() {
 
   // Initialize from cache so mobile users immediately see data on open without lag
   const initialCache = getCachedDashboard();
+  const safeInitialCounts = {
+    teams: Math.max(initialCache?.exactCounts?.teams || 0, initialCache?.teams?.length || 0),
+    members: Math.max(initialCache?.exactCounts?.members || 0, initialCache?.members?.length || 0),
+    subs: Math.max(initialCache?.exactCounts?.subs || 0, initialCache?.submissions?.length || 0),
+    evals: Math.max(initialCache?.exactCounts?.evals || 0, initialCache?.teams?.length || 0)
+  };
   const [teams, setTeams] = useState(initialCache?.teams || []);
   const [members, setMembers] = useState(initialCache?.members || []);
   const [submissions, setSubmissions] = useState(initialCache?.submissions || []);
-  const [exactCounts, setExactCounts] = useState(initialCache?.exactCounts || { teams: initialCache?.teams?.length || 0, members: initialCache?.members?.length || 0, subs: initialCache?.submissions?.length || 0, evals: initialCache?.teams?.length || 0 });
+  const [exactCounts, setExactCounts] = useState(safeInitialCounts);
   const [adminEmail, setAdminEmail] = useState('');
   const [showEmail, setShowEmail] = useState(false);
   const [emailLogs, setEmailLogs] = useState([]);
@@ -51,66 +64,71 @@ export default function AdminDashboard() {
   const [dataError, setDataError] = useState('');
   const [showTelemetryModal, setShowTelemetryModal] = useState(false);
 
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('haxlr8_admin_email') || 'haxlr8ecemitm@gmail.com';
+      setAdminEmail(savedEmail);
+    } catch (e) {}
+  }, []);
+
   const fetchData = useCallback(async () => {
     setDataError('');
     try {
-      // 1. Fetch exact counts (with fallback if head fails)
-      let teamCount = 0;
-      let memberCount = 0;
-      let subCount = 0;
+      // Fetch data & exact counts in a single fast, timeout-guarded parallel request (3 queries instead of 6)
+      // Exclude heavy base64 strings from submissions to ensure lightning-fast mobile loading
+      const [tRes, mRes, sRes] = await withTimeout(
+        Promise.all([
+          supabase
+            .from('teams')
+            .select('id, leader_id, team_name, score, created_at, updated_at', { count: 'exact' })
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('team_members')
+            .select('id, team_id, full_name, email, phone_number, college_name, dept, year, created_at, is_leader', { count: 'exact' })
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('submissions')
+            .select('id, team_id, project_title, sdg_goal, category, status, created_at', { count: 'exact' })
+            .order('created_at', { ascending: false }),
+        ]),
+        7500
+      );
 
-      try {
-        const [cT, cM, cS] = await Promise.all([
-          supabase.from('teams').select('*', { count: 'exact', head: true }),
-          supabase.from('team_members').select('*', { count: 'exact', head: true }),
-          supabase.from('submissions').select('*', { count: 'exact', head: true }),
-        ]);
-        teamCount = cT.count ?? 0;
-        memberCount = cM.count ?? 0;
-        subCount = cS.count ?? 0;
-      } catch (countErr) {
-        console.warn('Head count notice, falling back to full table count:', countErr);
+      const t = tRes?.data || [];
+      const m = mRes?.data || [];
+      const s = sRes?.data || [];
+
+      const countTeams = (typeof tRes?.count === 'number' && tRes.count > 0) ? tRes.count : t.length;
+      const countMembers = (typeof mRes?.count === 'number' && mRes.count > 0) ? mRes.count : m.length;
+      const countSubs = (typeof sRes?.count === 'number' && sRes.count > 0) ? sRes.count : s.length;
+
+      if (t.length > 0) setTeams(t);
+      if (m.length > 0) setMembers(m);
+      if (s.length > 0) setSubmissions(s);
+
+      // Only update exactCounts if we received valid counts
+      if (countTeams > 0 || countMembers > 0 || countSubs > 0) {
+        const newCounts = {
+          teams: countTeams,
+          members: countMembers,
+          subs: countSubs,
+          evals: countTeams,
+        };
+        setExactCounts(newCounts);
+
+        // Save lightweight payload (safe for mobile localStorage quota)
+        setCachedDashboard({
+          teams: t.length > 0 ? t : (initialCache?.teams || []),
+          members: m.length > 0 ? m : (initialCache?.members || []),
+          submissions: s.length > 0 ? s : (initialCache?.submissions || []),
+          exactCounts: newCounts,
+          savedAt: Date.now()
+        });
       }
-
-      // 2. Fetch data for charts & tables
-      const [tRes, mRes, sRes] = await Promise.all([
-        supabase.from('teams').select('*').order('created_at', { ascending: false }),
-        supabase.from('team_members').select('*').order('created_at', { ascending: false }),
-        supabase.from('submissions').select('*').order('created_at', { ascending: false }),
-      ]);
-
-      const t = tRes.data || [];
-      const m = mRes.data || [];
-      const s = sRes.data || [];
-
-      const finalTeamCount = teamCount || t.length;
-      const finalMemberCount = memberCount || m.length;
-      const finalSubCount = subCount || s.length;
-
-      const newCounts = {
-        teams: finalTeamCount,
-        members: finalMemberCount,
-        subs: finalSubCount,
-        evals: finalTeamCount,
-      };
-
-      if (t.length > 0 || !initialCache?.teams?.length) setTeams(t);
-      if (m.length > 0 || !initialCache?.members?.length) setMembers(m);
-      if (s.length > 0 || !initialCache?.submissions?.length) setSubmissions(s);
-      setExactCounts(newCounts);
       setEmailLogs(getEmailDispatchLogs());
-
-      // Save to cache for offline/mobile zero-delay loads
-      setCachedDashboard({
-        teams: t,
-        members: m,
-        submissions: s,
-        exactCounts: newCounts,
-        savedAt: Date.now()
-      });
     } catch (err) {
       console.warn('Dashboard fetch notice (using cache):', err);
-      setDataError('Network connectivity blip on mobile. Displaying cached roster data.');
+      setDataError('Mobile network sync delayed. Showing saved roster.');
     }
   }, []);
 
@@ -241,7 +259,13 @@ export default function AdminDashboard() {
             <button
               onClick={async () => {
                 setIsRefreshing(true);
-                try { await fetchData(); } finally { setIsRefreshing(false); }
+                try { 
+                  await fetchData(); 
+                } catch (e) {
+                  console.warn('Refresh error:', e);
+                } finally { 
+                  setIsRefreshing(false); 
+                }
               }}
               disabled={isRefreshing}
               style={{

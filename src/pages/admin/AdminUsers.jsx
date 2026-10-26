@@ -14,6 +14,13 @@ const S = {
   activeBg: '#EEE8FF', radius: '14px', pad: '24px', gap: '20px',
 };
 
+const withTimeout = (promise, ms = 7500) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
+  ]);
+};
+
 export default function AdminUsers() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -42,8 +49,11 @@ export default function AdminUsers() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { count: total } = await supabase.from('team_members').select('*', { count: 'exact', head: true });
-      setTotalUsersDB(total || 0);
+      const { count: total, data } = await withTimeout(
+        supabase.from('team_members').select('id', { count: 'exact' }),
+        7500
+      );
+      setTotalUsersDB(total || data?.length || 0);
     } catch (e) {
       console.warn('Fetch users notice:', e);
     } finally {

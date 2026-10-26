@@ -10,6 +10,13 @@ const S = {
   activeBg: '#E0F2FE', radius: '14px', pad: '24px', gap: '20px',
 };
 
+const withTimeout = (promise, ms = 7500) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
+  ]);
+};
+
 export default function AdminSubmissions() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,10 +36,14 @@ export default function AdminSubmissions() {
 
   const fetchData = useCallback(async () => {
     try {
-      const { count: total } = await supabase.from('teams').select('*', { count: 'exact', head: true });
+      const { count: total, data } = await withTimeout(
+        supabase.from('teams').select('id', { count: 'exact' }),
+        7500
+      );
+      const safeTotal = total || data?.length || 0;
       setTabCounts({
-        all: total || 0,
-        confirmed: total || 0,
+        all: safeTotal,
+        confirmed: safeTotal,
         pending: 0
       });
     } catch (e) {

@@ -13,6 +13,13 @@ const S = {
   activeBg: '#EEE8FF', radius: '14px', pad: '24px', gap: '20px',
 };
 
+const withTimeout = (promise, ms = 7500) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
+  ]);
+};
+
 export default function AdminTeams() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -38,10 +45,13 @@ export default function AdminTeams() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [{ count: total, data: allTeams }, { data: allSubs }] = await Promise.all([
-        supabase.from('teams').select('id', { count: 'exact' }),
-        supabase.from('submissions').select('team_id, pdf_url')
-      ]);
+      const [{ count: total, data: allTeams }, { data: allSubs }] = await withTimeout(
+        Promise.all([
+          supabase.from('teams').select('id', { count: 'exact' }),
+          supabase.from('submissions').select('team_id, pdf_url')
+        ]),
+        7500
+      );
 
       const teamsList = allTeams || [];
       const subsList = allSubs || [];

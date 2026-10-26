@@ -73,11 +73,12 @@ export default function AdminAuthGate({ children }) {
     return () => window.removeEventListener('haxlr8_organizer_logout', onLogoutEvent);
   }, []);
 
-  const setAuthStorage = () => {
+  const setAuthStorage = (adminEmail = '') => {
     const nowStr = Date.now().toString();
     try {
       localStorage.setItem(ORGANIZER_SESSION_KEY, 'active');
       localStorage.setItem(ORGANIZER_TIMESTAMP_KEY, nowStr);
+      if (adminEmail) localStorage.setItem('haxlr8_admin_email', adminEmail);
     } catch (e) {}
     try {
       sessionStorage.setItem(ORGANIZER_SESSION_KEY, 'active');
@@ -97,7 +98,7 @@ export default function AdminAuthGate({ children }) {
       cleanKey.toUpperCase() === 'HAXLR8' ||
       cleanKey.toUpperCase() === 'ADMIN'
     ) {
-      setAuthStorage();
+      setAuthStorage('organizer@haxlr8.in');
     } else {
       setErrorMsg('Incorrect Master Command Code. Access denied.');
     }
@@ -114,7 +115,7 @@ export default function AdminAuthGate({ children }) {
       (inputEmail === 'haxlr8ecemitm@gmail.com' || inputEmail === 'yashuhb18@gmail.com') &&
       (password.trim() === 'ecemit3.0' || password.trim() === 'HAXLR8_COMMAND_2026')
     ) {
-      setAuthStorage();
+      setAuthStorage(inputEmail);
       setSubmitting(false);
       return;
     }
@@ -124,11 +125,11 @@ export default function AdminAuthGate({ children }) {
       if (!res.error && res.data?.user) {
         const user = res.data.user;
         if (user.email === 'yashuhb18@gmail.com' || user.email === 'haxlr8ecemitm@gmail.com') {
-          setAuthStorage();
+          setAuthStorage(user.email);
         } else {
           const { data: adminList } = await supabase.from('admins').select('email').eq('email', user.email);
           if (adminList && adminList.length > 0) {
-            setAuthStorage();
+            setAuthStorage(user.email);
           } else {
             setErrorMsg('Account authenticated, but this email is not in the authorized Organizers roster.');
           }
