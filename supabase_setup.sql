@@ -110,8 +110,8 @@ INSERT INTO public.announcements (title, content, message, tag)
 VALUES 
 (
     'Welcome to HAXLR8 3.0 Spaceship Command!',
-    'All systems are active. Ensure your team details and idea paper abstract are submitted before October 28, 2026.',
-    'All systems are active. Ensure your team details and idea paper abstract are submitted before October 28, 2026.',
+    'All systems are active. Ensure your team details and idea paper abstract are submitted before November 02, 2026.',
+    'All systems are active. Ensure your team details and idea paper abstract are submitted before November 02, 2026.',
     'MISSION BRIEFING'
 )
 ON CONFLICT DO NOTHING;

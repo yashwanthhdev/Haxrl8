@@ -72,7 +72,7 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
         const { data } = await supabase.from('site_settings').select('value').eq('key', 'registration_closed').single();
         if (data?.value === true) setDeadlinePassed(true);
       } catch (err) {
-        if (new Date() > new Date('2026-10-28T18:29:59Z')) setDeadlinePassed(true);
+        if (new Date() > new Date('2026-11-02T18:29:59Z')) setDeadlinePassed(true);
       }
     };
     checkDeadline();
@@ -343,7 +343,7 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
               <ul style={{ fontSize: 13.5, color: '#475569', margin: 0, paddingLeft: 18, lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <li>Prepare your presentation with problem analysis, system architecture, and tech stack.</li>
                 <li>Export the completed presentation as a <strong>PDF document</strong> (Max 3MB).</li>
-                <li>Submission locks firmly on <strong>October 28, 2026 at 11:59 PM IST</strong>.</li>
+                <li>Submission locks firmly on <strong>November 02, 2026 at 11:59 PM IST</strong>.</li>
               </ul>
             </div>
 

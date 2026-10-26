@@ -49,14 +49,14 @@ const EVENTS = [
     Icon: IconRegisterOpen,
   },
   {
-    index: 1, num: "02", day: "28", month: "OCT", year: "2026",
+    index: 1, num: "02", day: "02", month: "NOV", year: "2026",
     title: "Roster & Payment Lock",
     desc: "Final deadline to confirm your 3–4 crew members and complete payment verification.",
     tag: "Deadline", tagColor: "#ef4444", tagBg: "rgba(239,68,68,0.1)", tagBorder: "rgba(239,68,68,0.3)",
     Icon: IconDeadline,
   },
   {
-    index: 2, num: "03", day: "02", month: "NOV", year: "2026",
+    index: 2, num: "03", day: "03", month: "NOV", year: "2026",
     title: "Problem Statements & Flight Passes",
     desc: "Problem Statements revealed; official Flight Passes issued to all registered squads with venue logistics briefing.",
     tag: "Pass Clearance", tagColor: "#facc15", tagBg: "rgba(250,204,21,0.1)", tagBorder: "rgba(250,204,21,0.3)",
@@ -396,7 +396,7 @@ function CTABanner({ mobile }) {
         }}>
           Don't wait — spots fill fast.<br />
           <span style={{ color: "#38fedc", fontWeight: 600, fontSize: "0.88em" }}>
-            Registration closes October 28, 2026.
+            Registration closes November 02, 2026.
           </span>
         </p>
       </div>

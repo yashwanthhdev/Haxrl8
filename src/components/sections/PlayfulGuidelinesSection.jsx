@@ -21,9 +21,9 @@ const guidelinesPart1 = [
   {
     num: '02',
     title: 'Online Registration',
-    description: 'Registration opens Oct 09 and closes Oct 28, 2026. Only the team leader needs to register and add 3–4 crew members.',
+    description: 'Registration opens Oct 09 and closes November 02, 2026. Only the team leader needs to register and add 3–4 crew members.',
     icon: UserPlus,
-    badge: 'DEADLINE OCT 28',
+    badge: 'DEADLINE NOV 02',
     bg: '#eff6ff',
     border: '#bfdbfe',
     accent: '#3b82f6',

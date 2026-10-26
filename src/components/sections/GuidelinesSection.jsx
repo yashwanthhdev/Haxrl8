@@ -100,7 +100,7 @@ const guidelinesPart1 = [
   },
   {
     id: '02', title: 'Register Online',
-    description: 'Registration opens Oct 09 and closes Oct 28. Register your 3–4 crew members online.',
+    description: 'Registration opens Oct 09 and closes November 02, 2026. Register your 3–4 crew members online.',
     icon: UserPlus
   },
   {

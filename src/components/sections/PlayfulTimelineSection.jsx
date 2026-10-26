@@ -477,7 +477,7 @@ const TIMELINE_STEPS = [
   {
     num: '02',
     sector: 'SECTOR 02: CAFETERIA',
-    date: 'Oct 28, 2026',
+    date: 'Nov 02, 2026',
     title: 'Registration Closes',
     desc: 'Emergency meeting called! Final call to lock in your squad roster and payment verification before doors close.',
     badgeBg: '#ffe4e6',

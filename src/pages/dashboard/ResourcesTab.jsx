@@ -149,8 +149,8 @@ export default function ResourcesTab({ hasTeam, submissions }) {
 
   const EVENTS = [
     { date: 'Oct 09', event: 'Registration Opens', status: 'done', desc: 'Team registration opens for undergraduate students across India.', time: 'All day' },
-    { date: 'Oct 28', event: 'Squad & Fee Lock', status: hasTeam ? 'done' : 'active', desc: 'Assemble 3–4 members, pay ₹1,200 team fee, & submit verification.', time: '11:59 PM IST' },
-    { date: 'Nov 02', event: 'Problem Statements & Pass Clearance', status: hasTeam ? 'active' : 'upcoming', desc: 'Official problem statements reveal & hackathon flight pass clearance.', time: '12:00 PM IST' },
+    { date: 'Nov 02', event: 'Squad & Fee Lock', status: hasTeam ? 'done' : 'active', desc: 'Assemble 3–4 members, pay ₹1,200 team fee, & submit verification.', time: '11:59 PM IST' },
+    { date: 'Nov 03', event: 'Problem Statements & Pass Clearance', status: hasTeam ? 'active' : 'upcoming', desc: 'Official problem statements reveal & hackathon flight pass clearance.', time: '12:00 PM IST' },
     { date: 'Nov 06–07', event: 'Grand Finale at MIT Mysore', status: 'upcoming', desc: '24-hour offline hackathon sprint and prize ceremony at Maharaja Institute of Technology Mysore.', time: '08:30 AM IST' },
   ];
 

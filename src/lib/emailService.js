@@ -242,7 +242,7 @@ export function generateSubmissionEmailHtml({ leaderName, teamName, trackName, p
       </div>
 
       <p style="font-size: 13.5px; color: #475569;">
-        Our technical evaluation panel will review all submissions following the deadline on <strong>October 28, 2026</strong>. Final shortlisted squads for the 24-hour offline hackathon will be announced on <strong>November 02, 2026</strong>.
+        Our technical evaluation panel will review all submissions following the deadline on <strong>November 02, 2026</strong>. Final shortlisted squads for the 24-hour offline hackathon will be announced on <strong>November 03, 2026</strong>.
       </p>
 
       <div style="text-align: center; margin-top: 26px;">
@@ -529,7 +529,7 @@ export function generateAccountWelcomeEmailHtml({ leaderName, recipientEmail }) 
       <div style="background-color: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 12px; padding: 14px 18px; margin: 20px 0; font-size: 12.5px; color: #7c2d12; line-height: 1.55;">
         <strong>🗓️ Mission Milestones:</strong><br>
         • <strong>Oct 09:</strong> Registrations Open<br>
-        • <strong>Oct 28:</strong> Registration &amp; Payment Lock<br>
+        • <strong>Nov 02:</strong> Registration &amp; Payment Lock<br>
         • <strong>Nov 06–07:</strong> 24-Hour Offline Grand Finale at MIT Mysore Campus (₹40,000 Prize Bounty)
       </div>
 

@@ -257,8 +257,8 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   };
 
   useEffect(() => {
-    // Official Registration Deadline: October 28, 2026 at 23:59:59 IST
-    const deadline = new Date('2026-10-28T23:59:59+05:30');
+    // Official Registration Deadline: November 02, 2026 at 23:59:59 IST
+    const deadline = new Date('2026-11-02T23:59:59+05:30');
     if (new Date() > deadline) {
       setDeadlinePassed(true);
     }
@@ -1283,7 +1283,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2, fontWeight: 800 }}>Registration & Payment Lock</div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: '#ea580c' }}>October 28, 2026 · 11:59 PM IST</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: '#ea580c' }}>November 02, 2026 · 11:59 PM IST</div>
             </div>
           </div>
         </div>

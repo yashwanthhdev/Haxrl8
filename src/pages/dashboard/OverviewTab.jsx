@@ -15,9 +15,9 @@ import {
 
 const TIMELINE_STEPS = [
   { title: 'Registration', date: 'Oct 09' },
-  { title: 'Squad Lock', date: 'Oct 28' },
-  { title: 'Fee Verify', date: 'Oct 28' },
-  { title: 'Pass Issued', date: 'Nov 02' },
+  { title: 'Squad Lock', date: 'Nov 02' },
+  { title: 'Fee Verify', date: 'Nov 02' },
+  { title: 'Pass Issued', date: 'Nov 03' },
   { title: 'Grand Finale', date: 'Nov 06–07' },
 ];
 
@@ -157,8 +157,8 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
 
   const now = new Date();
   const milestones = [
-    { title: 'Registration & Squad Lock', dateStr: '2026-10-28T23:59:59', icon: '🚀', desc: 'Lock in 3–4 crew members & ₹1,200 fee' },
-    { title: 'Flight Passes & Venue Briefing', dateStr: '2026-11-02T12:00:00', icon: '🎫', desc: 'Official checkpoint passes & instructions' },
+    { title: 'Registration & Squad Lock', dateStr: '2026-11-02T23:59:59', icon: '🚀', desc: 'Lock in 3–4 crew members & ₹1,200 fee' },
+    { title: 'Flight Passes & Venue Briefing', dateStr: '2026-11-03T12:00:00', icon: '🎫', desc: 'Official checkpoint passes & instructions' },
     { title: 'Grand Finale (MIT Mysore)', dateStr: '2026-11-06T09:00:00', icon: '🏆', desc: '24-hour hackathon & ₹40,000 bounty' }
   ];
 
@@ -181,7 +181,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
         <div style={{ background: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14, overflow: 'hidden', boxShadow: '0 4px 14px rgba(2, 132, 199, 0.08)' }}>
           <AmongUsCrewmate color="red" size={32} speechText="Registrations live tomorrow!" />
           <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0369a1', flex: 1, letterSpacing: '0.01em', lineHeight: 1.5 }}>
-            <strong>STARSHIP MISSION ADVISORY:</strong> Registrations open tomorrow evening (Oct 09). Registration fee is <strong>₹1,200 per team</strong> (3–4 members). Final roster &amp; payment lock on <strong>October 28, 2026 at 11:59 PM IST</strong>.
+            <strong>STARSHIP MISSION ADVISORY:</strong> Registrations open tomorrow evening (Oct 09). Registration fee is <strong>₹1,200 per team</strong> (3–4 members). Final roster &amp; payment lock on <strong>November 02, 2026 at 11:59 PM IST</strong>.
           </div>
           <button onClick={() => setShowNotification(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#0369a1', opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity='1'} onMouseLeave={e => e.currentTarget.style.opacity='0.7'}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

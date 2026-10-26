@@ -228,7 +228,7 @@ export default function EmergencyMeetingModal() {
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)' }} />
                 <div>
                   <span style={{ color: '#94a3b8', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Submissions Close</span>
-                  <strong style={{ color: '#ef4444', fontSize: '14px' }}>OCT 28, 2026</strong>
+                  <strong style={{ color: '#ef4444', fontSize: '14px' }}>NOV 02, 2026</strong>
                 </div>
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)' }} />
                 <div>
