@@ -236,10 +236,10 @@ export default function RegistrationExtendedModal() {
                         margin: 0,
                         fontSize: '12.5px',
                         color: '#475569',
-                        lineHeight: 1.45,
+                        lineHeight: 1.5,
                       }}
                     >
-                      Registrations are open until <strong>Nov 2, 11:59 PM</strong>. Problem statements release immediately at deadline close!
+                      Registrations are officially open until <strong>Nov 2, 11:59 PM</strong>. Gather your squad, lock in your entry, and compete for <strong>₹40,000 in prizes</strong> at MIT Mysore!
                     </p>
                   </div>
                 </div>
