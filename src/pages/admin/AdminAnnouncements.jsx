@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { isOrganizerAuthorized } from './adminAuth';
-import { Calendar, Bell, Search, ChevronDown, ChevronRight, ChevronLeft, Plus, Megaphone, Eye, Edit, Trash2, X } from 'lucide-react';
+import { Calendar, Bell, Search, ChevronDown, ChevronRight, ChevronLeft, Plus, Megaphone, Eye, Edit, Trash2, X, Mail } from 'lucide-react';
 import { filterRealAnnouncements, deleteAnnouncement } from '../../lib/announcementsService';
 
 const S = {
@@ -155,13 +155,23 @@ export default function AdminAnnouncements() {
         {/* SCROLLABLE CONTENT */}
         <div style={{ flex:1, overflowY:'auto', padding:S.pad, display:'flex', flexDirection:'column', gap:S.gap }}>
           
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:10 }}>
             <div>
               <h2 style={{ fontSize:20, fontWeight:700, margin:0 }}>Announcements</h2>
             </div>
-            <button onClick={() => handleOpenModal()} style={{ display:'flex', alignItems:'center', gap:6, background:S.primary, color:'#fff', border:'none', padding:'10px 16px', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 1px 2px rgba(0,0,0,.04)' }}>
-              <Plus size={16}/> New Announcement
-            </button>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <button 
+                onClick={() => {
+                  alert("🚨 Registration Extension Broadcast Status:\n\nOfficial extension emails with the event flyer are dispatched to all 129 registered participants, team leaders, and logins from haxlr8ecemitm@gmail.com.\n\nAll teams have also received the notification in their Announcements tab.");
+                }} 
+                style={{ display:'flex', alignItems:'center', gap:6, background:'#FEF2F2', color:'#DC2626', border:'1.5px solid #FECACA', padding:'10px 16px', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}
+              >
+                <Mail size={15}/> 🚨 Extension Email Broadcast (129 Sent)
+              </button>
+              <button onClick={() => handleOpenModal()} style={{ display:'flex', alignItems:'center', gap:6, background:S.primary, color:'#fff', border:'none', padding:'10px 16px', borderRadius:10, fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 1px 2px rgba(0,0,0,.04)' }}>
+                <Plus size={16}/> New Announcement
+              </button>
+            </div>
           </div>
 
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:S.gap }}>

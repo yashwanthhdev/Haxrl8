@@ -961,5 +961,110 @@ export async function sendContactSupportMessage({ name, email, phone, message })
   return { success: true, emailDispatched };
 }
 
+/**
+ * Generate rich HTML email for Registration Extended Announcement
+ */
+export function generateRegistrationExtendedEmailHtml({ recipientName = 'Haxlr8 Innovator' }) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAXLR8 3.0 Registration Extended</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; margin: 0; padding: 24px 10px; color: #0f172a;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border: 1px solid #1e293b;">
+    ${renderEmailHeader('🚨 OFFICIAL STARFLEET ANNOUNCEMENT • REGISTRATION EXTENDED')}
+
+    <div style="padding: 32px 28px; line-height: 1.6;">
+      <div style="display: inline-block; background-color: #fef2f2; border: 1.5px solid #fecaca; border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;">
+        <span style="color: #dc2626; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+          🚨 REGISTRATION EXTENDED TILL NOV 2ND
+        </span>
+      </div>
+
+      <h2 style="font-size: 23px; color: #0f172a; margin: 0 0 14px; font-weight: 900; letter-spacing: -0.02em;">
+        🚨 HAXLR8 3.0 REGISTRATION EXTENDED! 🚀
+      </h2>
+
+      <p style="margin: 0 0 16px; color: #1e293b; font-size: 15px; font-weight: 600;">
+        Hello ${recipientName || 'Haxlr8 Innovator'},
+      </p>
+
+      <p style="margin: 0 0 16px; color: #334155; font-size: 15px; line-height: 1.65;">
+        Missed registering? You still have time! Registrations are now open until <strong>November 2, 11:59 PM</strong>. Gather your team, complete your registration, and get ready for the challenge!
+      </p>
+
+      <!-- Attached Poster Graphic -->
+      <div style="margin: 22px 0; text-align: center; background: #030712; border-radius: 16px; overflow: hidden; border: 2px solid #ff3b69; box-shadow: 0 12px 32px rgba(255, 59, 105, 0.25);">
+        <a href="${HAXLR8_PORTAL_URL}" target="_blank" style="display: block;">
+          <img src="${HAXLR8_PORTAL_URL}/haxlr8-registration-extended.jpg" alt="HAXLR8 3.0 Registration Extended till November 2nd 11:59 PM" style="width: 100%; max-width: 480px; height: auto; display: block; margin: 0 auto;" />
+        </a>
+      </div>
+
+      <p style="margin: 0 0 16px; color: #334155; font-size: 15px; line-height: 1.65;">
+        📢 <strong>Problem statements drop on November 2 at 11:59 PM.</strong> Choose your problem statement wisely, plan with your team, and get ready to build on <strong>November 6–7</strong> at <strong>Maharaja Institute of Technology Mysore</strong>.
+      </p>
+
+      <!-- Official Mission Timeline -->
+      <div style="background-color: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 14px; padding: 18px 20px; margin: 24px 0; font-size: 13.5px; color: #7c2d12; line-height: 1.6;">
+        <div style="font-weight: 800; font-size: 12px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">
+          🗓️ OFFICIAL MISSION TIMELINE
+        </div>
+        <div>• <strong>Extended Registration Deadline:</strong> November 02, 2026 (11:59 PM IST)</div>
+        <div>• <strong>Problem Statements Release:</strong> November 02, 2026 (11:59 PM IST)</div>
+        <div>• <strong>24-Hour Offline Hackathon:</strong> November 06–07, 2026 @ MIT Mysore Campus</div>
+        <div>• <strong>Grand Cash Bounty:</strong> ₹40,000 Prize Pool + Exclusive Certificates &amp; Goodies</div>
+      </div>
+
+      <!-- Action Button -->
+      <div style="text-align: center; margin: 28px 0 20px;">
+        <a href="${HAXLR8_PORTAL_URL}" style="display: inline-block; background: linear-gradient(135deg, #ff3b69 0%, #ea580c 100%); color: #ffffff !important; padding: 15px 36px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 15px; box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4); letter-spacing: 0.02em;">
+          🔗 Register Now: ${HAXLR8_PORTAL_URL} →
+        </a>
+      </div>
+
+      <p style="margin: 20px 0 12px; font-size: 14.5px; color: #0f172a; font-weight: 700; text-align: center;">
+        Don’t wait till the last minute — see you at HAXLR8 3.0! 🔥
+      </p>
+
+      <p style="margin: 0; font-size: 13px; color: #64748b; text-align: center; font-weight: 600;">
+        #HAXLR83 &nbsp;&bull;&nbsp; #Hackathon2026 &nbsp;&bull;&nbsp; #MITMysore &nbsp;&bull;&nbsp; #IdeasTakeFlight
+      </p>
+    </div>
+
+    ${renderEmailFooter()}
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Dispatch registration extension update email to a single recipient
+ */
+export async function sendRegistrationExtendedEmail({ recipientEmail, recipientName }) {
+  if (!recipientEmail) return { success: false, error: 'Recipient email required' };
+
+  const emailPayload = {
+    to: recipientEmail,
+    subject: '🚨 HAXLR8 3.0 REGISTRATION EXTENDED! Deadline: November 2, 11:59 PM 🚀',
+    html: generateRegistrationExtendedEmailHtml({ recipientName }),
+  };
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+    return { success: res.ok };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+
 
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PlayfulNavbar from './components/layout/PlayfulNavbar';
 import PlayfulFooter from './components/layout/PlayfulFooter';
 import EntryVideoPopup from './components/ui/EntryVideoPopup';
+import RegistrationExtendedModal from './components/ui/RegistrationExtendedModal';
 
 // Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -102,6 +103,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <RegistrationExtendedModal />
       <Suspense fallback={
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fffaf3', color: '#0f172a', gap: 16, fontFamily: "'Fredoka', sans-serif" }}>
           <div style={{ width: 44, height: 44, border: '4px solid #fecaca', borderTopColor: '#ff3b69', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
