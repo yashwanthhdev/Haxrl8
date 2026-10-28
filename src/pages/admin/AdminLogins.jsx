@@ -208,6 +208,20 @@ export default function AdminLogins() {
         {/* Global Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button
+            onClick={() => navigate('/admin/whitelist')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '9px 18px', background: '#0284c7', border: 'none',
+              borderRadius: 10, fontSize: 13, fontWeight: 800, color: '#ffffff',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)'
+            }}
+          >
+            <ShieldCheck size={16} />
+            <span>Manage Access Whitelist</span>
+          </button>
+
+          <button
             onClick={loadData}
             disabled={refreshing}
             style={{

@@ -14,6 +14,7 @@ import {
 import haxlr8LogoDark from '../assets/logo/haxlr8-logo-dark.png';
 import { sendAccountWelcomeEmail, sendLoginNotificationEmail } from '../lib/emailService';
 import { recordUserActivity } from '../lib/userTrackingService';
+import { checkRegistrationEligibility } from '../lib/whitelistService';
 
 // Flight Repair Mode: Toggle to suspend logins/registrations if needed
 export const FLIGHT_REPAIR_MODE = false;
@@ -140,6 +141,14 @@ export default function AuthPage() {
         // Sign Up / Register Team Leader
         if (!cleanName) {
           setErrorMsg('Please enter your full name as Team Leader.');
+          setLoading(false);
+          return;
+        }
+
+        // Check Admin Whitelist Access Control
+        const eligibility = await checkRegistrationEligibility(cleanEmail);
+        if (!eligibility.allowed) {
+          setErrorMsg('Registration Access Restricted: Public registrations are closed. Only admin-approved emails are authorized to register. Please contact the hackathon coordinators or ensure you use your approved email.');
           setLoading(false);
           return;
         }

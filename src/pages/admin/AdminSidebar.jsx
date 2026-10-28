@@ -15,6 +15,7 @@ const S = {
 const navItems = [
   { icon: Home, label: 'Command Deck', subPath: '' },
   { icon: Flag, label: 'Squads & Teams', subPath: '/teams' },
+  { icon: Shield, label: 'Access Whitelist', subPath: '/whitelist' },
   { icon: Users, label: 'Participants', subPath: '/users' },
   { icon: Mail, label: 'Logged-in Accounts', subPath: '/logins' },
   { icon: FileText, label: 'Squad Payments', subPath: '/submissions' },

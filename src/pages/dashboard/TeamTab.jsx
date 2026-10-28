@@ -6,6 +6,7 @@ import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calenda
 import { sendParticipantWelcomeEmail } from '../../lib/emailService';
 import { ensureUUID, isUUID } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
+import { checkRegistrationEligibility } from '../../lib/whitelistService';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 // import IdCardUpload from '../../components/IdCardUpload';
 
@@ -487,6 +488,15 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
         finalTeamData = { ...(existingTeam || teamData), team_name: cleanTeamName, domain: cleanDomain };
         localStorage.setItem(`haxlr8_team_${validLeaderId}`, JSON.stringify(finalTeamData));
       } else {
+        // Whitelist Access Control: Verify new team leader is authorized
+        const leaderEmail = formData.leader.email || user?.email;
+        const eligibility = await checkRegistrationEligibility(leaderEmail);
+        if (!eligibility.allowed) {
+          setErrorMsg('Registration Access Restricted: Public registrations are closed. Only admin-approved emails are authorized to assemble a squad. Please contact hackathon coordinators.');
+          setCreating(false);
+          return;
+        }
+
         let team = null;
         currentTeamId = ensureUUID(currentTeamId || teamData?.id);
         
