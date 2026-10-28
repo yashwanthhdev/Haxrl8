@@ -59,7 +59,8 @@ export default function RegistrationExtendedModal() {
     }
   }, [isOpen]);
 
-  if (isAdminRoute) return null;
+  // Disabled: Popup removed as per request
+  return null;
 
   return (
     <AnimatePresence>
