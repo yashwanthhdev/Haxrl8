@@ -108,6 +108,8 @@ export default function RegistrationExtendedModal() {
                 background: '#ffffff',
                 borderRadius: '24px',
                 overflow: 'hidden',
+                maxHeight: '92vh',
+                overflowY: 'auto',
                 boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -123,12 +125,12 @@ export default function RegistrationExtendedModal() {
                   position: 'absolute',
                   top: '12px',
                   right: '12px',
-                  zIndex: 20,
+                  zIndex: 25,
                   width: '34px',
                   height: '34px',
                   borderRadius: '50%',
-                  background: 'rgba(15, 23, 42, 0.7)',
-                  border: '1.5px solid rgba(255, 255, 255, 0.35)',
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.4)',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
@@ -136,14 +138,14 @@ export default function RegistrationExtendedModal() {
                   cursor: 'pointer',
                   backdropFilter: 'blur(6px)',
                   transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#dc2626';
                   e.currentTarget.style.transform = 'scale(1.08)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.7)';
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.75)';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
@@ -155,9 +157,9 @@ export default function RegistrationExtendedModal() {
                 style={{
                   position: 'relative',
                   width: '100%',
-                  maxHeight: '66vh',
+                  maxHeight: '64vh',
                   overflow: 'hidden',
-                  background: '#ffffff',
+                  background: '#0052ff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -170,7 +172,7 @@ export default function RegistrationExtendedModal() {
                   style={{
                     width: '100%',
                     height: 'auto',
-                    maxHeight: '66vh',
+                    maxHeight: '64vh',
                     objectFit: 'contain',
                     display: 'block',
                   }}
@@ -178,33 +180,6 @@ export default function RegistrationExtendedModal() {
                     e.currentTarget.src = '/haxlr8-registration-closed.jpg';
                   }}
                 />
-
-                {/* Floating Notification Pill */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    zIndex: 15,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(15, 23, 42, 0.88)',
-                    color: '#ffffff',
-                    padding: '5px 12px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                    backdropFilter: 'blur(6px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                  }}
-                >
-                  <Lock size={12} color="#f87171" />
-                  <span>Registrations Closed</span>
-                </div>
               </div>
 
               {/* Content & Action Bar */}
