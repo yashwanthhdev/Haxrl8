@@ -88,85 +88,108 @@ export default function AdminJury() {
     const teamMembers = members.filter(m => m.team_id === team.id);
     
     const tl = teamMembers.find(m => m.is_leader) || teamMembers[0] || null;
-    const otherMembers = teamMembers.filter(m => m.id !== tl?.id);
-    
-    const tm1 = otherMembers[0] || null;
-    const tm2 = otherMembers[1] || null;
-    const tm3 = otherMembers[2] || null;
-    const track = resolveDomain(team, sub, null, 'General');
+    const track = resolveDomain(team, sub, null, 'General Innovation');
+
+    // Clean deduplicated college list
+    const collegeList = [];
+    const seenColleges = new Set();
+    teamMembers.forEach(m => {
+      const col = (m.college_name || '').trim();
+      if (col && !seenColleges.has(col.toLowerCase())) {
+        seenColleges.add(col.toLowerCase());
+        collegeList.push(col);
+      }
+    });
+    const collegeName = collegeList.join(' / ') || (tl?.college_name || 'N/A');
+
+    // Clean member names formatted with (Lead) tag
+    const sortedMembers = [
+      ...(tl ? [tl] : []),
+      ...teamMembers.filter(m => m.id !== tl?.id)
+    ];
+    const memberNames = sortedMembers.map(m => {
+      const isLead = m.id === tl?.id;
+      return `${m.full_name || 'Member'}${isLead ? ' (Lead)' : ''}`;
+    }).filter(Boolean).join(', ');
+
+    // USN of all members
+    const usns = sortedMembers.map(m => {
+      const isLead = m.id === tl?.id;
+      return `${m.full_name || 'Member'}${isLead ? ' (Lead)' : ''}: ${m.reg_no || 'N/A'}`;
+    }).filter(Boolean).join(' | ');
 
     return {
       sNo: index + 1,
       teamName: team?.team_name || 'N/A',
       domain: track,
+      collegeName: collegeName,
       tlName: tl?.full_name || 'N/A',
       tlEmail: tl?.email || 'N/A',
-      tlPhone: tl?.phone_number || 'N/A',
-      tm1Name: tm1?.full_name || '-',
-      tm1Email: tm1?.email || '-',
-      tm1Phone: tm1?.phone_number || '-',
-      tm2Name: tm2?.full_name || '-',
-      tm2Email: tm2?.email || '-',
-      tm2Phone: tm2?.phone_number || '-',
-      tm3Name: tm3?.full_name || '-',
-      tm3Email: tm3?.email || '-',
-      tm3Phone: tm3?.phone_number || '-',
-      collegeName: tl?.college_name || 'N/A',
+      tlPhone: tl?.phone_number || tl?.phone || 'N/A',
+      memberNames: memberNames || (tl?.full_name ? `${tl.full_name} (Lead)` : 'N/A'),
+      usns: usns || (tl?.reg_no || 'N/A'),
       location: tl?.location || 'N/A',
       crewCount: teamMembers.length || 1,
-      regFee: '₹1,200',
       status: 'Finale Ready',
-      submitDate: team.created_at ? new Date(team.created_at).toLocaleDateString() : '-'
+      submitDate: team.created_at ? new Date(team.created_at).toLocaleDateString('en-GB') : '-'
     };
   });
 
   const filteredData = processedData.filter(d => 
     d.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.collegeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.tlName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.tlEmail.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const exportExcel = () => {
     const headers = [
-      "Sl No", "Team Name", "Domain", "Team Lead", "Team Members", "Members Count",
-      "Payment Transaction ID", "Phone", "Date and Time of Registration"
+      "Sl No",
+      "Team Name",
+      "Domain",
+      "College Name",
+      "Team Lead",
+      "Team Members",
+      "USN / Seat No",
+      "Phone Number",
+      "Email Address",
+      "Members Count",
+      "Date of Registration"
     ];
 
-    const excelData = filteredData.map((row, i) => {
-      const memberNames = [row.tlName, row.tm1Name, row.tm2Name, row.tm3Name]
-        .filter(n => n && n !== 'N/A' && n !== '-')
-        .join(', ');
-
-      return [
-        i + 1,
-        row.teamName,
-        row.domain || 'General',
-        row.tlName,
-        memberNames || row.tlName,
-        row.crewCount,
-        row.regFee || '₹1,200 Verified',
-        row.tlPhone || 'N/A',
-        row.submitDate || 'N/A'
-      ];
-    });
+    const excelData = filteredData.map((row, i) => [
+      i + 1,
+      row.teamName,
+      row.domain || 'General Innovation',
+      row.collegeName || 'N/A',
+      row.tlName,
+      row.memberNames || row.tlName,
+      row.usns || 'N/A',
+      row.tlPhone || 'N/A',
+      row.tlEmail || 'N/A',
+      row.crewCount,
+      row.submitDate || 'N/A'
+    ]);
 
     excelData.unshift(headers);
 
     const worksheet = XLSX.utils.aoa_to_sheet(excelData);
     worksheet['!cols'] = [
       { wch: 8 },  // Sl No
-      { wch: 28 }, // Team Name
+      { wch: 26 }, // Team Name
       { wch: 20 }, // Domain
+      { wch: 45 }, // College Name
       { wch: 24 }, // Team Lead
-      { wch: 50 }, // Team Members
+      { wch: 55 }, // Team Members
+      { wch: 60 }, // USN / Seat No
+      { wch: 18 }, // Phone Number
+      { wch: 32 }, // Email Address
       { wch: 14 }, // Members Count
-      { wch: 24 }, // Payment Transaction ID
-      { wch: 16 }, // Phone
-      { wch: 22 }, // Date and Time
+      { wch: 20 }, // Date of Registration
     ];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Teams Roster");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Teams Master Roster");
 
     XLSX.writeFile(workbook, "haxlr8_teams_registered.xlsx");
   };
