@@ -174,29 +174,24 @@ export async function checkRegistrationEligibility(rawEmail) {
     return { allowed: true, mode: 'whitelisted', whitelisted: true };
   }
 
-  // 4. Verify if this is an already registered team leader or member in Supabase
+  // 4. Verify if this is an already registered team leader or teammate in Supabase
   try {
-    const { data: teamLead } = await supabase
-      .from('teams')
-      .select('id')
-      .ilike('leader_email', email)
-      .limit(1);
-
-    if (teamLead && teamLead.length > 0) {
-      return { allowed: true, mode: 'existing_leader', existing: true };
-    }
-
-    const { data: member } = await supabase
+    const { data: members, error: mErr } = await supabase
       .from('team_members')
-      .select('id')
+      .select('id, team_id, is_leader, full_name')
       .ilike('email', email)
       .limit(1);
 
-    if (member && member.length > 0) {
-      return { allowed: true, mode: 'existing_member', existing: true };
+    if (!mErr && members && members.length > 0) {
+      return { 
+        allowed: true, 
+        mode: members[0].is_leader ? 'existing_leader' : 'existing_member', 
+        existing: true,
+        member: members[0]
+      };
     }
   } catch (dbErr) {
-    console.warn('Check existing team notice:', dbErr);
+    console.warn('Check existing team member notice:', dbErr);
   }
 
   // 5. Block registration

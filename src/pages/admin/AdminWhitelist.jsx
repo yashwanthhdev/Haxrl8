@@ -51,13 +51,21 @@ export default function AdminWhitelist() {
       setEnabled(config.enabled);
       setAllowedEmails(config.allowedEmails || []);
 
-      // 2. Fetch existing registered teams to cross-reference status
+      // 2. Fetch existing registered teams & members to cross-reference status
       try {
-        const { data: teams } = await supabase.from('teams').select('id, team_name, leader_email, domain');
+        const { data: teams } = await supabase.from('teams').select('id, team_name');
+        const teamNameMap = {};
+        (teams || []).forEach(t => { teamNameMap[t.id] = t.team_name; });
+
+        const { data: members } = await supabase.from('team_members').select('id, team_id, email, is_leader, full_name');
         const map = {};
-        (teams || []).forEach(t => {
-          if (t.leader_email) {
-            map[normalizeEmail(t.leader_email)] = t;
+        (members || []).forEach(m => {
+          if (m.email) {
+            map[normalizeEmail(m.email)] = {
+              team_name: teamNameMap[m.team_id] || 'Registered Squad',
+              is_leader: m.is_leader,
+              full_name: m.full_name
+            };
           }
         });
         setRegisteredTeamsMap(map);
