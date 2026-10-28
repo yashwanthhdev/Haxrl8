@@ -176,7 +176,15 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     teammates: [{ ...defaultMember }, { ...defaultMember }] // Initialized for teamSize 3 (2 teammates)
   });
 
-  const isExistingHealthcare = (hasTeam || Boolean(teamData)) && resolveDomain(teamData, submissions?.[0], user, '') === 'Healthcare';
+  const existingDomain = (hasTeam || Boolean(teamData)) ? resolveDomain(teamData, submissions?.[0], user, '') : '';
+  const isExistingHealthcare = existingDomain === 'Healthcare';
+  const isExistingSmartCity = existingDomain === 'Smart City' || existingDomain === 'SmartCity';
+
+  const isDomainFull = (domId) => {
+    if (domId === 'Healthcare') return !isExistingHealthcare;
+    if (domId === 'Smart City' || domId === 'SmartCity') return !isExistingSmartCity;
+    return false;
+  };
 
   const [creating, setCreating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -324,7 +332,10 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     if (currentStep === 0) {
       if (!formData.domain) return "Please select a challenge domain.";
       if (formData.domain === 'Healthcare' && !isExistingHealthcare) {
-        return "Healthcare domain slots are completely full. Please choose Agriculture or Smart City.";
+        return "Healthcare domain slots are completely full. Only Agriculture slots are currently open.";
+      }
+      if ((formData.domain === 'Smart City' || formData.domain === 'SmartCity') && !isExistingSmartCity) {
+        return "Smart City domain slots are completely full. Only Agriculture slots are currently open.";
       }
       if (!formData.teamName.trim()) return "Team Name is required.";
       if (!/^[a-zA-Z0-9 ]+$/.test(formData.teamName)) return "Team Name can only contain letters, numbers, and spaces.";
@@ -850,31 +861,31 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                     { id: 'Smart City', icon: '🏙️', title: 'Smart City' }
                   ].map(domOpt => {
                     const isSelected = formData.domain === domOpt.id;
-                    const isHealthcareFull = domOpt.id === 'Healthcare' && !isExistingHealthcare;
+                    const isFull = isDomainFull(domOpt.id);
                     return (
                       <div
                         key={domOpt.id}
                         onClick={() => {
-                          if (isHealthcareFull) {
-                            setErrorMsg('Healthcare domain slots are completely full. Please choose Agriculture or Smart City.');
+                          if (isFull) {
+                            setErrorMsg(`${domOpt.title} domain slots are completely full. Only Agriculture slots are currently open.`);
                             return;
                           }
                           setErrorMsg('');
                           setFormData({ ...formData, domain: domOpt.id });
                         }}
                         style={{
-                          border: isHealthcareFull
+                          border: isFull
                             ? '1.5px dashed #fca5a5'
                             : (isSelected ? '2.5px solid #0284c7' : '1.5px solid #cbd5e1'),
-                          background: isHealthcareFull
+                          background: isFull
                             ? '#fef2f2'
                             : (isSelected ? '#f0f9ff' : '#ffffff'),
                           borderRadius: 14,
                           padding: '16px 14px',
-                          cursor: isHealthcareFull ? 'not-allowed' : 'pointer',
-                          opacity: isHealthcareFull ? 0.72 : 1,
+                          cursor: isFull ? 'not-allowed' : 'pointer',
+                          opacity: isFull ? 0.72 : 1,
                           transition: 'all 0.2s',
-                          boxShadow: isSelected && !isHealthcareFull ? '0 4px 14px rgba(2, 132, 199, 0.18)' : 'none',
+                          boxShadow: isSelected && !isFull ? '0 4px 14px rgba(2, 132, 199, 0.18)' : 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -882,19 +893,19 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 26, filter: isHealthcareFull ? 'grayscale(0.4)' : 'none' }}>{domOpt.icon}</span>
+                          <span style={{ fontSize: 26, filter: isFull ? 'grayscale(0.4)' : 'none' }}>{domOpt.icon}</span>
                           <div>
-                            <div style={{ fontSize: 16, fontWeight: 900, color: isHealthcareFull ? '#991b1b' : (isSelected ? '#0369a1' : '#0f172a') }}>
+                            <div style={{ fontSize: 16, fontWeight: 900, color: isFull ? '#991b1b' : (isSelected ? '#0369a1' : '#0f172a') }}>
                               {domOpt.title}
                             </div>
-                            {isHealthcareFull && (
+                            {isFull && (
                               <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2 }}>
                                 Slots are full (Closed)
                               </div>
                             )}
                           </div>
                         </div>
-                        {isHealthcareFull ? (
+                        {isFull ? (
                           <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fee2e2', padding: '4px 8px', borderRadius: 10, border: '1px solid #fecaca', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                             SLOTS FULL
                           </span>

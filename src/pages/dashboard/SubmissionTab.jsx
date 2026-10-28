@@ -393,37 +393,37 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                     }}>
                       {SDG_OPTIONS.map(opt => {
                         const isChecked = Array.isArray(form.sdg) ? form.sdg.includes(opt) : (form.sdg || '').includes(opt);
-                        const isExistingHealthcare = (hasTeam || Boolean(teamData)) && (
-                          teamData?.domain === 'Healthcare' || 
-                          submissions?.[0]?.category === 'Healthcare' || 
-                          submissions?.[0]?.sdg_goal?.includes('Healthcare')
+                        const isExistingDomain = (hasTeam || Boolean(teamData)) && (
+                          teamData?.domain === opt || 
+                          submissions?.[0]?.category === opt || 
+                          submissions?.[0]?.sdg_goal?.includes(opt)
                         );
-                        const isHealthcareFull = opt === 'Healthcare' && !isChecked && !isExistingHealthcare;
+                        const isOptFull = (opt === 'Healthcare' || opt === 'Smart City') && !isChecked && !isExistingDomain;
                         return (
                           <label key={opt} style={{ 
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '10px', 
-                            cursor: isHealthcareFull ? 'not-allowed' : 'pointer', 
+                            cursor: isOptFull ? 'not-allowed' : 'pointer', 
                             fontSize: '13.5px', 
-                            color: isHealthcareFull ? '#94a3b8' : '#0f172a', 
+                            color: isOptFull ? '#94a3b8' : '#0f172a', 
                             padding: '6px 8px', 
                             borderRadius: 8, 
                             background: isChecked ? '#e0f2fe' : 'transparent',
-                            opacity: isHealthcareFull ? 0.6 : 1
+                            opacity: isOptFull ? 0.6 : 1
                           }}>
                             <input 
                               type="checkbox" 
                               checked={isChecked} 
-                              disabled={isHealthcareFull}
+                              disabled={isOptFull}
                               onChange={() => {
-                                if (isHealthcareFull) return;
+                                if (isOptFull) return;
                                 handleSdgToggle(opt);
                               }} 
-                              style={{ cursor: isHealthcareFull ? 'not-allowed' : 'pointer', accentColor: '#0284c7' }} 
+                              style={{ cursor: isOptFull ? 'not-allowed' : 'pointer', accentColor: '#0284c7' }} 
                             />
                             <span>
-                              {opt} {isHealthcareFull && <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>(Slots are full)</span>}
+                              {opt} {isOptFull && <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>(Slots are full)</span>}
                             </span>
                           </label>
                         );
