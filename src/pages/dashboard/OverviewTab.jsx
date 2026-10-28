@@ -205,14 +205,14 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
     ];
   } else {
     nextMilestone = { 
-      title: 'Registration & Squad Lock', 
-      dateStr: '2026-11-02T23:59:59', 
-      icon: '🚀', 
-      desc: 'Lock in 3–4 crew members & ₹1,200 fee' 
+      title: 'Registration Closed & Final Briefing', 
+      dateStr: '2026-11-03T12:00:00', 
+      icon: '🔒', 
+      desc: 'Hackathon registrations are officially closed' 
     };
     upcomingMilestonesList = [
-      { title: 'Registration & Squad Lock', desc: 'Assemble 3–4 crew members & lock domain', icon: '🚀', statusText: 'In Progress · Due Nov 02', statusColor: '#ea580c', statusBg: '#ffedd5' },
-      { title: 'Payment Verification', desc: '₹1,200 team fee via official UPI / Google Form', icon: '💳', statusText: 'Upcoming', statusColor: '#64748b', statusBg: '#f1f5f9' },
+      { title: 'New Squad Registration', desc: 'Squad capacity reached', icon: '🔒', statusText: 'Closed', statusColor: '#dc2626', statusBg: '#fee2e2' },
+      { title: 'Payment Verification', desc: 'Registered squads fee clearance', icon: '💳', statusText: 'In Progress', statusColor: '#ea580c', statusBg: '#ffedd5' },
       { title: 'Flight Passes & Venue Briefing', desc: 'Official checkpoint passes & instructions', icon: '🎫', statusText: 'Nov 03', statusColor: '#64748b', statusBg: '#f1f5f9' },
       { title: 'Grand Finale (MIT Mysore)', desc: '24-hour hackathon & ₹40,000 bounty', icon: '🏆', statusText: 'Nov 06–07', statusColor: '#64748b', statusBg: '#f1f5f9' }
     ];
@@ -223,11 +223,61 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+
+      {/* Unregistered Account Gate Banner */}
+      {!hasTeam && !teamData && (
+        <div style={{
+          background: '#fff1f2',
+          border: '2px solid #fecdd3',
+          borderRadius: 20,
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          boxShadow: '0 4px 14px rgba(225, 29, 72, 0.08)',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ fontSize: 28 }}>🔒</span>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: '#9f1239' }}>
+                Registrations Officially Closed
+              </div>
+              <div style={{ fontSize: 13, color: '#881337', fontWeight: 600, marginTop: 2, lineHeight: 1.4 }}>
+                HAXLR8 3.0 has reached maximum capacity and new registrations are permanently closed.
+                {user?.email && ` Your account (${user.email}) is not associated with any registered squad. If you are a team member, please ask your squad leader to verify your email address.`}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              try { await supabase.auth.signOut(); } catch (e) {}
+              localStorage.clear();
+              window.location.href = '/login';
+            }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 12,
+              background: '#9f1239',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 800,
+              fontSize: 13,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 8px rgba(159, 18, 57, 0.25)'
+            }}
+          >
+            Sign Out &amp; Switch Account
+          </button>
+        </div>
+      )}
       
       {/* Priority Mission Broadcast Banner */}
       {showNotification && (
         <div style={{ background: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14, overflow: 'hidden', boxShadow: '0 4px 14px rgba(2, 132, 199, 0.08)' }}>
-          <AmongUsCrewmate color={isPaid ? "green" : hasTeam ? "cyan" : "red"} size={32} speechText={isPaid ? "Payment Verified!" : hasTeam ? "Squad Locked!" : "Registrations live!"} />
+          <AmongUsCrewmate color={isPaid ? "green" : hasTeam ? "cyan" : "red"} size={32} speechText={isPaid ? "Payment Verified!" : hasTeam ? "Squad Locked!" : "Registration Closed"} />
           <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0369a1', flex: 1, letterSpacing: '0.01em', lineHeight: 1.5 }}>
             <strong>STARSHIP MISSION ADVISORY:</strong>{' '}
             {hasTeam && isPaid ? (
@@ -235,7 +285,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
             ) : hasTeam && !isPaid ? (
               <>Squad <strong>"{teamData?.team_name}"</strong> manifest ({memberCount} crew members) is locked in! Complete your squad's <strong>₹1,200 payment verification</strong> before <strong>November 02, 2026 at 11:59 PM IST</strong> to unlock flight passes &amp; verified receipt.</>
             ) : (
-              <>Registrations are live! Assemble your 3–4 crew members and complete the ₹1,200 registration fee before <strong>November 02, 2026 at 11:59 PM IST</strong>.</>
+              <>Registrations for HAXLR8 3.0 are officially closed. Registered squads are finalizing preparations for the Grand Finale at MIT Mysore.</>
             )}
           </div>
           <button onClick={() => setShowNotification(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#0369a1', opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity='1'} onMouseLeave={e => e.currentTarget.style.opacity='0.7'}>

@@ -143,7 +143,7 @@ export default function PlayfulCtaSection() {
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <Link
-            to={user ? '/dashboard' : '/register'}
+            to={user ? '/dashboard' : '/login'}
             style={{ textDecoration: 'none' }}
           >
             <button
@@ -172,7 +172,7 @@ export default function PlayfulCtaSection() {
                 e.currentTarget.style.boxShadow = '0 12px 35px rgba(0, 0, 0, 0.2)';
               }}
             >
-              <span>{user ? 'ACCESS DASHBOARD' : 'REGISTER NOW'}</span>
+              <span>{user ? 'ACCESS DASHBOARD' : 'CAPTAIN & CREW LOGIN'}</span>
               <ArrowRight size={22} strokeWidth={2.8} />
             </button>
           </Link>

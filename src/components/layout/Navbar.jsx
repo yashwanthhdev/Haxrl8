@@ -188,11 +188,11 @@ export default function Navbar() {
             }}
           >
             <Link
-              to={user ? '/dashboard' : '/register'}
+              to={user ? '/dashboard' : '/login'}
               style={{ textDecoration: 'none' }}
             >
               <button className="nav-primary-red-btn">
-                <span>{user ? 'Dashboard' : 'Register Now'}</span>
+                <span>{user ? 'Dashboard' : 'Captain Login'}</span>
                 <ArrowUpRight size={16} strokeWidth={2.4} />
               </button>
             </Link>
@@ -264,7 +264,7 @@ export default function Navbar() {
 
               <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <Link
-                  to={user ? '/dashboard' : '/register'}
+                  to={user ? '/dashboard' : '/login'}
                   onClick={() => setMobileOpen(false)}
                   style={{ textDecoration: 'none' }}
                 >
@@ -272,7 +272,7 @@ export default function Navbar() {
                     className="nav-primary-red-btn"
                     style={{ width: '100%', justifyContent: 'center' }}
                   >
-                    <span>{user ? 'Dashboard' : 'Register Now'}</span>
+                    <span>{user ? 'Dashboard' : 'Captain Login'}</span>
                     <ArrowUpRight size={16} strokeWidth={2.4} />
                   </button>
                 </Link>

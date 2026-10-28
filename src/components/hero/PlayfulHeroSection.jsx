@@ -237,25 +237,24 @@ export default function PlayfulHeroSection() {
                 <span>FINALE: NOV 6 – 7</span>
               </div>
 
-              {/* Team Fee Badge */}
+              {/* Registration Closed Badge */}
               <div
                 className="hero-badge-pill"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '7px',
-                  background: 'rgba(234, 88, 12, 0.08)',
-                  border: '2px solid rgba(234, 88, 12, 0.35)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '2px solid rgba(239, 68, 68, 0.4)',
                   borderRadius: '100px',
                   padding: '7px 16px',
                   fontSize: '13px',
-                  fontWeight: 800,
-                  color: '#c2410c',
-                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.08)',
+                  fontWeight: 900,
+                  color: '#dc2626',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.08)',
                 }}
               >
-                <Sparkles size={15} color="#ea580c" strokeWidth={2.5} />
-                <span>₹1,200 / SQUAD</span>
+                <span>🔒 REGISTRATIONS CLOSED</span>
               </div>
             </motion.div>
 
@@ -273,11 +272,11 @@ export default function PlayfulHeroSection() {
                 marginBottom: '24px',
               }}
             >
-              <Link to="/register" style={{ textDecoration: 'none' }}>
+              <Link to="/login" style={{ textDecoration: 'none' }}>
                 <button
                   className="hero-primary-cta"
                   style={{
-                    background: '#ff3b69',
+                    background: '#0f172a',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '100px',
@@ -288,20 +287,20 @@ export default function PlayfulHeroSection() {
                     alignItems: 'center',
                     gap: '10px',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 25px rgba(255, 59, 105, 0.45)',
+                    boxShadow: '0 8px 25px rgba(15, 23, 42, 0.35)',
                     transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     fontFamily: "'Fredoka', sans-serif",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(255, 59, 105, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 12px 30px rgba(15, 23, 42, 0.45)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 59, 105, 0.45)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(15, 23, 42, 0.35)';
                   }}
                 >
-                  <span>Register Now</span>
+                  <span>Captain &amp; Crew Login</span>
                   <ArrowRight size={20} strokeWidth={2.6} />
                 </button>
               </Link>

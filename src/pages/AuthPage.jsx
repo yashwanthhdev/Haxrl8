@@ -23,10 +23,8 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mode: 'login' or 'signup' — auto-detect from /register or /login route
-  const [mode, setMode] = useState(() => {
-    return location.pathname === '/register' ? 'signup' : 'login';
-  });
+  // Mode: strictly locked to 'login' since new registrations are officially closed
+  const [mode, setMode] = useState('login');
 
   // Modals
   const [showImpostorModal, setShowImpostorModal] = useState(false);
@@ -66,7 +64,11 @@ export default function AuthPage() {
 
   // Keep route synced with tab switcher
   const switchMode = (newMode) => {
-    setMode(newMode);
+    if (newMode === 'signup') {
+      setErrorMsg('Registrations for HAXLR8 3.0 are officially closed. No new squads can be registered.');
+      return;
+    }
+    setMode('login');
     setErrorMsg('');
     setSuccessMsg('');
     playCrewmatePopSound();
@@ -76,6 +78,11 @@ export default function AuthPage() {
     e.preventDefault();
     if (FLIGHT_REPAIR_MODE) {
       setErrorMsg('Flight repairs are currently in progress. Registrations and logins are temporarily suspended.');
+      setLoading(false);
+      return;
+    }
+    if (mode !== 'login') {
+      setErrorMsg('Registrations for HAXLR8 3.0 are officially closed. No new squads can be registered.');
       setLoading(false);
       return;
     }
@@ -109,7 +116,7 @@ export default function AuthPage() {
         if (error) {
           console.warn('Sign-in error:', error);
           if (error.message?.toLowerCase().includes('invalid login credentials') || error.message?.toLowerCase().includes('invalid_grant')) {
-            setErrorMsg('Invalid email or password. Please verify your credentials or click "Squad Register" to create an account.');
+            setErrorMsg('Invalid email or password. Please verify your credentials or ensure you are using your registered squad email.');
           } else {
             setErrorMsg(error.message || 'Login failed. Please check your credentials.');
           }
@@ -586,7 +593,7 @@ export default function AuthPage() {
           >
             <Sparkles size={16} color="#b45309" style={{ flexShrink: 0 }} />
             <p style={{ margin: 0, fontSize: '11.5px', color: '#92400e', fontWeight: 700, lineHeight: 1.4 }}>
-              Only Team Leader registers. Teammates are added directly inside your Flight Deck!
+              Registered Squad Leaders &amp; Crewmates: Log in to view your squad dashboard &amp; verified status.
             </p>
           </div>
         </div>
@@ -606,8 +613,8 @@ export default function AuthPage() {
           <div className="auth-mobile-header" style={{ display: 'none', textAlign: 'center', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
               <AmongUsCrewmate 
-                color={mode === 'signup' ? 'yellow' : 'red'} 
-                hat={mode === 'signup' ? 'crown' : 'cap'} 
+                color="red" 
+                hat="cap" 
                 size={58} 
                 interactive={false} 
               />
@@ -616,13 +623,11 @@ export default function AuthPage() {
               HAXLR8 3.0 Flight Deck
             </h2>
             <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0, fontWeight: 600 }}>
-              {mode === 'signup' 
-                ? 'Register squad leader to assemble your team' 
-                : 'Login to access your squad command deck'}
+              Captain &amp; Crew Login to access your squad command deck
             </p>
           </div>
 
-          {/* ── MODE SWITCHER TABS (Login vs Register) ── */}
+          {/* ── MODE SWITCHER TABS (Login Active / Registration Closed Disabled) ── */}
           <div
             className="auth-mode-tabs"
             style={{
@@ -631,7 +636,7 @@ export default function AuthPage() {
               background: '#f1f5f9',
               borderRadius: '16px',
               padding: '4px',
-              marginBottom: '24px',
+              marginBottom: '18px',
               position: 'relative',
             }}
           >
@@ -642,58 +647,93 @@ export default function AuthPage() {
                 padding: '11px',
                 borderRadius: '12px',
                 border: 'none',
-                background: mode === 'login' ? '#ffffff' : 'transparent',
-                color: mode === 'login' ? '#0f172a' : '#64748b',
-                fontWeight: mode === 'login' ? 900 : 700,
+                background: '#ffffff',
+                color: '#0f172a',
+                fontWeight: 900,
                 fontSize: '14px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: mode === 'login' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                 transition: 'all 0.2s',
               }}
             >
-              <span>🔑 Captain Login</span>
+              <span>🔑 Captain &amp; Crew Login</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => switchMode('signup')}
+            <div
               style={{
                 padding: '11px',
                 borderRadius: '12px',
                 border: 'none',
-                background: mode === 'signup' ? '#ffffff' : 'transparent',
-                color: mode === 'signup' ? '#a8262a' : '#64748b',
-                fontWeight: mode === 'signup' ? 900 : 700,
-                fontSize: '14px',
-                cursor: 'pointer',
+                background: 'transparent',
+                color: '#94a3b8',
+                fontWeight: 700,
+                fontSize: '13px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                boxShadow: mode === 'signup' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.2s',
+                gap: '6px',
+                cursor: 'not-allowed',
+                userSelect: 'none',
+              }}
+              title="Registrations are officially closed"
+            >
+              <span>🔒 Registration Closed</span>
+            </div>
+          </div>
+
+          {/* ── REGISTRATIONS CLOSED OFFICIAL NOTICE BANNER ── */}
+          <div
+            style={{
+              backgroundColor: '#fff1f2',
+              border: '1.5px solid #fecdd3',
+              borderRadius: '16px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+            }}
+          >
+            <div
+              style={{
+                background: '#ffe4e6',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              <span>🚀 Squad Register</span>
-            </button>
+              <Lock size={16} color="#e11d48" />
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 900, color: '#9f1239', marginBottom: '2px' }}>
+                Registrations Officially Closed
+              </div>
+              <div style={{ fontSize: '12px', color: '#881337', fontWeight: 600, lineHeight: 1.45 }}>
+                HAXLR8 3.0 has reached maximum capacity. All registered team leaders and crewmates can log in below to access their flight deck and passes.
+              </div>
+            </div>
           </div>
 
           {/* Title on Desktop */}
-          <div className="auth-desktop-title-row" style={{ marginBottom: '22px' }}>
+          <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>
             <h1
               style={{
-                fontSize: '28px',
+                fontSize: '26px',
                 fontWeight: 900,
                 color: '#0f172a',
                 margin: '0 0 6px',
                 lineHeight: 1.2,
               }}
             >
-              {mode === 'login' ? 'Welcome Back, Captain! 👋' : 'Assemble Your Crew! 🚀'}
+              Captain &amp; Crew Login 🔑
             </h1>
             <p
               style={{
@@ -703,9 +743,7 @@ export default function AuthPage() {
                 fontWeight: 500,
               }}
             >
-              {mode === 'login'
-                ? 'Sign in to access your squad manifest, registration receipt, and domain'
-                : 'Create your Leader account to register your squad for MIT Mysore'}
+              Sign in with your registered email or Google account to access your squad command deck.
             </p>
           </div>
 

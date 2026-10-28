@@ -612,23 +612,6 @@ export default function DashboardPage() {
               Sign In with Email & Password →
             </button>
 
-            {/* Register */}
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                padding: '10px 14px',
-                borderRadius: 12,
-                background: '#fff7ed',
-                border: '1.5px solid #fed7aa',
-                color: '#ea580c',
-                fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-            >
-              New Squad? Register Leader Account
-            </button>
-
             {/* Return home */}
             <button
               onClick={() => navigate('/')}

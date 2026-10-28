@@ -450,10 +450,10 @@ export default function PlayfulNavbar() {
             })}
           </nav>
 
-          {/* Right Action: Register Now Button */}
+          {/* Right Action: Captain Login Button */}
           <div className="playful-nav-cta">
             <Link
-              to={user ? '/dashboard' : '/register'}
+              to={user ? '/dashboard' : '/login'}
               style={{ textDecoration: 'none' }}
             >
               <button
@@ -484,7 +484,7 @@ export default function PlayfulNavbar() {
                   e.currentTarget.style.boxShadow = '0 4px 14px rgba(15, 23, 42, 0.18)';
                 }}
               >
-                <span>{user ? 'Dashboard' : 'Register Now'}</span>
+                <span>{user ? 'Dashboard' : 'Captain Login'}</span>
                 <ArrowRight size={16} strokeWidth={2.4} />
               </button>
             </Link>
@@ -581,14 +581,14 @@ export default function PlayfulNavbar() {
 
               <div style={{ paddingTop: '12px', marginTop: '6px', borderTop: '1px solid rgba(226, 232, 240, 0.8)' }}>
                 <Link
-                  to={user ? '/dashboard' : '/register'}
+                  to={user ? '/dashboard' : '/login'}
                   onClick={() => setMobileOpen(false)}
                   style={{ textDecoration: 'none' }}
                 >
                   <button
                     style={{
                       width: '100%',
-                      background: '#ff3b69',
+                      background: '#0f172a',
                       color: '#ffffff',
                       border: 'none',
                       borderRadius: '100px',
@@ -600,10 +600,10 @@ export default function PlayfulNavbar() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      boxShadow: '0 6px 18px rgba(255, 59, 105, 0.35)',
+                      boxShadow: '0 6px 18px rgba(15, 23, 42, 0.25)',
                     }}
                   >
-                    <span>{user ? 'Dashboard' : 'Register Now'}</span>
+                    <span>{user ? 'Dashboard' : 'Captain Login'}</span>
                     <ArrowRight size={16} />
                   </button>
                 </Link>

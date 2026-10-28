@@ -837,6 +837,67 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   };
 
   // --- MAIN RENDER ---
+  // Registrations permanently closed for new squads
+  if (!hasTeam && !teamData && !isEditingTeam) {
+    return (
+      <div style={{ maxWidth: 580, margin: '40px auto', width: '100%', textAlign: 'center', background: '#ffffff', borderRadius: 24, padding: '36px 24px', border: '2px solid #fed7aa', boxShadow: '0 12px 36px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <AmongUsCrewmate color="red" size={68} hat="cap" speechText="Registrations are closed!" />
+        </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 20, padding: '4px 12px', marginBottom: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            ● REGISTRATIONS OFFICIALLY CLOSED
+          </span>
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: '0 0 10px' }}>
+          Registration Has Closed
+        </h2>
+        <p style={{ fontSize: 13.5, color: '#64748b', lineHeight: 1.6, margin: '0 auto 24px', maxWidth: 460 }}>
+          Registration capacity for HAXLR8 3.0 has been reached. No new squads or teams can be created. If your team was registered under a different email, please sign out and log in with your squad's registered email address.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={async () => {
+              try {
+                await supabase.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+              } catch (e) {}
+              window.location.href = '/login';
+            }}
+            style={{
+              padding: '11px 22px',
+              borderRadius: 12,
+              background: '#0f172a',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 800,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Sign Out & Switch Account
+          </button>
+          <button
+            onClick={() => window.location.href = '/'}
+            style={{
+              padding: '11px 20px',
+              borderRadius: 12,
+              background: '#f8fafc',
+              border: '1.5px solid #cbd5e1',
+              color: '#475569',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasTeam || isEditingTeam) {
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24 }}>

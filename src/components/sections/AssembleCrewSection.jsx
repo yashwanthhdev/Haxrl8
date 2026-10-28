@@ -80,13 +80,13 @@ export default function AssembleCrewSection() {
             3 – 4 members. One mission. One chance.
           </p>
 
-          {/* Large Red Button: REGISTER YOUR CREW → */}
+          {/* Large Red Button: CAPTAIN & CREW LOGIN → */}
           <Link
-            to={user ? '/dashboard' : '/register'}
+            to={user ? '/dashboard' : '/login'}
             style={{ textDecoration: 'none' }}
           >
             <button className="assemble-register-btn">
-              <span>{user ? 'ACCESS DASHBOARD' : 'REGISTER YOUR CREW'}</span>
+              <span>{user ? 'ACCESS DASHBOARD' : 'CAPTAIN & CREW LOGIN'}</span>
               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
           </Link>
