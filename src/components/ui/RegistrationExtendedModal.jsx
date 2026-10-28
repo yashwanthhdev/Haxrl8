@@ -214,7 +214,7 @@ export default function RegistrationExtendedModal() {
                         fontWeight: 500,
                       }}
                     >
-                      All 52 national squads are locked in. Registered team leaders and crewmates can log in to view manifests, verified status, and flight passes.
+                      All national squads are locked in. Registered team leaders and crewmates can log in to view manifests, verified status, and flight passes.
                     </p>
                   </div>
                 </div>
