@@ -398,7 +398,7 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                           submissions?.[0]?.category === opt || 
                           submissions?.[0]?.sdg_goal?.includes(opt)
                         );
-                        const isOptFull = opt === 'Healthcare' && !isChecked && !isExistingDomain;
+                        const isOptFull = (opt === 'Healthcare' || opt === 'Smart City') && !isChecked && !isExistingDomain;
                         return (
                           <label key={opt} style={{ 
                             display: 'flex', 
