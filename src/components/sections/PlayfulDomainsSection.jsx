@@ -33,7 +33,6 @@ const DOMAINS = [
     border: '#7dd3fc',
     textCol: '#0284c7',
     icon: Building2,
-    slotsFull: true,
   },
 ];
 
@@ -389,7 +388,7 @@ export default function PlayfulDomainsSection() {
                 >
                   <span style={{ fontSize: '20px' }}>⚠️</span>
                   <div style={{ fontSize: '13px', color: '#991b1b', lineHeight: 1.5 }}>
-                    <strong>{selectedDomain.title} Domain Slots are Full:</strong> Registration capacity for this track has been reached. Newly registering squads must select <strong>Agriculture</strong>.
+                    <strong>Healthcare Domain Slots are Full:</strong> Registration capacity for the Healthcare track has been reached. Newly registering squads must select either <strong>Agriculture</strong> or <strong>Smart City</strong>.
                   </div>
                 </div>
               )}

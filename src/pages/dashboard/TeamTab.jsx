@@ -182,7 +182,6 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
 
   const isDomainFull = (domId) => {
     if (domId === 'Healthcare') return !isExistingHealthcare;
-    if (domId === 'Smart City' || domId === 'SmartCity') return !isExistingSmartCity;
     return false;
   };
 
@@ -332,10 +331,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     if (currentStep === 0) {
       if (!formData.domain) return "Please select a challenge domain.";
       if (formData.domain === 'Healthcare' && !isExistingHealthcare) {
-        return "Healthcare domain slots are completely full. Only Agriculture slots are currently open.";
-      }
-      if ((formData.domain === 'Smart City' || formData.domain === 'SmartCity') && !isExistingSmartCity) {
-        return "Smart City domain slots are completely full. Only Agriculture slots are currently open.";
+        return "Healthcare domain slots are completely full. Please choose Agriculture or Smart City.";
       }
       if (!formData.teamName.trim()) return "Team Name is required.";
       if (!/^[a-zA-Z0-9 ]+$/.test(formData.teamName)) return "Team Name can only contain letters, numbers, and spaces.";
@@ -867,7 +863,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                         key={domOpt.id}
                         onClick={() => {
                           if (isFull) {
-                            setErrorMsg(`${domOpt.title} domain slots are completely full. Only Agriculture slots are currently open.`);
+                            setErrorMsg(`${domOpt.title} domain slots are completely full. Please choose Agriculture or Smart City.`);
                             return;
                           }
                           setErrorMsg('');
