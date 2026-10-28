@@ -1432,8 +1432,8 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
               <Calendar size={24} />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2, fontWeight: 800 }}>Registration & Payment Lock</div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: '#ea580c' }}>November 02, 2026 · 11:59 PM IST</div>
+              <div style={{ fontSize: 11, color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2, fontWeight: 800 }}>Registration Status</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: '#dc2626' }}>Registrations Officially Closed</div>
             </div>
           </div>
         </div>

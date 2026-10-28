@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import MagneticButton from '../ui/MagneticButton';
 import {
   Clock, UserPlus, FileText, Unlock, Badge,
-  Users, Coffee, Building, MapPin, ShieldCheck
+  Users, Coffee, Building, MapPin, ShieldCheck, Lock
 } from 'lucide-react';
 
 
@@ -99,9 +99,9 @@ const guidelinesPart1 = [
     icon: Clock
   },
   {
-    id: '02', title: 'Register Online',
-    description: 'Registration opens Oct 09 and closes November 02, 2026. Register your 3–4 crew members online.',
-    icon: UserPlus
+    id: '02', title: 'Registration Closed',
+    description: 'Registrations are officially closed as capacity is reached. Registered teams can log in to view their flight manifest.',
+    icon: Lock
   },
   {
     id: '03', title: 'Registration Fee & Verification',
@@ -562,19 +562,19 @@ export default function GuidelinesSection() {
           <div>
             <p style={{
               fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.2em',
-              color: '#38fedc', textTransform: 'uppercase', margin: '0 0 8px',
-            }}>READY TO JOIN THE CREW?</p>
+              color: '#ef4444', textTransform: 'uppercase', margin: '0 0 8px',
+            }}>REGISTRATIONS OFFICIALLY CLOSED</p>
             <p style={{
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               fontSize: 'clamp(1rem,2vw,1.2rem)', fontWeight: 800,
               color: '#f8fafc', margin: 0, lineHeight: 1.3,
             }}>
-              Registration is free. Form your 3–4 member squad across India.
+              All squad spots are filled. Registered teams can log into their dashboard.
             </p>
           </div>
           
           <a
-            href="/register"
+            href="/login"
             style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "14px 28px",
@@ -595,7 +595,7 @@ export default function GuidelinesSection() {
               e.currentTarget.style.boxShadow = "0 8px 25px rgba(56,254,220,0.35)";
             }}
           >
-            REGISTER YOUR SQUAD (₹1,200) →
+            CAPTAIN &amp; CREW LOGIN →
           </a>
         </motion.div>
       </div>

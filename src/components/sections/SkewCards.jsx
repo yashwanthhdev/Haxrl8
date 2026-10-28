@@ -205,7 +205,7 @@ export default function SkewCards() {
         {/* CTA Button */}
         <div style={{ textAlign: 'center', marginTop: '64px', position: 'relative', zIndex: 1 }}>
           <a
-            href="/register"
+            href="/login"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -224,7 +224,7 @@ export default function SkewCards() {
             onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 35px rgba(56,254,220,0.5)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(56,254,220,0.35)'; }}
           >
-            REGISTER YOUR SQUAD (3–4 CREW) →
+            CAPTAIN &amp; CREW LOGIN (REGISTRATIONS CLOSED) →
           </a>
         </div>
 

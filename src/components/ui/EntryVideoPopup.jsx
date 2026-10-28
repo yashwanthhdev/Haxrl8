@@ -131,7 +131,7 @@ export default function EntryVideoPopup() {
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <a
-                        href="/register"
+                        href="/login"
                         onClick={closeVideo}
                         style={{
                           padding: '9px 22px', borderRadius: 100, background: '#fff', color: '#111',
@@ -142,7 +142,7 @@ export default function EntryVideoPopup() {
                         onMouseEnter={e => { e.currentTarget.style.background = '#e5e5e5'; e.currentTarget.style.transform = 'scale(1.03)'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'scale(1)'; }}
                       >
-                        🚀 Register Now
+                        🚀 Crew Login (Closed)
                       </a>
                     </div>
                   </div>

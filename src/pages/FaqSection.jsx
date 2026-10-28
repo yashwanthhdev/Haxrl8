@@ -51,7 +51,7 @@ const FAQS = [
     id: 8,
     category: 'registration',
     question: "What is the registration fee?",
-    answer: "The registration fee is ₹1,200 per team (for 3 to 4 members). Registrations open tomorrow evening (Oct 09). It covers complete 24-hour hackathon entry, Wi-Fi, mentorship, catering, meals, and official certificates.",
+    answer: "The registration fee was ₹1,200 per team (for 3 to 4 members). Registrations are now officially closed as all squad slots are filled. It covers complete 24-hour hackathon entry, Wi-Fi, mentorship, catering, meals, and official certificates.",
   },
   {
     id: 9,

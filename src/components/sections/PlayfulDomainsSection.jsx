@@ -494,7 +494,7 @@ export default function PlayfulDomainsSection() {
               </div>
 
               <a
-                href="/register"
+                href="/login"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -503,15 +503,15 @@ export default function PlayfulDomainsSection() {
                   width: '100%',
                   padding: '14px',
                   borderRadius: '100px',
-                  background: '#ff3b69',
+                  background: '#0f172a',
                   color: '#ffffff',
                   fontWeight: 800,
                   fontSize: '15px',
                   textDecoration: 'none',
-                  boxShadow: '0 6px 20px rgba(255, 59, 105, 0.4)',
+                  boxShadow: '0 6px 20px rgba(15, 23, 42, 0.25)',
                 }}
               >
-                <span>REGISTER CREW FOR THIS DOMAIN →</span>
+                <span>CAPTAIN &amp; CREW LOGIN (CLOSED) →</span>
               </a>
             </motion.div>
           </div>

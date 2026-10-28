@@ -49,10 +49,10 @@ const EVENTS = [
     Icon: IconRegisterOpen,
   },
   {
-    index: 1, num: "02", day: "02", month: "NOV", year: "2026",
-    title: "Roster & Payment Lock",
-    desc: "Final deadline to confirm your 3–4 crew members and complete payment verification.",
-    tag: "Deadline", tagColor: "#ef4444", tagBg: "rgba(239,68,68,0.1)", tagBorder: "rgba(239,68,68,0.3)",
+    index: 1, num: "02", day: "28", month: "OCT", year: "2026",
+    title: "Registration Closed",
+    desc: "Registrations are officially closed. All squad spots are filled and manifests locked in.",
+    tag: "Closed", tagColor: "#ef4444", tagBg: "rgba(239,68,68,0.1)", tagBorder: "rgba(239,68,68,0.3)",
     Icon: IconDeadline,
   },
   {
@@ -379,14 +379,13 @@ function CTABanner({ mobile }) {
           border: "1px solid rgba(56,254,220,0.3)", marginBottom: 12,
         }}>
           <div style={{
-            width: 6, height: 6, borderRadius: "50%", background: "#38fedc",
-            animation: "pulse-dot 1.5s ease-in-out infinite",
-            boxShadow: "0 0 8px #38fedc",
+            width: 6, height: 6, borderRadius: "50%", background: "#ef4444",
+            boxShadow: "0 0 8px #ef4444",
           }} />
           <span style={{
             fontSize: "0.62rem", fontWeight: 800, letterSpacing: "0.18em",
-            color: "#38fedc", textTransform: "uppercase",
-          }}>CREW REGISTRATION OPEN</span>
+            color: "#f87171", textTransform: "uppercase",
+          }}>REGISTRATIONS CLOSED</span>
         </div>
         <p style={{
           fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -394,15 +393,15 @@ function CTABanner({ mobile }) {
           fontWeight: 800, color: "#f8fafc", margin: 0,
           letterSpacing: "-0.02em", lineHeight: 1.3,
         }}>
-          Don't wait — spots fill fast.<br />
-          <span style={{ color: "#38fedc", fontWeight: 600, fontSize: "0.88em" }}>
-            Registration closes November 02, 2026.
+          Capacity Reached — Seats are filled.<br />
+          <span style={{ color: "#f87171", fontWeight: 600, fontSize: "0.88em" }}>
+            Registrations are officially closed.
           </span>
         </p>
       </div>
 
       <a
-        href="/register"
+        href="/login"
         style={{
           display: "inline-flex", alignItems: "center", gap: 10,
           padding: mobile ? "12px 22px" : "15px 30px",
@@ -423,7 +422,7 @@ function CTABanner({ mobile }) {
           e.currentTarget.style.boxShadow = "0 8px 25px rgba(56,254,220,0.35)";
         }}
       >
-        Register Squad (₹1,200)
+        Captain &amp; Crew Login
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#070a13" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14M12 5l7 7-7 7"/>
         </svg>

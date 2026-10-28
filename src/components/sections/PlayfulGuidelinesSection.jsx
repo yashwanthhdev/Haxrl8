@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Clock, UserPlus, FileText, GraduationCap,
   Users, Utensils, Building2, MapPin, ShieldCheck,
-  CheckCircle2, Sparkles, AlertCircle
+  CheckCircle2, Sparkles, AlertCircle, Lock
 } from 'lucide-react';
 import AmongUsCrewmate from '../amongus/AmongUsCrewmate';
 
@@ -20,13 +20,13 @@ const guidelinesPart1 = [
   },
   {
     num: '02',
-    title: 'Online Registration',
-    description: 'Registration opens Oct 09 and closes November 02, 2026. Only the team leader needs to register and add 3–4 crew members.',
-    icon: UserPlus,
-    badge: 'DEADLINE NOV 02',
-    bg: '#eff6ff',
-    border: '#bfdbfe',
-    accent: '#3b82f6',
+    title: 'Registration Closed',
+    description: 'Registrations are officially closed as all squad slots are filled. Registered team leaders and crewmates can log into their dashboard.',
+    icon: Lock,
+    badge: 'CLOSED',
+    bg: '#fff1f2',
+    border: '#fecdd3',
+    accent: '#e11d48',
   },
   {
     num: '03',
@@ -467,18 +467,18 @@ export default function PlayfulGuidelinesSection() {
             </div>
             <div>
               <h4 style={{ fontSize: '19px', fontWeight: 900, color: '#0f172a', margin: '0 0 6px' }}>
-                Ready to Assemble Your 3–4 Crewmates?
+                Registrations Officially Closed 🔒
               </h4>
               <p style={{ fontSize: '14px', color: '#64748b', margin: 0, fontWeight: 500 }}>
-                Registration is completely free. Fill in your team leader details to get started!
+                All squad slots are filled. Registered team leaders and crewmates can log in to view their dashboard.
               </p>
             </div>
           </div>
 
           <a
-            href="/register"
+            href="/login"
             style={{
-              backgroundColor: '#ff3b69',
+              backgroundColor: '#0f172a',
               color: '#ffffff',
               padding: '14px 28px',
               borderRadius: '9999px',
@@ -488,19 +488,19 @@ export default function PlayfulGuidelinesSection() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 8px 24px rgba(255, 59, 105, 0.35)',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.25)',
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 12px 30px rgba(255, 59, 105, 0.5)';
+              e.currentTarget.style.boxShadow = '0 12px 30px rgba(15, 23, 42, 0.35)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 59, 105, 0.35)';
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(15, 23, 42, 0.25)';
             }}
           >
-            Claim Registration Receipt →
+            Captain &amp; Crew Login →
           </a>
         </motion.div>
       </div>

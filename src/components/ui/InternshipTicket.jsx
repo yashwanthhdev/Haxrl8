@@ -242,7 +242,7 @@ export const InternshipTicket = () => {
                 transformStyle: "preserve-3d",
               }}
             >
-              <a href="/register" style={{
+              <a href="/login" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "13px 26px", background: "linear-gradient(135deg, #38fedc 0%, #2dd4bf 100%)", color: "#070a13",
                 fontSize: "0.85rem", fontWeight: 800, borderRadius: 10,
@@ -253,7 +253,7 @@ export const InternshipTicket = () => {
                 onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
                 onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
               >
-                CLAIM CREW PASS →
+                CAPTAIN &amp; CREW LOGIN →
               </a>
             </motion.div>
           </div>

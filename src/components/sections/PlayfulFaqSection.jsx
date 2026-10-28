@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: 'What is the registration fee?',
-    a: 'The registration fee is ₹1,200 per team (for 3 to 4 members). Registrations open tomorrow evening (Oct 09). There are no screening or elimination rounds—all registered and verified teams advance directly to the 24-hour offline hackathon at Maharaja Institute of Technology Mysore!',
+    a: 'The registration fee was ₹1,200 per team (for 3 to 4 members). Registrations are now officially closed as all squad slots are filled. All registered and verified teams advance directly to the 24-hour offline hackathon at Maharaja Institute of Technology Mysore!',
   },
   {
     q: 'Where and when is the hackathon held?',

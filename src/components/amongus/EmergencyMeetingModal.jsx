@@ -227,8 +227,8 @@ export default function EmergencyMeetingModal() {
                 </div>
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)' }} />
                 <div>
-                  <span style={{ color: '#94a3b8', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Submissions Close</span>
-                  <strong style={{ color: '#ef4444', fontSize: '14px' }}>NOV 02, 2026</strong>
+                  <span style={{ color: '#94a3b8', display: 'block', fontSize: '10px', textTransform: 'uppercase' }}>Registrations</span>
+                  <strong style={{ color: '#ef4444', fontSize: '14px' }}>CLOSED</strong>
                 </div>
                 <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.15)' }} />
                 <div>
@@ -242,25 +242,25 @@ export default function EmergencyMeetingModal() {
                 <button
                   onClick={() => {
                     handleClose();
-                    navigate('/register');
+                    navigate('/login');
                   }}
                   style={{
-                    background: '#22c55e',
-                    color: '#111',
-                    border: '2px solid #111',
+                    background: '#0f172a',
+                    color: '#fff',
+                    border: '2px solid rgba(255,255,255,0.3)',
                     borderRadius: '12px',
                     padding: '14px 28px',
                     fontSize: '13px',
                     fontWeight: 900,
                     cursor: 'pointer',
-                    boxShadow: '0 6px 18px rgba(34,197,94,0.4)',
+                    boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
                     letterSpacing: '0.04em',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
                   }}
                 >
-                  🚀 JOIN THE CREW (REGISTER)
+                  🚀 CAPTAIN &amp; CREW LOGIN (CLOSED)
                 </button>
 
                 <button

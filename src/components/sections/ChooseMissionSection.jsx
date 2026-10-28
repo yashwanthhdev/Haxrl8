@@ -384,7 +384,7 @@ export default function ChooseMissionSection() {
               </div>
 
               <a
-                href="/register"
+                href="/login"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -393,15 +393,15 @@ export default function ChooseMissionSection() {
                   width: '100%',
                   padding: '14px',
                   borderRadius: '12px',
-                  background: '#dc2626',
+                  background: '#0f172a',
                   color: '#ffffff',
                   fontWeight: 800,
                   fontSize: '14px',
                   textDecoration: 'none',
-                  boxShadow: '0 0 20px rgba(220, 38, 38, 0.5)',
+                  boxShadow: '0 0 20px rgba(15, 23, 42, 0.3)',
                 }}
               >
-                <span>REGISTER YOUR CREW FOR THIS MISSION →</span>
+                <span>CAPTAIN &amp; CREW LOGIN (REGISTRATIONS CLOSED) →</span>
               </a>
             </motion.div>
           </div>

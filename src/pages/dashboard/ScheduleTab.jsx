@@ -3,7 +3,7 @@ import { Calendar, Clock, UserCheck, Sparkles, Radio } from 'lucide-react';
 
 const EVENTS = [
   { date: 'Oct 09',    event: 'Registration Opens',               status: 'active',   desc: 'Squad registration opens for undergraduate students across India.', time: '06:00 PM IST' },
-  { date: 'Nov 02',    event: 'Squad Registration & Payment Closes', status: 'upcoming', desc: 'Final deadline to lock 3–4 crew members & verify ₹1,200 squad registration fee.', time: '11:59 PM IST' },
+  { date: 'Closed',    event: 'Squad Registration Closed', status: 'done', desc: 'Registrations are officially closed. All squad spots are filled.', time: 'Complete' },
   { date: 'Nov 03',    event: 'Flight Passes & Venue Briefing',   status: 'upcoming', desc: 'Official checkpoint passes & offline hackathon briefing released to all squads.', time: '12:00 PM IST' },
   { date: 'Nov 06–07', event: 'Grand Finale & 24H Hackathon',      status: 'upcoming', desc: '24-hour offline hackathon and live showcase at Maharaja Institute of Technology Mysore.', time: '09:00 AM IST' },
 ];

@@ -44,17 +44,10 @@ const QUICK_LINKS = [
 
 const FAQS = [
   {
-    q: "How do I register?",
+    q: "Are registrations still open?",
     a: (
       <>
-        You can register through the official hackathon registration portal at{" "}
-        <a
-          href="/register"
-          style={{ color: '#ff3b69', textDecoration: 'underline', fontWeight: 700 }}
-        >
-          the registration page
-        </a>
-        . Only the Team Leader needs to register. Once logged in, the leader selects the domain, adds 3–4 crew members in the My Team tab, and completes payment verification.
+        Public registrations for HAXLR8 3.0 are officially closed as all squad slots have been filled. Team leaders and crew members can view their squad roster in the My Team tab and check flight passes in the Passes tab.
       </>
     ),
   },
@@ -149,7 +142,7 @@ export default function ResourcesTab({ hasTeam, submissions }) {
 
   const EVENTS = [
     { date: 'Oct 09', event: 'Registration Opens', status: 'done', desc: 'Team registration opens for undergraduate students across India.', time: 'All day' },
-    { date: 'Nov 02', event: 'Squad & Fee Lock', status: hasTeam ? 'done' : 'active', desc: 'Assemble 3–4 members, pay ₹1,200 team fee, & submit verification.', time: '11:59 PM IST' },
+    { date: 'Closed', event: 'Registration Closed', status: 'done', desc: 'Squad registrations are officially closed as capacity is reached.', time: 'Complete' },
     { date: 'Nov 03', event: 'Problem Statements & Pass Clearance', status: hasTeam ? 'active' : 'upcoming', desc: 'Official problem statements reveal & hackathon flight pass clearance.', time: '12:00 PM IST' },
     { date: 'Nov 06–07', event: 'Grand Finale at MIT Mysore', status: 'upcoming', desc: '24-hour offline hackathon sprint and prize ceremony at Maharaja Institute of Technology Mysore.', time: '08:30 AM IST' },
   ];

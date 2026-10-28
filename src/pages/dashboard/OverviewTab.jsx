@@ -16,7 +16,7 @@ import { resolveDomain, formatDomainWithBadge } from '../../lib/domainUtils';
 
 const TIMELINE_STEPS = [
   { title: 'Registration', date: 'Oct 09' },
-  { title: 'Squad Lock', date: 'Nov 02' },
+  { title: 'Reg Closed', date: 'Locked' },
   { title: 'Fee Verify', date: 'Nov 02' },
   { title: 'Pass Issued', date: 'Nov 03' },
   { title: 'Grand Finale', date: 'Nov 06–07' },
