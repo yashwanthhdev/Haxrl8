@@ -55,7 +55,7 @@ const CheckItem = ({ label, status }) => {
   );
 };
 
-export default function OverviewTab({ hasTeam, teamData, teamMembers, submissions, user, setActiveTab, announcements = [] }) {
+export default function OverviewTab({ hasTeam, teamData, teamMembers, submissions, user, setActiveTab, announcements = [], onRefresh }) {
   const [totalTeams, setTotalTeams] = useState(0);
   const [squadronsConfig, setSquadronsConfig] = useState(() => getLocalSquadronsConfig());
   const [showRulebook, setShowRulebook] = useState(false);
@@ -224,7 +224,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
-      {/* Unregistered Account Gate Banner */}
+      {/* Unregistered Account Gate Banner (Only for truly unassociated accounts) */}
       {!hasTeam && !teamData && (
         <div style={{
           background: '#fff1f2',
@@ -246,31 +246,59 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
               </div>
               <div style={{ fontSize: 13, color: '#881337', fontWeight: 600, marginTop: 2, lineHeight: 1.4 }}>
                 HAXLR8 3.0 has reached maximum capacity and new registrations are permanently closed.
-                {user?.email && ` Your account (${user.email}) is not associated with any registered squad. If you are a team member, please ask your squad leader to verify your email address.`}
+                {user?.email ? (
+                  <> Your account (<strong>{user.email}</strong>) is not associated with any registered squad. If you are a team member, please ask your squad leader to confirm your registered email address.</>
+                ) : (
+                  <> Only registered squad leaders and teammates can access manifests and flight passes.</>
+                )}
               </div>
             </div>
           </div>
-          <button
-            onClick={async () => {
-              try { await supabase.auth.signOut(); } catch (e) {}
-              localStorage.clear();
-              window.location.href = '/login';
-            }}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 12,
-              background: '#9f1239',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 800,
-              fontSize: 13,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(159, 18, 57, 0.25)'
-            }}
-          >
-            Sign Out &amp; Switch Account
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 12,
+                  background: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                🔄 Refresh Squad Status
+              </button>
+            )}
+            <button
+              onClick={async () => {
+                try { await supabase.auth.signOut(); } catch (e) {}
+                localStorage.clear();
+                window.location.href = '/login';
+              }}
+              style={{
+                padding: '10px 18px',
+                borderRadius: 12,
+                background: '#9f1239',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(159, 18, 57, 0.25)'
+              }}
+            >
+              Sign Out &amp; Switch Account
+            </button>
+          </div>
         </div>
       )}
       

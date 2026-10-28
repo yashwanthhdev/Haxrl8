@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const fetchingRef = useRef(false);
   const userRef = useRef(null);
 
-  const withTimeout = (promise, ms = 4000) =>
+  const withTimeout = (promise, ms = 12000) =>
     Promise.race([
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
@@ -68,14 +68,14 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchDashboardData = async (overrideUser = null) => {
-    if (fetchingRef.current && !overrideUser) return;
+  const fetchDashboardData = async (overrideUser = null, forceRefresh = false) => {
+    if (fetchingRef.current && !overrideUser && !forceRefresh) return;
     fetchingRef.current = true;
 
     try {
       let activeUser = overrideUser || null;
 
-      // 1. Instant Cache Hydration: Render instantly if cached session exists
+      // 1. Instant Cache Hydration: Render instantly if cached session and team exist
       if (!activeUser) {
         const local = localStorage.getItem('haxlr8_leader_session');
         if (local) {
@@ -85,18 +85,25 @@ export default function DashboardPage() {
             if (activeUser) {
               setUser(activeUser);
               userRef.current = activeUser;
-              // Pre-hydrate team data so UI loads with 0ms delay
-              const cachedTeam = localStorage.getItem(`haxlr8_team_${activeUser.id}`);
-              if (cachedTeam) {
-                const pt = JSON.parse(cachedTeam);
-                setHasTeam(true);
-                setTeamData(pt);
-                const cm = localStorage.getItem(`haxlr8_members_${activeUser.id}`);
-                if (cm) setTeamMembers(JSON.parse(cm));
-                const cs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`);
-                if (cs) setSubmissions(JSON.parse(cs));
+              const cleanEmail = (activeUser.email || activeUser.user_metadata?.email || '').trim().toLowerCase();
+              // Pre-hydrate team data so UI loads with 0ms delay ONLY if cached team is present
+              const cachedTeamRaw = localStorage.getItem(`haxlr8_team_${activeUser.id}`) ||
+                                    (cleanEmail ? localStorage.getItem(`haxlr8_team_${cleanEmail}`) : null);
+              if (cachedTeamRaw) {
+                const pt = JSON.parse(cachedTeamRaw);
+                if (pt && pt.id) {
+                  setHasTeam(true);
+                  setTeamData(pt);
+                  const cm = localStorage.getItem(`haxlr8_members_${activeUser.id}`) ||
+                             (cleanEmail ? localStorage.getItem(`haxlr8_members_${cleanEmail}`) : null);
+                  if (cm) setTeamMembers(JSON.parse(cm));
+                  const cs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`) ||
+                             (cleanEmail ? localStorage.getItem(`haxlr8_subs_${cleanEmail}`) : null);
+                  if (cs) setSubmissions(JSON.parse(cs));
+                  setLoading(false);
+                }
               }
-              setLoading(false);
+              // If no cached team exists on this device yet, keep loading = true until Supabase resolves
             }
           } catch (e) {}
         }
@@ -206,138 +213,122 @@ export default function DashboardPage() {
         localStorage.removeItem('haxlr8_submissions_db');
       } catch (e) {}
 
-      // 2. Fetch team strictly associated with activeUser
+      // 2. High-Performance Parallel Team Resolution (supports both Captains and Crewmates)
       let resolvedTeam = null;
       let resolvedMembers = [];
       let resolvedSubs = [];
 
+      const cleanEmail = (activeUser.email || activeUser.user_metadata?.email || '').trim().toLowerCase();
+      const userId = activeUser.id;
+
       try {
-        // A. Check if activeUser is the leader of a registered team in Supabase
-        let leadTeam = null;
-        try {
-          const { data: leadTeams } = await withTimeout(
+        // Step 1: Run parallel discovery with 12s timeout
+        // A: Check if activeUser is leader in `teams` table (by leader_id)
+        // B: Check if activeUser's email is in `team_members` table (catches both leaders and teammates!)
+        const leaderTeamPromise = userId
+          ? withTimeout(
+              supabase
+                .from('teams')
+                .select('*')
+                .eq('leader_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1),
+              12000
+            ).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] });
+
+        const memberTeamPromise = cleanEmail
+          ? withTimeout(
+              supabase
+                .from('team_members')
+                .select('team_id, is_leader, full_name, email')
+                .ilike('email', cleanEmail)
+                .order('created_at', { ascending: false })
+                .limit(1),
+              12000
+            ).catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] });
+
+        const [leaderRes, memberRes] = await Promise.all([
+          leaderTeamPromise,
+          memberTeamPromise
+        ]);
+
+        let targetTeamId = null;
+
+        if (leaderRes?.data && leaderRes.data.length > 0) {
+          resolvedTeam = leaderRes.data[0];
+          targetTeamId = resolvedTeam.id;
+        } else if (memberRes?.data && memberRes.data.length > 0 && memberRes.data[0]?.team_id) {
+          targetTeamId = memberRes.data[0].team_id;
+        }
+
+        // Secondary fallback: Check teams table by leader_email or contact_email
+        if (!targetTeamId && cleanEmail) {
+          try {
+            const { data: fallbackTeams } = await withTimeout(
+              supabase
+                .from('teams')
+                .select('*')
+                .or(`leader_email.ilike.${cleanEmail},contact_email.ilike.${cleanEmail}`)
+                .order('created_at', { ascending: false })
+                .limit(1),
+              10000
+            );
+            if (fallbackTeams && fallbackTeams.length > 0) {
+              resolvedTeam = fallbackTeams[0];
+              targetTeamId = resolvedTeam.id;
+            }
+          } catch (fbErr) {}
+        }
+
+        // Step 2: Once targetTeamId is identified, fetch full team record, roster members, and submissions in parallel
+        if (targetTeamId) {
+          const teamDataPromise = resolvedTeam
+            ? Promise.resolve({ data: resolvedTeam })
+            : withTimeout(
+                supabase.from('teams').select('*').eq('id', targetTeamId).single(),
+                12000
+              ).catch(() => ({ data: null }));
+
+          const membersPromise = withTimeout(
             supabase
-              .from('teams')
+              .from('team_members')
               .select('*')
-              .eq('leader_id', activeUser.id)
-              .order('created_at', { ascending: false })
-              .limit(1),
-            5000
-          );
-          if (leadTeams && leadTeams.length > 0) {
-            leadTeam = leadTeams[0];
+              .eq('team_id', targetTeamId)
+              .order('is_leader', { ascending: false }),
+            12000
+          ).catch(() => ({ data: [] }));
+
+          const subsPromise = withTimeout(
+            supabase
+              .from('submissions')
+              .select('*')
+              .eq('team_id', targetTeamId)
+              .order('created_at', { ascending: false }),
+            12000
+          ).catch(() => ({ data: [] }));
+
+          const [teamRes, memsRes, subsRes] = await Promise.all([
+            teamDataPromise,
+            membersPromise,
+            subsPromise
+          ]);
+
+          if (!resolvedTeam && teamRes?.data) {
+            resolvedTeam = teamRes.data;
           }
-        } catch (tErr) {
-          console.warn('Leader team fetch notice:', tErr);
-        }
-
-        // A2. Also check if activeUser email is listed as is_leader in team_members
-        if (!leadTeam && activeUser.email) {
-          try {
-            const { data: leadMems } = await withTimeout(
-              supabase
-                .from('team_members')
-                .select('team_id')
-                .ilike('email', activeUser.email.trim())
-                .eq('is_leader', true)
-                .order('created_at', { ascending: false })
-                .limit(1),
-              5000
-            );
-            if (leadMems?.[0]?.team_id) {
-              const { data: matchingTeams } = await withTimeout(
-                supabase.from('teams').select('*').eq('id', leadMems[0].team_id).limit(1),
-                5000
-              );
-              if (matchingTeams?.[0]) leadTeam = matchingTeams[0];
-            }
-          } catch (lmErr) {}
-        }
-
-        if (leadTeam) {
-          resolvedTeam = leadTeam;
-        } else if (activeUser.email) {
-          // B. Check if activeUser is registered as a crewmate in another team
-          try {
-            const { data: memberRecords } = await withTimeout(
-              supabase
-                .from('team_members')
-                .select('team_id')
-                .ilike('email', activeUser.email.trim())
-                .order('created_at', { ascending: false })
-                .limit(1),
-              5000
-            );
-
-            if (memberRecords?.[0]?.team_id) {
-              const { data: joinedTeams } = await withTimeout(
-                supabase
-                  .from('teams')
-                  .select('*')
-                  .eq('id', memberRecords[0].team_id)
-                  .limit(1),
-                5000
-              );
-              if (joinedTeams?.[0]) resolvedTeam = joinedTeams[0];
-            }
-          } catch (memErr) {}
+          if (memsRes?.data && memsRes.data.length > 0) {
+            resolvedMembers = memsRes.data;
+            setTeamMembers(memsRes.data);
+          }
+          if (subsRes?.data && subsRes.data.length > 0) {
+            resolvedSubs = subsRes.data;
+            setSubmissions(subsRes.data);
+          }
         }
 
         if (resolvedTeam) {
-          try {
-            const { data: members } = await withTimeout(
-              supabase
-                .from('team_members')
-                .select('*')
-                .eq('team_id', resolvedTeam.id)
-                .order('is_leader', { ascending: false }),
-              5000
-            );
-            if (members && members.length > 0) {
-              resolvedMembers = members;
-              setTeamMembers(members);
-            } else {
-              // Network fallback: load cached members if available
-              const cachedMemsRaw = localStorage.getItem(`haxlr8_members_${activeUser.id}`);
-              if (cachedMemsRaw) {
-                try {
-                  const parsedMems = JSON.parse(cachedMemsRaw);
-                  if (parsedMems && parsedMems.length > 0) {
-                    resolvedMembers = parsedMems;
-                    setTeamMembers(parsedMems);
-                  }
-                } catch (e) {}
-              }
-            }
-          } catch (mErr) {
-            console.warn('Team members fetch notice:', mErr);
-            const cachedMemsRaw = localStorage.getItem(`haxlr8_members_${activeUser.id}`);
-            if (cachedMemsRaw) {
-              try {
-                const parsedMems = JSON.parse(cachedMemsRaw);
-                if (parsedMems && parsedMems.length > 0) {
-                  resolvedMembers = parsedMems;
-                  setTeamMembers(parsedMems);
-                }
-              } catch (e) {}
-            }
-          }
-
-          try {
-            const { data: subs } = await withTimeout(
-              supabase
-                .from('submissions')
-                .select('*')
-                .eq('team_id', resolvedTeam.id)
-                .order('created_at', { ascending: false }),
-              5000
-            );
-            if (subs && subs.length > 0) {
-              resolvedSubs = subs;
-              setSubmissions(subs);
-            }
-          } catch (sErr) {}
-
           // Determine canonical domain
           const finalDomain = resolveDomain(resolvedTeam, resolvedSubs?.[0], activeUser);
           resolvedTeam.domain = finalDomain;
@@ -367,31 +358,38 @@ export default function DashboardPage() {
                 submitted_at: paidSub.updated_at || paidSub.created_at || new Date().toISOString()
               };
               localStorage.setItem(`haxlr8_payment_${activeUser.id}`, JSON.stringify(autoPaymentRecord));
+              if (cleanEmail) {
+                localStorage.setItem(`haxlr8_payment_${cleanEmail}`, JSON.stringify(autoPaymentRecord));
+              }
             } catch (e) {}
           }
 
           setHasTeam(true);
-          setTeamData({ ...resolvedTeam, domain: finalDomain, payment_status: paymentStatus, payment_utr: paymentUtr });
+          const fullTeamData = { ...resolvedTeam, domain: finalDomain, payment_status: paymentStatus, payment_utr: paymentUtr };
+          setTeamData(fullTeamData);
 
-          // Cache strictly scoped to this user (never overwrite with empty members)
+          // Cache strictly scoped to this user and email
           try {
-            localStorage.setItem(`haxlr8_team_${activeUser.id}`, JSON.stringify({ ...resolvedTeam, domain: finalDomain, payment_status: paymentStatus, payment_utr: paymentUtr }));
+            localStorage.setItem(`haxlr8_team_${activeUser.id}`, JSON.stringify(fullTeamData));
+            if (cleanEmail) localStorage.setItem(`haxlr8_team_${cleanEmail}`, JSON.stringify(fullTeamData));
             if (resolvedMembers && resolvedMembers.length > 0) {
               localStorage.setItem(`haxlr8_members_${activeUser.id}`, JSON.stringify(resolvedMembers));
+              if (cleanEmail) localStorage.setItem(`haxlr8_members_${cleanEmail}`, JSON.stringify(resolvedMembers));
             }
             if (resolvedSubs && resolvedSubs.length > 0) {
               localStorage.setItem(`haxlr8_subs_${activeUser.id}`, JSON.stringify(resolvedSubs));
+              if (cleanEmail) localStorage.setItem(`haxlr8_subs_${cleanEmail}`, JSON.stringify(resolvedSubs));
             }
           } catch (e) {}
         } else {
-          // C. User has NO team in Supabase!
-          // Only check user-scoped cache if it strictly belongs to THIS activeUser.id
+          // If Supabase returned no team, check if valid user-scoped cache exists
           let userScopedTeam = null;
           try {
-            const scopedRaw = localStorage.getItem(`haxlr8_team_${activeUser.id}`);
+            const scopedRaw = localStorage.getItem(`haxlr8_team_${activeUser.id}`) ||
+                              (cleanEmail ? localStorage.getItem(`haxlr8_team_${cleanEmail}`) : null);
             if (scopedRaw) {
               const parsed = JSON.parse(scopedRaw);
-              if (parsed && (parsed.leader_id === activeUser.id || parsed.leader_email === activeUser.email)) {
+              if (parsed && parsed.id) {
                 userScopedTeam = parsed;
               }
             }
@@ -403,9 +401,11 @@ export default function DashboardPage() {
             setHasTeam(true);
             setTeamData({ ...userScopedTeam, domain: finalDomain });
             try {
-              const scopedMems = localStorage.getItem(`haxlr8_members_${activeUser.id}`);
+              const scopedMems = localStorage.getItem(`haxlr8_members_${activeUser.id}`) ||
+                                 (cleanEmail ? localStorage.getItem(`haxlr8_members_${cleanEmail}`) : null);
               if (scopedMems) setTeamMembers(JSON.parse(scopedMems));
-              const scopedSubs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`);
+              const scopedSubs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`) ||
+                                 (cleanEmail ? localStorage.getItem(`haxlr8_subs_${cleanEmail}`) : null);
               if (scopedSubs) setSubmissions(JSON.parse(scopedSubs));
             } catch (e) {}
           } else {
@@ -418,13 +418,13 @@ export default function DashboardPage() {
         }
       } catch (teamErr) {
         console.warn('Teams fetch network notice:', teamErr);
-        // Only load if strictly scoped to activeUser
         let userScopedTeam = null;
         try {
-          const scopedRaw = localStorage.getItem(`haxlr8_team_${activeUser.id}`);
+          const scopedRaw = localStorage.getItem(`haxlr8_team_${activeUser.id}`) ||
+                            (cleanEmail ? localStorage.getItem(`haxlr8_team_${cleanEmail}`) : null);
           if (scopedRaw) {
             const parsed = JSON.parse(scopedRaw);
-            if (parsed && (parsed.leader_id === activeUser.id || parsed.leader_email === activeUser.email)) {
+            if (parsed && parsed.id) {
               userScopedTeam = parsed;
             }
           }
@@ -434,9 +434,11 @@ export default function DashboardPage() {
           setHasTeam(true);
           setTeamData(userScopedTeam);
           try {
-            const scopedMems = localStorage.getItem(`haxlr8_members_${activeUser.id}`);
+            const scopedMems = localStorage.getItem(`haxlr8_members_${activeUser.id}`) ||
+                               (cleanEmail ? localStorage.getItem(`haxlr8_members_${cleanEmail}`) : null);
             if (scopedMems) setTeamMembers(JSON.parse(scopedMems));
-            const scopedSubs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`);
+            const scopedSubs = localStorage.getItem(`haxlr8_subs_${activeUser.id}`) ||
+                               (cleanEmail ? localStorage.getItem(`haxlr8_subs_${cleanEmail}`) : null);
             if (scopedSubs) setSubmissions(JSON.parse(scopedSubs));
           } catch (e) {}
         } else {
@@ -635,7 +637,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} hasTeam={hasTeam} announcements={announcements} user={user} teamData={teamData} teamMembers={teamMembers}>
-      {activeTab === 'overview'   && <OverviewTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} announcements={announcements} />}
+      {activeTab === 'overview'   && <OverviewTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} announcements={announcements} onRefresh={() => fetchDashboardData(user, true)} />}
       {activeTab === 'team'       && <TeamTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setTeamMembers={setTeamMembers} setTeamData={setTeamData} setHasTeam={setHasTeam} setActiveTab={setActiveTab} />}
       {activeTab === 'payment'    && <PaymentTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} onPaymentUpdated={(p) => { if (teamData) setTeamData({ ...teamData, payment_status: 'submitted', payment_utr: p.transaction_id }); }} />}
       {activeTab === 'ticket'     && <TicketTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} />}
