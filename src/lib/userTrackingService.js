@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { resolveDomain } from './domainUtils';
 
 const REGISTRY_STORAGE_KEY = 'haxlr8_registered_accounts_registry';
 const REGISTRY_TAG = 'ACCOUNTS_REGISTRY';
@@ -203,16 +204,19 @@ export async function fetchRegisteredAccountsData() {
     }
   }
 
-  // 2. Fetch live teams and team_members from Supabase
+  // 2. Fetch live teams, team_members, and submissions from Supabase
   let teams = [];
   let teamMembers = [];
+  let submissions = [];
   try {
-    const [teamsRes, membersRes] = await Promise.all([
+    const [teamsRes, membersRes, subsRes] = await Promise.all([
       supabase.from('teams').select('id, leader_id, team_name, created_at'),
       supabase.from('team_members').select('*'),
+      supabase.from('submissions').select('id, team_id, category, sdg_goal, project_title'),
     ]);
     teams = teamsRes.data || [];
     teamMembers = membersRes.data || [];
+    submissions = subsRes.data || [];
   } catch (dbErr) {
     console.warn('Supabase database roster fetch notice:', dbErr);
   }
@@ -266,12 +270,16 @@ export async function fetchRegisteredAccountsData() {
     const hasTeam = Boolean(matchedTeam || memberRecord);
     const isLeader = Boolean(leaderTeam || memberRecord?.is_leader);
 
+    const subRecord = matchedTeam ? submissions.find(s => s.team_id === matchedTeam.id) : null;
+    const domain = matchedTeam ? resolveDomain(matchedTeam, subRecord, null, 'General Innovation') : '—';
+
     return {
       ...account,
       email: cleanEmail,
       hasTeam,
       teamId: matchedTeam?.id || memberRecord?.team_id || null,
       teamName: matchedTeam?.team_name || (hasTeam ? 'Squad Member' : null),
+      domain,
       isLeader,
       teamRole: !hasTeam
         ? 'No Team Details Yet'

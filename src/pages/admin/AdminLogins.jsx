@@ -107,6 +107,7 @@ export default function AdminLogins() {
         "Auth Provider": (a.provider || 'email').toUpperCase(),
         "Squad Status": a.hasTeam ? 'Team Formed' : 'Pending Team Setup',
         "Squad Name": a.teamName || '—',
+        "Domain": a.domain || '—',
         "Role in Squad": a.teamRole || '—',
         "Login Count": a.loginCount || 1,
         "Last Login": a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString('en-US') : '—',
@@ -124,6 +125,7 @@ export default function AdminLogins() {
         { wch: 14 }, // Auth Provider
         { wch: 20 }, // Squad Status
         { wch: 24 }, // Squad Name
+        { wch: 18 }, // Domain
         { wch: 18 }, // Role in Squad
         { wch: 14 }, // Login Count
         { wch: 24 }, // Last Login
@@ -500,6 +502,11 @@ export default function AdminLogins() {
                               {isLead && (
                                 <span style={{ fontSize: 10, fontWeight: 800, color: '#0369A1', background: '#E0F2FE', padding: '1px 6px', borderRadius: 4 }}>
                                   LEAD
+                                </span>
+                              )}
+                              {account.domain && account.domain !== '—' && (
+                                <span style={{ fontSize: 10, fontWeight: 800, color: '#047857', background: '#D1FAE5', padding: '1px 6px', borderRadius: 4, border: '1px solid #A7F3D0' }}>
+                                  {account.domain}
                                 </span>
                               )}
                             </div>

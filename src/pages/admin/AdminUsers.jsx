@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { isOrganizerAuthorized } from './adminAuth';
 import * as XLSX from 'xlsx';
+import { resolveDomain } from '../../lib/domainUtils';
 import { 
   Users, Flag, BookOpen, Shield, Search, ChevronDown, Download, ChevronRight, 
   Plus, ChevronLeft, Eye, CheckCircle, X, Clock, Trash2, CheckCircle2 
@@ -181,9 +182,19 @@ export default function AdminUsers() {
       const query = await buildQuery(false);
       const { data, count } = await query;
       if (data && data.length > 0) {
-        const teamIds = data.map(m => m.team_id);
-        const { data: teamsData } = await supabase.from('teams').select('id, team_name').in('id', teamIds);
-        setTeams(teamsData || []);
+        const teamIds = data.map(m => m.team_id).filter(Boolean);
+        const [{ data: teamsData }, { data: subsData }] = await Promise.all([
+          supabase.from('teams').select('id, team_name').in('id', teamIds),
+          supabase.from('submissions').select('id, team_id, category, sdg_goal, project_title').in('team_id', teamIds)
+        ]);
+        const enrichedTeams = (teamsData || []).map(t => {
+          const s = (subsData || []).find(sub => sub.team_id === t.id);
+          return {
+            ...t,
+            domain: resolveDomain(t, s, null, 'General Innovation')
+          };
+        });
+        setTeams(enrichedTeams);
         setMembers(data);
       } else {
         setMembers([]);
@@ -201,14 +212,16 @@ export default function AdminUsers() {
   const exportExcel = async () => {
     setExporting(true);
     try {
-      // 1. Fetch all teams and members
-      const [{ data: allTeams }, { data: allMembers }] = await Promise.all([
+      // 1. Fetch all teams, members, and submissions
+      const [{ data: allTeams }, { data: allMembers }, { data: allSubs }] = await Promise.all([
         supabase.from('teams').select('id, team_name, created_at').order('created_at', { ascending: true }),
-        supabase.from('team_members').select('*').order('created_at', { ascending: true })
+        supabase.from('team_members').select('*').order('created_at', { ascending: true }),
+        supabase.from('submissions').select('*')
       ]);
 
       const teamsList = allTeams || [];
       const membersList = allMembers || [];
+      const subsList = allSubs || [];
 
       if (teamsList.length === 0 && membersList.length === 0) {
         alert('No participant records found to export.');
@@ -216,11 +229,12 @@ export default function AdminUsers() {
         return;
       }
 
-      // 2. Build rows: Sl No, Team Name, Team Members (with (Team Lead) in bracket), Phone Number, College Name, Signature
-      // 2. Build rows: Sl No, Team Name, Team Members, College of Each Member, Phone Numbers, Signature
+      // 2. Build rows: Sl No, Team Name, Domain, Team Members (with (Team Lead) in bracket), Phone Number, College Name, Signature
       const excelRows = teamsList.map((t, idx) => {
         const teamMems = membersList.filter(m => m.team_id === t.id);
         const lead = teamMems.find(m => m.is_leader === true) || teamMems[0];
+        const sub = subsList.find(s => s.team_id === t.id);
+        const domain = resolveDomain(t, sub, null, 'General Innovation');
         
         // Format team members string with lead indicated in brackets
         const formattedMembers = teamMems.map(m => {
@@ -255,6 +269,7 @@ export default function AdminUsers() {
         return {
           "Sl No": idx + 1,
           "Team Name": t.team_name || '—',
+          "Domain": domain,
           "Team Members": formattedMembers || (lead?.full_name ? `${lead.full_name} (Team Lead)` : '—'),
           "USN / Seat No": usnsOfEachMember || (lead?.reg_no || '—'),
           "College of Each Member": collegesOfEachMember || leadCollege,
@@ -271,6 +286,7 @@ export default function AdminUsers() {
       wsTeams['!cols'] = [
         { wch: 8 },  // Sl No
         { wch: 28 }, // Team Name
+        { wch: 20 }, // Domain
         { wch: 55 }, // Team Members (with (Team Lead) in bracket)
         { wch: 50 }, // USN / Seat No
         { wch: 75 }, // College of Each Member
@@ -282,6 +298,8 @@ export default function AdminUsers() {
       // Sheet 2: Individual Participants Roster
       const individualRows = membersList.map((m, idx) => {
         const t = teamsList.find(team => team.id === m.team_id);
+        const sub = subsList.find(s => s.team_id === m.team_id);
+        const domain = resolveDomain(t, sub, null, 'General Innovation');
         const isLeader = m.is_leader === true;
         return {
           "Sl No": idx + 1,
@@ -289,6 +307,7 @@ export default function AdminUsers() {
           "Role": isLeader ? "Team Lead" : "Member",
           "USN / Seat No": m.reg_no || '—',
           "Team Name": t?.team_name || "—",
+          "Domain": domain,
           "Phone Number": m.phone_number || "—",
           "Email": m.email || "—",
           "College Name": m.college_name || "—",
@@ -304,6 +323,7 @@ export default function AdminUsers() {
         { wch: 14 }, // Role
         { wch: 20 }, // USN / Seat No
         { wch: 24 }, // Team Name
+        { wch: 20 }, // Domain
         { wch: 18 }, // Phone Number
         { wch: 30 }, // Email
         { wch: 36 }, // College Name
@@ -462,7 +482,7 @@ export default function AdminUsers() {
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13, tableLayout:'auto' }}>
                   <thead>
                     <tr style={{ background:'#FAFAFA', borderBottom:'1px solid '+S.border }}>
-                      {['S.No', 'User', 'Role', 'Team', 'Email', 'College', 'Location', 'Year', 'ID Card', 'Verified By', 'Registered On', 'Actions'].map(h => (
+                      {['S.No', 'User', 'Role', 'Team', 'Domain', 'Email', 'College', 'Location', 'Year', 'ID Card', 'Verified By', 'Registered On', 'Actions'].map(h => (
                         <th key={h} style={{ padding:'14px 16px', fontWeight:600, color:S.t2, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -512,6 +532,20 @@ export default function AdminUsers() {
                               </div>
                               {t ? t.team_name : '-'}
                             </div>
+                          </td>
+                          <td style={{ padding:'14px 16px' }}>
+                            <span style={{ 
+                              padding:'4px 10px', 
+                              borderRadius:20, 
+                              fontSize:11, 
+                              fontWeight:800, 
+                              background:'#E0F2FE', 
+                              color:'#0369A1', 
+                              border:'1px solid #BAE6FD',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {t?.domain || '—'}
+                            </span>
                           </td>
                           <td style={{ padding:'14px 16px', color:S.t2, fontSize:12 }}>{m.email || 'N/A'}</td>
                           <td style={{ padding:'14px 16px', color:S.t2, fontSize:12 }}>{m.college_name || '-'}</td>

@@ -148,10 +148,12 @@ export default function AdminDashboard() {
 
   // eslint-disable-next-line no-unused-vars
   const exportCSV = () => {
-    let csv = "data:text/csv;charset=utf-8,Team,Status,Score,Name,Email,Phone,College,Dept,Year\n";
+    let csv = "data:text/csv;charset=utf-8,Team,Domain,Status,Score,Name,Email,Phone,College,Dept,Year\n";
     teams.forEach(t => {
+      const sub = submissions.find(s => s.team_id === t.id);
+      const domain = resolveDomain(t, sub, null, 'General Innovation');
       members.filter(m => m.team_id === t.id).forEach(m => {
-        csv += ['"'+t.team_name+'"',t.status||'Pending',t.score||0,'"'+m.full_name+'"',m.email,m.phone_number,'"'+m.college_name+'"','"'+m.dept+'"',m.year].join(",") + "\n";
+        csv += ['"'+t.team_name+'"','"'+domain+'"',t.status||'Pending',t.score||0,'"'+m.full_name+'"',m.email,m.phone_number,'"'+m.college_name+'"','"'+m.dept+'"',m.year].join(",") + "\n";
       });
     });
     const a = document.createElement("a");

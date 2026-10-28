@@ -129,7 +129,7 @@ export default function AdminJury() {
 
   const exportExcel = () => {
     const headers = [
-      "Sl No", "Team Name", "Team Lead", "Team Members", "Members Count",
+      "Sl No", "Team Name", "Domain", "Team Lead", "Team Members", "Members Count",
       "Payment Transaction ID", "Phone", "Date and Time of Registration"
     ];
 
@@ -141,6 +141,7 @@ export default function AdminJury() {
       return [
         i + 1,
         row.teamName,
+        row.domain || 'General',
         row.tlName,
         memberNames || row.tlName,
         row.crewCount,
@@ -153,6 +154,17 @@ export default function AdminJury() {
     excelData.unshift(headers);
 
     const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    worksheet['!cols'] = [
+      { wch: 8 },  // Sl No
+      { wch: 28 }, // Team Name
+      { wch: 20 }, // Domain
+      { wch: 24 }, // Team Lead
+      { wch: 50 }, // Team Members
+      { wch: 14 }, // Members Count
+      { wch: 24 }, // Payment Transaction ID
+      { wch: 16 }, // Phone
+      { wch: 22 }, // Date and Time
+    ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Teams Roster");
 

@@ -335,10 +335,12 @@ export default function AdminTeams() {
         const leadCollege = lead?.college_name || teamMems.find(mem => mem.college_name)?.college_name || 'N/A';
         const leadPhone = lead?.phone_number || lead?.phone || 'N/A';
         const paymentStatus = hasReceipt ? 'Payment Done (Proof Submitted)' : 'Not Submitted (Pending)';
+        const domain = resolveDomain(t, sub, null, 'General Innovation');
 
         return {
           "Sl No": i + 1,
           "Team Name": t.team_name || 'N/A',
+          "Domain": domain,
           "Team Members": memberNames || (lead?.full_name ? `${lead.full_name} (Team Lead)` : 'N/A'),
           "USN / Seat No": usnsOfEachMember || (lead?.reg_no || 'N/A'),
           "College of Each Member": collegesOfEachMember || leadCollege,
@@ -356,12 +358,14 @@ export default function AdminTeams() {
         const lead = teamMems.find(mem => mem.is_leader === true) || teamMems[0];
         const sub = allSubs.find(subItem => subItem.team_id === t.id);
         const hasReceipt = Boolean(sub?.pdf_url && typeof sub.pdf_url === 'string' && sub.pdf_url.trim().length > 10);
+        const domain = resolveDomain(t, sub, null, 'General Innovation');
 
         teamMems.forEach(mem => {
           const isLead = mem.is_leader === true || mem.id === lead?.id;
           individualRows.push({
             "Sl No": indIndex++,
             "Team Name": t.team_name || 'N/A',
+            "Domain": domain,
             "Participant Name": mem.full_name || 'N/A',
             "Role": isLead ? "Team Lead" : "Crew Member",
             "USN / Seat No": mem.reg_no || 'N/A',
@@ -381,6 +385,7 @@ export default function AdminTeams() {
       wsTeams['!cols'] = [
         { wch: 8 },   // Sl No
         { wch: 28 },  // Team Name
+        { wch: 20 },  // Domain
         { wch: 55 },  // Team Members
         { wch: 50 },  // USN / Seat No
         { wch: 75 },  // College of Each Member
@@ -396,6 +401,7 @@ export default function AdminTeams() {
         wsIndividuals['!cols'] = [
           { wch: 8 },   // Sl No
           { wch: 28 },  // Team Name
+          { wch: 20 },  // Domain
           { wch: 26 },  // Participant Name
           { wch: 14 },  // Role
           { wch: 20 },  // USN / Seat No
