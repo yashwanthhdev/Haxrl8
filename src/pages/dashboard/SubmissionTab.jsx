@@ -393,10 +393,38 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                     }}>
                       {SDG_OPTIONS.map(opt => {
                         const isChecked = Array.isArray(form.sdg) ? form.sdg.includes(opt) : (form.sdg || '').includes(opt);
+                        const isExistingHealthcare = (hasTeam || Boolean(teamData)) && (
+                          teamData?.domain === 'Healthcare' || 
+                          submissions?.[0]?.category === 'Healthcare' || 
+                          submissions?.[0]?.sdg_goal?.includes('Healthcare')
+                        );
+                        const isHealthcareFull = opt === 'Healthcare' && !isChecked && !isExistingHealthcare;
                         return (
-                          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13.5px', color: '#0f172a', padding: '6px 8px', borderRadius: 8, background: isChecked ? '#e0f2fe' : 'transparent' }}>
-                            <input type="checkbox" checked={isChecked} onChange={() => handleSdgToggle(opt)} style={{ cursor: 'pointer', accentColor: '#0284c7' }} />
-                            {opt}
+                          <label key={opt} style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            cursor: isHealthcareFull ? 'not-allowed' : 'pointer', 
+                            fontSize: '13.5px', 
+                            color: isHealthcareFull ? '#94a3b8' : '#0f172a', 
+                            padding: '6px 8px', 
+                            borderRadius: 8, 
+                            background: isChecked ? '#e0f2fe' : 'transparent',
+                            opacity: isHealthcareFull ? 0.6 : 1
+                          }}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked} 
+                              disabled={isHealthcareFull}
+                              onChange={() => {
+                                if (isHealthcareFull) return;
+                                handleSdgToggle(opt);
+                              }} 
+                              style={{ cursor: isHealthcareFull ? 'not-allowed' : 'pointer', accentColor: '#0284c7' }} 
+                            />
+                            <span>
+                              {opt} {isHealthcareFull && <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>(Slots are full)</span>}
+                            </span>
                           </label>
                         );
                       })}

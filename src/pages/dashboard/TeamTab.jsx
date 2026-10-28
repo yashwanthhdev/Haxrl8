@@ -167,7 +167,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   const [formData, setFormData] = useState({
     teamName: '',
     teamSize: 3,
-    domain: resolveDomain(teamData, null, user, 'Healthcare'),
+    domain: (hasTeam && teamData) ? resolveDomain(teamData, null, user, 'Agriculture') : 'Agriculture',
     leader: {
       ...defaultMember,
       full_name: user?.user_metadata?.full_name || '',
@@ -175,6 +175,8 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     },
     teammates: [{ ...defaultMember }, { ...defaultMember }] // Initialized for teamSize 3 (2 teammates)
   });
+
+  const isExistingHealthcare = (hasTeam || Boolean(teamData)) && resolveDomain(teamData, submissions?.[0], user, '') === 'Healthcare';
 
   const [creating, setCreating] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -321,6 +323,9 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     setErrorMsg('');
     if (currentStep === 0) {
       if (!formData.domain) return "Please select a challenge domain.";
+      if (formData.domain === 'Healthcare' && !isExistingHealthcare) {
+        return "Healthcare domain slots are completely full. Please choose Agriculture or Smart City.";
+      }
       if (!formData.teamName.trim()) return "Team Name is required.";
       if (!/^[a-zA-Z0-9 ]+$/.test(formData.teamName)) return "Team Name can only contain letters, numbers, and spaces.";
       return true;
@@ -845,30 +850,55 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                     { id: 'Smart City', icon: '🏙️', title: 'Smart City' }
                   ].map(domOpt => {
                     const isSelected = formData.domain === domOpt.id;
+                    const isHealthcareFull = domOpt.id === 'Healthcare' && !isExistingHealthcare;
                     return (
                       <div
                         key={domOpt.id}
-                        onClick={() => setFormData({ ...formData, domain: domOpt.id })}
+                        onClick={() => {
+                          if (isHealthcareFull) {
+                            setErrorMsg('Healthcare domain slots are completely full. Please choose Agriculture or Smart City.');
+                            return;
+                          }
+                          setErrorMsg('');
+                          setFormData({ ...formData, domain: domOpt.id });
+                        }}
                         style={{
-                          border: isSelected ? '2.5px solid #0284c7' : '1.5px solid #cbd5e1',
-                          background: isSelected ? '#f0f9ff' : '#ffffff',
+                          border: isHealthcareFull
+                            ? '1.5px dashed #fca5a5'
+                            : (isSelected ? '2.5px solid #0284c7' : '1.5px solid #cbd5e1'),
+                          background: isHealthcareFull
+                            ? '#fef2f2'
+                            : (isSelected ? '#f0f9ff' : '#ffffff'),
                           borderRadius: 14,
                           padding: '16px 14px',
-                          cursor: 'pointer',
+                          cursor: isHealthcareFull ? 'not-allowed' : 'pointer',
+                          opacity: isHealthcareFull ? 0.72 : 1,
                           transition: 'all 0.2s',
-                          boxShadow: isSelected ? '0 4px 14px rgba(2, 132, 199, 0.18)' : 'none',
+                          boxShadow: isSelected && !isHealthcareFull ? '0 4px 14px rgba(2, 132, 199, 0.18)' : 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
+                          position: 'relative',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 26 }}>{domOpt.icon}</span>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: isSelected ? '#0369a1' : '#0f172a' }}>
-                            {domOpt.title}
+                          <span style={{ fontSize: 26, filter: isHealthcareFull ? 'grayscale(0.4)' : 'none' }}>{domOpt.icon}</span>
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 900, color: isHealthcareFull ? '#991b1b' : (isSelected ? '#0369a1' : '#0f172a') }}>
+                              {domOpt.title}
+                            </div>
+                            {isHealthcareFull && (
+                              <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2 }}>
+                                Slots are full (Closed)
+                              </div>
+                            )}
                           </div>
                         </div>
-                        {isSelected && (
+                        {isHealthcareFull ? (
+                          <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fee2e2', padding: '4px 8px', borderRadius: 10, border: '1px solid #fecaca', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                            SLOTS FULL
+                          </span>
+                        ) : isSelected && (
                           <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: 10, border: '1px solid #bae6fd' }}>
                             SELECTED ✓
                           </span>

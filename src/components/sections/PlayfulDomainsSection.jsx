@@ -22,6 +22,7 @@ const DOMAINS = [
     border: '#fecdd3',
     textCol: '#e11d48',
     icon: HeartPulse,
+    slotsFull: true,
   },
   {
     id: 'smart-city',
@@ -146,8 +147,31 @@ export default function PlayfulDomainsSection() {
                   transition: 'all 0.25s ease',
                   minHeight: '260px',
                   justifyContent: 'space-between',
+                  position: 'relative',
                 }}
               >
+                {/* Slots Full Badge */}
+                {domain.slotsFull && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '14px',
+                      right: '14px',
+                      background: '#fee2e2',
+                      color: '#b91c1c',
+                      border: '1px solid #fecaca',
+                      padding: '3px 8px',
+                      borderRadius: '10px',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Slots Full
+                  </div>
+                )}
+
                 {/* Domain Icon */}
                 <div
                   style={{
@@ -347,6 +371,27 @@ export default function PlayfulDomainsSection() {
               <p style={{ margin: '0 0 24px 0', fontSize: '14.5px', color: '#475569', fontWeight: 500, lineHeight: 1.6 }}>
                 {selectedDomain.desc}
               </p>
+
+              {/* Slots Full Notice */}
+              {selectedDomain.slotsFull && (
+                <div
+                  style={{
+                    background: '#fef2f2',
+                    border: '1.5px solid #fecaca',
+                    borderRadius: '16px',
+                    padding: '14px 18px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>⚠️</span>
+                  <div style={{ fontSize: '13px', color: '#991b1b', lineHeight: 1.5 }}>
+                    <strong>Healthcare Domain Slots are Full:</strong> Registration capacity for the Healthcare track has been reached. Newly registering squads must select either <strong>Agriculture</strong> or <strong>Smart City</strong>.
+                  </div>
+                </div>
+              )}
 
               {/* Core or Software Freedom Highlight */}
               <div
