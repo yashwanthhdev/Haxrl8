@@ -398,7 +398,7 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                           submissions?.[0]?.category === opt || 
                           submissions?.[0]?.sdg_goal?.includes(opt)
                         );
-                        const isOptFull = (opt === 'Healthcare' || opt === 'Smart City') && !isChecked && !isExistingDomain;
+                        const isOptFull = opt === 'Healthcare' && !isChecked && !isExistingDomain;
                         return (
                           <label key={opt} style={{ 
                             display: 'flex', 
@@ -424,6 +424,7 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                             />
                             <span>
                               {opt} {isOptFull && <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>(Slots are full)</span>}
+                              {opt === 'Smart City' && !isOptFull && <span style={{ fontSize: '11px', color: '#b45309', fontWeight: 800 }}>(1 slot left 🔥)</span>}
                             </span>
                           </label>
                         );

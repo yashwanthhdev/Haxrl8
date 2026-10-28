@@ -180,9 +180,33 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
   const isExistingHealthcare = existingDomain === 'Healthcare';
   const isExistingSmartCity = existingDomain === 'Smart City' || existingDomain === 'SmartCity';
 
+  // Smart City is open for exactly 1 new team (Max capacity = 19 teams)
+  const [smartCityCount, setSmartCityCount] = useState(18);
+
+  useEffect(() => {
+    async function checkSmartCityCapacity() {
+      try {
+        const { count, error } = await supabase
+          .from('submissions')
+          .select('*', { count: 'exact', head: true })
+          .or('category.eq.Smart City,sdg_goal.ilike.%Smart City%');
+        if (!error && typeof count === 'number') {
+          setSmartCityCount(count);
+        }
+      } catch (e) {}
+    }
+    checkSmartCityCapacity();
+  }, []);
+
+  const SMART_CITY_MAX_CAPACITY = 19;
+  const isSmartCityCapped = smartCityCount >= SMART_CITY_MAX_CAPACITY;
+
   const isDomainFull = (domId) => {
     if (domId === 'Healthcare') return !isExistingHealthcare;
-    if (domId === 'Smart City' || domId === 'SmartCity') return !isExistingSmartCity;
+    if (domId === 'Smart City' || domId === 'SmartCity') {
+      if (isExistingSmartCity) return false;
+      return isSmartCityCapped;
+    }
     return false;
   };
 
@@ -332,10 +356,10 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
     if (currentStep === 0) {
       if (!formData.domain) return "Please select a challenge domain.";
       if (formData.domain === 'Healthcare' && !isExistingHealthcare) {
-        return "Healthcare domain slots are completely full. Only Agriculture slots are currently open.";
+        return "Healthcare domain slots are completely full. Please choose Agriculture or Smart City.";
       }
-      if ((formData.domain === 'Smart City' || formData.domain === 'SmartCity') && !isExistingSmartCity) {
-        return "Smart City domain slots are completely full. Only Agriculture slots are currently open.";
+      if ((formData.domain === 'Smart City' || formData.domain === 'SmartCity') && !isExistingSmartCity && isSmartCityCapped) {
+        return "Smart City capacity has just been reached. Please choose Agriculture.";
       }
       if (!formData.teamName.trim()) return "Team Name is required.";
       if (!/^[a-zA-Z0-9 ]+$/.test(formData.teamName)) return "Team Name can only contain letters, numbers, and spaces.";
@@ -867,7 +891,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                         key={domOpt.id}
                         onClick={() => {
                           if (isFull) {
-                            setErrorMsg(`${domOpt.title} domain slots are completely full. Only Agriculture slots are currently open.`);
+                            setErrorMsg(`${domOpt.title} domain slots are completely full. Only Agriculture is currently open.`);
                             return;
                           }
                           setErrorMsg('');
@@ -898,22 +922,30 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                             <div style={{ fontSize: 16, fontWeight: 900, color: isFull ? '#991b1b' : (isSelected ? '#0369a1' : '#0f172a') }}>
                               {domOpt.title}
                             </div>
-                            {isFull && (
+                            {isFull ? (
                               <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2 }}>
                                 Slots are full (Closed)
                               </div>
-                            )}
+                            ) : domOpt.id === 'Smart City' ? (
+                              <div style={{ fontSize: 11, fontWeight: 800, color: '#b45309', marginTop: 2 }}>
+                                1 slot left for final squad 🔥
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                         {isFull ? (
                           <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', background: '#fee2e2', padding: '4px 8px', borderRadius: 10, border: '1px solid #fecaca', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                             SLOTS FULL
                           </span>
-                        ) : isSelected && (
+                        ) : isSelected ? (
                           <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: 10, border: '1px solid #bae6fd' }}>
                             SELECTED ✓
                           </span>
-                        )}
+                        ) : domOpt.id === 'Smart City' ? (
+                          <span style={{ fontSize: 10, fontWeight: 900, color: '#b45309', background: '#fffbeb', padding: '4px 8px', borderRadius: 10, border: '1px solid #fde68a', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                            1 SLOT LEFT 🔥
+                          </span>
+                        ) : null}
                       </div>
                     );
                   })}

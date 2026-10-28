@@ -8,11 +8,15 @@ import AmongUsCrewmate from '../components/amongus/AmongUsCrewmate';
 import { playCrewmatePopSound, playEmergencyMeetingSound, playTaskCompleteSound } from '../components/amongus/AmongUsSound';
 import { 
   Mail, Lock, Eye, EyeOff, User, ArrowLeft, Trophy, Zap, 
-  Users, CheckCircle2, AlertTriangle, ShieldCheck, Sparkles, HelpCircle
+  Users, CheckCircle2, AlertTriangle, ShieldCheck, Sparkles, HelpCircle,
+  Wrench, RefreshCw, Clock
 } from 'lucide-react';
 import haxlr8LogoDark from '../assets/logo/haxlr8-logo-dark.png';
 import { sendAccountWelcomeEmail, sendLoginNotificationEmail } from '../lib/emailService';
 import { recordUserActivity } from '../lib/userTrackingService';
+
+// Flight Repair Mode: Toggle to suspend logins/registrations if needed
+export const FLIGHT_REPAIR_MODE = false;
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -42,6 +46,7 @@ export default function AuthPage() {
   // Check if session already exists or returning from OAuth
   useEffect(() => {
     const checkSession = async () => {
+      if (FLIGHT_REPAIR_MODE) return;
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user) {
         try {
@@ -68,6 +73,11 @@ export default function AuthPage() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
+    if (FLIGHT_REPAIR_MODE) {
+      setErrorMsg('Flight repairs are currently in progress. Registrations and logins are temporarily suspended.');
+      setLoading(false);
+      return;
+    }
     setErrorMsg('');
     setSuccessMsg('');
     setLoading(true);
@@ -182,6 +192,10 @@ export default function AuthPage() {
 
   // Native Google SSO: Direct Redirect to Google Accounts
   const handleGoogleAuth = async () => {
+    if (FLIGHT_REPAIR_MODE) {
+      setErrorMsg('Flight repairs are currently in progress. Registrations and logins are temporarily suspended.');
+      return;
+    }
     playCrewmatePopSound();
     setErrorMsg('');
     setGoogleLoading(true);
