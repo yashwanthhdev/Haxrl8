@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import { sanitizeInput } from '../../lib/security';
-import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2, X, Edit2 } from 'lucide-react';
+import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2, X, Edit2, UserPlus } from 'lucide-react';
 import { sendParticipantWelcomeEmail } from '../../lib/emailService';
 import { ensureUUID, isUUID } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
@@ -288,6 +288,203 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
       setUsnModalError('Failed to save USN: ' + (err.message || err));
     } finally {
       setSavingUsn(false);
+    }
+  };
+
+  // --- SPECIAL AUTHORIZATION: Squad CodeX (Leader bvravi413@gmail.com) 4th Teammate Slot ---
+  const isCodeXTeam = Boolean(
+    teamData?.id === '6f23860c-c3cf-499f-86ea-eef9e80b07df' ||
+    teamData?.team_name?.trim()?.toLowerCase() === 'codex' ||
+    (user?.email && user.email.toLowerCase().trim() === 'bvravi413@gmail.com') ||
+    (teamMembers || []).some(m => m.is_leader && m.email?.toLowerCase().trim() === 'bvravi413@gmail.com')
+  );
+
+  // Strictly allowed ONLY when CodeX has exactly 3 members (after adding 4th, it automatically locks)
+  const canAddTeammate = isCodeXTeam && (teamMembers || []).length === 3;
+
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [savingNewMember, setSavingNewMember] = useState(false);
+  const [addMemberError, setAddMemberError] = useState('');
+  const [newMemberForm, setNewMemberForm] = useState({
+    full_name: '',
+    email: '',
+    phone_number: '',
+    college_name: 'Alvas institute of engineering and technology',
+    reg_no: '',
+    dept: 'Data Science',
+    dept_other: '',
+    year: '2 Year',
+    state: 'Karnataka',
+    city: 'Mangaluru',
+    city_other: '',
+    id_card_front_file: null,
+    id_card_back_file: null,
+    id_card_front_preview: '',
+    id_card_back_preview: ''
+  });
+
+  const uploadMemberIdFile = async (file, memberName, side) => {
+    if (!file) return null;
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Only image files are allowed for ID cards.');
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      throw new Error('ID card image size must be under 3MB.');
+    }
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const safeName = memberName ? memberName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : 'member';
+    const path = `uploads/${timestamp}_${randomStr}_${safeName}_${side}.${file.name.split('.').pop()}`;
+
+    try {
+      const { error } = await supabase.storage.from('id-cards').upload(path, file, { cacheControl: '3600', upsert: false });
+      if (!error) {
+        const { data } = supabase.storage.from('id-cards').getPublicUrl(path);
+        if (data?.publicUrl) return data.publicUrl;
+      }
+    } catch (e) {
+      console.warn('Storage upload fallback:', e);
+    }
+    return URL.createObjectURL(file);
+  };
+
+  const handleAddFourthMember = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!canAddTeammate) return;
+    setAddMemberError('');
+
+    const name = sanitizeInput((newMemberForm.full_name || '').trim());
+    const cleanEmail = sanitizeInput((newMemberForm.email || '').trim().toLowerCase());
+    const phone = sanitizeInput((newMemberForm.phone_number || '').trim().replace(/\D/g, ''));
+    const college = sanitizeInput((newMemberForm.college_name || '').trim());
+    const usn = sanitizeInput((newMemberForm.reg_no || '').trim().toUpperCase());
+    const dept = sanitizeInput(newMemberForm.dept === 'Other' ? (newMemberForm.dept_other || 'Other') : (newMemberForm.dept || 'Data Science'));
+    const year = sanitizeInput(newMemberForm.year || '2 Year');
+    const state = sanitizeInput(newMemberForm.state || 'Karnataka');
+    const city = sanitizeInput(newMemberForm.city === 'Other' ? (newMemberForm.city_other || 'Other') : (newMemberForm.city || 'Mangaluru'));
+
+    if (!name) {
+      setAddMemberError('Please enter full name of the teammate.');
+      return;
+    }
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setAddMemberError('Please enter a valid email address.');
+      return;
+    }
+    if (!phone || phone.length !== 10) {
+      setAddMemberError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!college) {
+      setAddMemberError('Please enter the college name.');
+      return;
+    }
+    if (!usn) {
+      setAddMemberError('Please enter college USN or university seat number (e.g. 4AL25CD033).');
+      return;
+    }
+    if (isLikelyPhone(usn)) {
+      setAddMemberError('Please enter your college USN (e.g. 4AL25CD033), not a phone number.');
+      return;
+    }
+
+    if ((teamMembers || []).some(m => m.email?.toLowerCase().trim() === cleanEmail)) {
+      setAddMemberError('This email is already part of your squad roster.');
+      return;
+    }
+
+    setSavingNewMember(true);
+    try {
+      // 1. Verify email uniqueness across all hackathon squads
+      const { data: existingMembers } = await supabase
+        .from('team_members')
+        .select('id, team_id')
+        .ilike('email', cleanEmail)
+        .limit(1);
+
+      if (existingMembers && existingMembers.length > 0) {
+        setAddMemberError('This email address is already registered with another squad.');
+        setSavingNewMember(false);
+        return;
+      }
+
+      // 2. Upload ID Cards if selected
+      let frontUrl = '';
+      let backUrl = '';
+      if (newMemberForm.id_card_front_file) {
+        try {
+          frontUrl = await uploadMemberIdFile(newMemberForm.id_card_front_file, name, 'front');
+        } catch (e) {
+          console.warn('ID front upload notice:', e);
+        }
+      }
+      if (newMemberForm.id_card_back_file) {
+        try {
+          backUrl = await uploadMemberIdFile(newMemberForm.id_card_back_file, name, 'back');
+        } catch (e) {
+          console.warn('ID back upload notice:', e);
+        }
+      }
+
+      // 3. Insert new 4th crewmate into Supabase
+      const newMemberPayload = {
+        team_id: teamData.id,
+        full_name: name,
+        email: cleanEmail,
+        phone_number: phone,
+        location: `${city}, ${state}`,
+        college_name: college,
+        reg_no: usn,
+        dept: dept,
+        year: year,
+        id_card_front_url: frontUrl || '',
+        id_card_back_url: backUrl || '',
+        is_leader: false,
+        id_card_verified: false
+      };
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from('team_members')
+        .insert(newMemberPayload)
+        .select()
+        .single();
+
+      if (insertErr) {
+        throw new Error(insertErr.message || 'Failed to save member in database.');
+      }
+
+      const freshMember = inserted || { ...newMemberPayload, id: ensureUUID() };
+      const updatedMembers = [...(teamMembers || []), freshMember];
+
+      setTeamMembers(updatedMembers);
+
+      // Cache across sessions
+      try {
+        if (user?.id) localStorage.setItem(`haxlr8_members_${user.id}`, JSON.stringify(updatedMembers));
+        localStorage.setItem(`haxlr8_members_bvravi413@gmail.com`, JSON.stringify(updatedMembers));
+        localStorage.setItem(`haxlr8_members_${cleanEmail}`, JSON.stringify(updatedMembers));
+        localStorage.setItem(`haxlr8_team_${cleanEmail}`, JSON.stringify(teamData));
+      } catch (e) {}
+
+      // Dispatch welcome email
+      try {
+        const leadName = (teamMembers || []).find(m => m.is_leader)?.full_name || user?.user_metadata?.full_name || 'Ravi.B.V';
+        sendParticipantWelcomeEmail({
+          recipientEmail: cleanEmail,
+          memberName: name,
+          teamName: teamData.team_name,
+          leaderName: leadName
+        }).catch(() => {});
+      } catch (e) {}
+
+      setToastMsg('4th teammate successfully added to squad CodeX! Manifest is now complete (4/4).');
+      setShowAddMemberModal(false);
+      setTimeout(() => setToastMsg(''), 6000);
+    } catch (err) {
+      console.error('Error adding 4th member:', err);
+      setAddMemberError(err.message || 'Unable to add teammate. Please check credentials and try again.');
+    } finally {
+      setSavingNewMember(false);
     }
   };
 
@@ -1253,26 +1450,56 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
               <h3 style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', margin: 0 }}>Crew Roster ({teamMembers.length})</h3>
               <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Official college USN & credentials</div>
             </div>
-            <button
-              onClick={() => openUsnModal()}
-              style={{
-                padding: '7px 14px',
-                borderRadius: 10,
-                background: '#e0f2fe',
-                border: '1.5px solid #7dd3fc',
-                color: '#0284c7',
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                transition: 'all 0.15s ease'
-              }}
-              title="Edit college USN / seat numbers for team members"
-            >
-              <Edit2 size={13} /> Edit USN / Seat No
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {canAddTeammate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMemberError('');
+                    setShowAddMemberModal(true);
+                  }}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 10,
+                    background: '#0284c7',
+                    border: '1.5px solid #0284c7',
+                    color: '#ffffff',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Squad CodeX authorized slot: Add 4th teammate"
+                >
+                  <UserPlus size={13} /> Add 4th Teammate
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => openUsnModal()}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 10,
+                  background: '#e0f2fe',
+                  border: '1.5px solid #7dd3fc',
+                  color: '#0284c7',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.15s ease'
+                }}
+                title="Edit college USN / seat numbers for team members"
+              >
+                <Edit2 size={13} /> Edit USN / Seat No
+              </button>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -1354,6 +1581,73 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                 </div>
               );
             })}
+
+            {/* 4th Teammate Slot Card (Exclusively for Squad CodeX) */}
+            {canAddTeammate && (
+              <div style={{
+                marginTop: 14,
+                padding: '16px 18px',
+                border: '2px dashed #0284c7',
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    border: '2px solid #7dd3fc',
+                    color: '#0284c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: 20,
+                    flexShrink: 0
+                  }}>
+                    +
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 900, color: '#0369a1' }}>
+                      4th Teammate Slot Open (Squad: CodeX)
+                    </div>
+                    <div style={{ fontSize: 12, color: '#0284c7', fontWeight: 600, marginTop: 2 }}>
+                      Your squad currently has 3 members. Add your 4th crewmate to complete your manifest.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMemberError('');
+                    setShowAddMemberModal(true);
+                  }}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: 10,
+                    background: '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <UserPlus size={15} /> Add 4th Teammate →
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1636,6 +1930,310 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                 {savingUsn ? 'Saving to Database...' : 'Save & Update USN 🚀'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ADD 4TH TEAMMATE (EXCLUSIVELY FOR SQUAD CODEX) ── */}
+      {showAddMemberModal && canAddTeammate && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 16
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 22,
+            maxWidth: 620,
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px 24px',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            border: '2px solid #0284c7',
+            fontFamily: "'Plus Jakarta Sans', sans-serif"
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, borderBottom: '1.5px solid #f1e7db', paddingBottom: 14 }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                  🚀 Squad CodeX Authorized Slot
+                </div>
+                <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: '#0f172a' }}>
+                  Add 4th Teammate to Squad CodeX
+                </h3>
+                <p style={{ margin: '6px 0 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+                  Enter credentials for your 4th crewmate. Once added, your squad roster will be permanently locked (4/4 members).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { if (!savingNewMember) setShowAddMemberModal(false); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#64748b', borderRadius: 8 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {addMemberError && (
+              <div style={{ marginBottom: 16, background: '#fef2f2', border: '1.5px solid #fecaca', color: '#b91c1c', padding: '12px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={18} />
+                <span>{addMemberError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAddFourthMember} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Full Name */}
+              <div>
+                <label style={styles.label}>Full Name *</label>
+                <input
+                  type="text"
+                  value={newMemberForm.full_name}
+                  onChange={e => setNewMemberForm(p => ({ ...p, full_name: e.target.value }))}
+                  placeholder="e.g. Rahul Sharma"
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              {/* Email & Phone Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={styles.label}>Email Address *</label>
+                  <input
+                    type="email"
+                    value={newMemberForm.email}
+                    onChange={e => setNewMemberForm(p => ({ ...p, email: e.target.value }))}
+                    placeholder="e.g. teammate@gmail.com"
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={styles.label}>Phone Number *</label>
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #cbd5e1', borderRadius: 12, overflow: 'hidden', background: '#fafafa' }}>
+                    <span style={{ padding: '12px 14px', background: '#f1e7db', color: '#ea580c', fontWeight: 800, fontSize: 13 }}>+91</span>
+                    <input
+                      type="tel"
+                      value={newMemberForm.phone_number}
+                      onChange={e => setNewMemberForm(p => ({ ...p, phone_number: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                      placeholder="10-digit number"
+                      style={{ border: 'none', background: 'transparent', padding: '12px 14px', outline: 'none', width: '100%', fontSize: 14, fontFamily: 'inherit', color: '#0f172a' }}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* College USN / Seat Number */}
+              <div>
+                <label style={styles.label}>College USN / University Seat Number *</label>
+                <input
+                  type="text"
+                  value={newMemberForm.reg_no}
+                  onChange={e => setNewMemberForm(p => ({ ...p, reg_no: e.target.value.toUpperCase() }))}
+                  placeholder="e.g. 4AL25CD033"
+                  style={{ ...styles.input, fontFamily: 'monospace', fontWeight: 700 }}
+                  required
+                />
+                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4, fontWeight: 600 }}>
+                  🎓 Enter your college USN or university seat number.
+                </div>
+              </div>
+
+              {/* College Name */}
+              <div>
+                <label style={styles.label}>College Name *</label>
+                <input
+                  type="text"
+                  value={newMemberForm.college_name}
+                  onChange={e => setNewMemberForm(p => ({ ...p, college_name: e.target.value }))}
+                  placeholder="College Name"
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              {/* Department & Year Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={styles.label}>Department *</label>
+                  <select
+                    value={newMemberForm.dept}
+                    onChange={e => setNewMemberForm(p => ({ ...p, dept: e.target.value }))}
+                    style={{ ...styles.input, cursor: 'pointer' }}
+                  >
+                    {DEPARTMENTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={styles.label}>Year of Study *</label>
+                  <select
+                    value={newMemberForm.year}
+                    onChange={e => setNewMemberForm(p => ({ ...p, year: e.target.value }))}
+                    style={{ ...styles.input, cursor: 'pointer' }}
+                  >
+                    <option value="1 Year">1 Year</option>
+                    <option value="2 Year">2 Year</option>
+                    <option value="3 Year">3 Year</option>
+                    <option value="4 Year">4 Year</option>
+                  </select>
+                </div>
+              </div>
+
+              {newMemberForm.dept === 'Other' && (
+                <div>
+                  <label style={styles.label}>Specify Department *</label>
+                  <input
+                    type="text"
+                    value={newMemberForm.dept_other}
+                    onChange={e => setNewMemberForm(p => ({ ...p, dept_other: e.target.value }))}
+                    placeholder="Enter Department Name"
+                    style={styles.input}
+                    required
+                  />
+                </div>
+              )}
+
+              {/* State & City Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                <div>
+                  <label style={styles.label}>State *</label>
+                  <select
+                    value={newMemberForm.state}
+                    onChange={e => {
+                      const newState = e.target.value;
+                      const cities = INDIA_STATES_CITIES[newState] || [];
+                      setNewMemberForm(p => ({ ...p, state: newState, city: cities[0] || 'Other' }));
+                    }}
+                    style={{ ...styles.input, cursor: 'pointer' }}
+                  >
+                    {Object.keys(INDIA_STATES_CITIES).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={styles.label}>City *</label>
+                  <select
+                    value={newMemberForm.city}
+                    onChange={e => setNewMemberForm(p => ({ ...p, city: e.target.value }))}
+                    style={{ ...styles.input, cursor: 'pointer' }}
+                  >
+                    {(INDIA_STATES_CITIES[newMemberForm.state] || []).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* College ID Card Uploads (Optional) */}
+              <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: 14, border: '1.5px solid #e2e8f0' }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>
+                  🪪 College ID Card Upload (Optional)
+                </div>
+                <div style={{ fontSize: 11.5, color: '#64748b', marginBottom: 12 }}>
+                  Photos can also be verified during physical check-in at MIT Mysore.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>Front Side</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewMemberForm(p => ({
+                            ...p,
+                            id_card_front_file: file,
+                            id_card_front_preview: URL.createObjectURL(file)
+                          }));
+                        }
+                      }}
+                      style={{ fontSize: 12, width: '100%' }}
+                    />
+                    {newMemberForm.id_card_front_preview && (
+                      <img src={newMemberForm.id_card_front_preview} alt="Front ID Preview" style={{ width: '100%', height: 70, objectFit: 'cover', borderRadius: 8, marginTop: 6, border: '1px solid #cbd5e1' }} />
+                    )}
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 4 }}>Back Side</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewMemberForm(p => ({
+                            ...p,
+                            id_card_back_file: file,
+                            id_card_back_preview: URL.createObjectURL(file)
+                          }));
+                        }
+                      }}
+                      style={{ fontSize: 12, width: '100%' }}
+                    />
+                    {newMemberForm.id_card_back_preview && (
+                      <img src={newMemberForm.id_card_back_preview} alt="Back ID Preview" style={{ width: '100%', height: 70, objectFit: 'cover', borderRadius: 8, marginTop: 6, border: '1px solid #cbd5e1' }} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1.5px solid #f1e7db', paddingTop: 16, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => { if (!savingNewMember) setShowAddMemberModal(false); }}
+                  disabled={savingNewMember}
+                  style={{
+                    padding: '11px 20px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    color: '#475569',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: savingNewMember ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={savingNewMember}
+                  style={{
+                    padding: '11px 24px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: savingNewMember ? '#94a3b8' : '#0284c7',
+                    color: '#ffffff',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    cursor: savingNewMember ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8
+                  }}
+                >
+                  {savingNewMember ? 'Adding 4th Teammate...' : 'Confirm & Add 4th Teammate 🚀'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
