@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabaseClient';
 import { sanitizeInput } from '../../lib/security';
-import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2, X, Edit2, UserPlus } from 'lucide-react';
+import { Rocket, Users, Flag, ClipboardList, MoreVertical, Info, Target, Calendar, Check, AlertCircle, Clock, CheckCircle2, X, Edit2, UserPlus, KeyRound } from 'lucide-react';
 import { sendParticipantWelcomeEmail } from '../../lib/emailService';
 import { ensureUUID, isUUID } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
@@ -162,7 +162,7 @@ const styles = {
   }
 };
 
-export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, user, setTeamMembers, setTeamData, setHasTeam, setActiveTab }) {
+export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, user, setTeamMembers, setTeamData, setHasTeam, setActiveTab, onOpenResetPassword }) {
   // --- STATE MANAGEMENT ---
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -1306,6 +1306,11 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                      teamMembers?.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase());
   const leaderName = teamLeader?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Flight Captain';
   const registeredDate = teamData?.created_at ? new Date(teamData.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+  const isLeaderUser = Boolean(
+    (teamData?.leader_id && user?.id && teamData.leader_id === user.id) ||
+    (teamMembers || []).some(m => m.is_leader && m.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim()) ||
+    (teamLeader?.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim())
+  );
 
   // --- Retrieve payment state ---
   let paymentRecord = null;
@@ -1468,6 +1473,29 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                   title="Squad CodeX authorized slot: Add 4th teammate"
                 >
                   <UserPlus size={13} /> Add 4th Teammate
+                </button>
+              )}
+              {isLeaderUser && onOpenResetPassword && (
+                <button
+                  type="button"
+                  onClick={() => onOpenResetPassword()}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 10,
+                    background: '#fff7ed',
+                    border: '1.5px solid #fed7aa',
+                    color: '#ea580c',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    transition: 'all 0.15s ease'
+                  }}
+                  title="Reset Flight Captain Pass / Password"
+                >
+                  <KeyRound size={13} /> Reset Pass
                 </button>
               )}
               <button

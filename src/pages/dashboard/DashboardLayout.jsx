@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell, KeyRound } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DomainWheel from '../../components/ui/DomainWheel';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
 import emitersSeal from '../../assets/logo/emiters-seal.png';
 import AmongUsCrewmate, { AmongUsKingCharacter } from '../../components/amongus/AmongUsCrewmate';
+import ResetPasswordModal from '../../components/dashboard/ResetPasswordModal';
 
 export { DomainWheel };
 export const SDGWheel = DomainWheel;
@@ -24,6 +25,7 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
   const [collapsed, setCollapsed] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const userPhoto = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   const isLeader = Boolean(
@@ -122,6 +124,36 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
 
         {/* Footer nav */}
         <div style={{ padding:'12px 10px', borderTop:'1.5px solid #f1e7db' }}>
+          {isLeader && (
+            <button
+              onClick={() => setShowResetPassword(true)}
+              title="Reset Squad Leader Pass / Password"
+              style={{
+                display:'flex',
+                alignItems:'center',
+                gap:10,
+                padding:'10px 14px',
+                borderRadius:12,
+                border:'1.5px solid #fed7aa',
+                cursor:'pointer',
+                width:'100%',
+                background:'#fff7ed',
+                textAlign:'left',
+                outline:'none',
+                marginBottom:8,
+                color:'#ea580c',
+                fontWeight:800,
+                fontSize:12.5,
+                transition:'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background='#ffedd5'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='#fff7ed'; }}
+            >
+              <KeyRound size={16} strokeWidth={2.4} />
+              {!collapsed && <span>Reset Pass</span>}
+            </button>
+          )}
+
           <button
             onClick={() => navigate('/')}
             style={{
@@ -189,7 +221,36 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
               HAXLR8 3.0 · ECE Department · Maharaja Institute of Technology Mysore
             </p>
           </div>
-          <div className="dash-header-right" style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div className="dash-header-right" style={{ display:'flex', alignItems:'center', gap:10 }}>
+            {/* Squad Leader Reset Pass Button */}
+            {isLeader && (
+              <button
+                type="button"
+                onClick={() => setShowResetPassword(true)}
+                title="Reset Squad Leader Pass / Password"
+                style={{
+                  display:'inline-flex',
+                  alignItems:'center',
+                  gap:6,
+                  background:'#fff7ed',
+                  border:'1.5px solid #fed7aa',
+                  borderRadius:'100px',
+                  padding:'5px 12px 5px 10px',
+                  cursor:'pointer',
+                  color:'#ea580c',
+                  fontSize:12,
+                  fontWeight:800,
+                  transition:'all 0.2s',
+                  boxShadow:'0 2px 8px rgba(251, 146, 60, 0.12)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background='#ffedd5'; }}
+                onMouseLeave={e => { e.currentTarget.style.background='#fff7ed'; }}
+              >
+                <KeyRound size={13} strokeWidth={2.5} />
+                <span>Reset Pass</span>
+              </button>
+            )}
+
             {/* Notification Icon */}
             <button
               onClick={() => setShowAnnouncements(true)}
@@ -246,7 +307,14 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
 
         {/* Page content */}
         <main className="dash-content" style={{ flex:1, padding:'32px', overflow:'auto' }}>
-          {children}
+          {React.Children.map(children, child =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, {
+                  onOpenResetPassword: () => setShowResetPassword(true),
+                  isLeader,
+                })
+              : child
+          )}
         </main>
       </div>
 
@@ -328,6 +396,39 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
                   <input type="email" defaultValue={user?.email || ''} readOnly style={{ border:'none', outline:'none', width:'100%', fontSize:13.5, background:'transparent', color:'#0f172a', fontWeight:600, cursor:'not-allowed' }}/>
                 </div>
               </div>
+
+              {isLeader && (
+                <div style={{ background:'#fff7ed', border:'1.5px solid #fed7aa', borderRadius:14, padding:'12px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginTop:4 }}>
+                  <div>
+                    <div style={{ fontSize:12.5, fontWeight:800, color:'#9a3412' }}>Squad Leader Passcode</div>
+                    <div style={{ fontSize:11.5, color:'#c2410c' }}>Update your secret launch password</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfile(false);
+                      setShowResetPassword(true);
+                    }}
+                    style={{
+                      padding:'7px 14px',
+                      borderRadius:10,
+                      border:'none',
+                      background:'#ea580c',
+                      color:'#ffffff',
+                      fontSize:12,
+                      fontWeight:800,
+                      cursor:'pointer',
+                      display:'inline-flex',
+                      alignItems:'center',
+                      gap:6,
+                      boxShadow:'0 2px 8px rgba(234, 88, 12, 0.25)',
+                    }}
+                  >
+                    <KeyRound size={13} strokeWidth={2.5} />
+                    <span>Reset Pass</span>
+                  </button>
+                </div>
+              )}
             </div>
             
             <div style={{ padding:'20px 24px', borderTop:'1.5px solid #f1e7db', display:'flex', flexDirection:'column', gap:10, background:'#fafafa' }}>
@@ -341,6 +442,15 @@ export default function DashboardLayout({ activeTab, setActiveTab, children, has
           </div>
         </div>
       )}
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={showResetPassword}
+        onClose={() => setShowResetPassword(false)}
+        user={user}
+        isLeader={isLeader}
+        teamData={teamData}
+      />
 
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }

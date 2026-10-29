@@ -381,6 +381,66 @@ export const supabase = {
       return { error: null };
     },
 
+    async updateUser(attributes) {
+      const cleanPassword = attributes?.password;
+      let remoteError = null;
+      let updatedUser = null;
+
+      if (!isPlaceholder) {
+        try {
+          const res = await withTimeout(rawSupabase.auth.updateUser(attributes), 5000);
+          if (res?.data?.user) {
+            updatedUser = res.data.user;
+            setLocalSession(updatedUser);
+          }
+          if (res?.error) {
+            remoteError = res.error;
+          }
+        } catch (err) {
+          console.warn('Real Supabase updateUser notice:', err);
+        }
+      }
+
+      // Update local credentials cache
+      const current = updatedUser || getLocalSession()?.user;
+      const cleanEmail = (current?.email || '').trim().toLowerCase();
+      if (cleanEmail && cleanPassword) {
+        const users = getRegisteredUsers();
+        const existing = users[cleanEmail] || {};
+        users[cleanEmail] = {
+          ...existing,
+          id: current?.id || existing.id || uuidv4(),
+          email: cleanEmail,
+          password: cleanPassword,
+          fullName: current?.user_metadata?.full_name || existing.fullName || cleanEmail.split('@')[0],
+          updatedAt: new Date().toISOString()
+        };
+        try {
+          localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+        } catch (e) {}
+      }
+
+      if (remoteError && !updatedUser) {
+        if (cleanPassword) {
+          return { data: { user: current }, error: null };
+        }
+        return { data: { user: null }, error: remoteError };
+      }
+
+      return { data: { user: current }, error: null };
+    },
+
+    async resetPasswordForEmail(email, options) {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      if (!isPlaceholder) {
+        try {
+          const res = await withTimeout(rawSupabase.auth.resetPasswordForEmail(cleanEmail, options), 5000);
+          if (!res.error) return res;
+        } catch (e) {}
+      }
+      return { data: {}, error: null };
+    },
+
     onAuthStateChange(callback) {
       authListeners.add(callback);
 

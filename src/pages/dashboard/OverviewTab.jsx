@@ -55,7 +55,7 @@ const CheckItem = ({ label, status }) => {
   );
 };
 
-export default function OverviewTab({ hasTeam, teamData, teamMembers, submissions, user, setActiveTab, announcements = [], onRefresh }) {
+export default function OverviewTab({ hasTeam, teamData, teamMembers, submissions, user, setActiveTab, announcements = [], onRefresh, onOpenResetPassword }) {
   const [totalTeams, setTotalTeams] = useState(0);
   const [squadronsConfig, setSquadronsConfig] = useState(() => getLocalSquadronsConfig());
   const [showRulebook, setShowRulebook] = useState(false);
@@ -395,6 +395,30 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {isCurrentUserLeader && onOpenResetPassword && (
+              <button
+                type="button"
+                onClick={() => onOpenResetPassword()}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  background: '#fff7ed',
+                  border: '1.5px solid #fed7aa',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  color: '#ea580c',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 8px rgba(251, 146, 60, 0.12)'
+                }}
+                title="Reset Captain Pass / Password"
+              >
+                <span>🔑</span>
+                <span>Reset Pass</span>
+              </button>
+            )}
             <button
               onClick={() => setActiveTab && setActiveTab('team')}
               style={{
