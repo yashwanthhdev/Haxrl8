@@ -424,7 +424,6 @@ export default function SubmissionTab({ hasTeam, teamData, teamMembers, submissi
                             />
                             <span>
                               {opt} {isOptFull && <span style={{ fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>(Slots are full)</span>}
-                              {opt === 'Smart City' && !isOptFull && <span style={{ fontSize: '11px', color: '#b45309', fontWeight: 800 }}>(1 slot left 🔥)</span>}
                             </span>
                           </label>
                         );

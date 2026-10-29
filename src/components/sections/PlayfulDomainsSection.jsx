@@ -22,7 +22,6 @@ const DOMAINS = [
     border: '#fecdd3',
     textCol: '#e11d48',
     icon: HeartPulse,
-    slotsFull: true,
   },
   {
     id: 'smart-city',
@@ -33,7 +32,6 @@ const DOMAINS = [
     border: '#7dd3fc',
     textCol: '#0284c7',
     icon: Building2,
-    slotsBadge: '1 Slot Left 🔥',
   },
 ];
 
@@ -151,50 +149,6 @@ export default function PlayfulDomainsSection() {
                   position: 'relative',
                 }}
               >
-                {/* Slots Full Badge */}
-                {domain.slotsFull && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '14px',
-                      right: '14px',
-                      background: '#fee2e2',
-                      color: '#b91c1c',
-                      border: '1px solid #fecaca',
-                      padding: '3px 8px',
-                      borderRadius: '10px',
-                      fontSize: '10px',
-                      fontWeight: 800,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Slots Full
-                  </div>
-                )}
-
-                {/* 1 Slot Left Badge */}
-                {domain.slotsBadge && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '14px',
-                      right: '14px',
-                      background: '#fffbeb',
-                      color: '#b45309',
-                      border: '1px solid #fde68a',
-                      padding: '3px 8px',
-                      borderRadius: '10px',
-                      fontSize: '10px',
-                      fontWeight: 900,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {domain.slotsBadge}
-                  </div>
-                )}
-
                 {/* Domain Icon */}
                 <div
                   style={{
@@ -395,47 +349,7 @@ export default function PlayfulDomainsSection() {
                 {selectedDomain.desc}
               </p>
 
-              {/* Slots Full Notice */}
-              {selectedDomain.slotsFull && (
-                <div
-                  style={{
-                    background: '#fef2f2',
-                    border: '1.5px solid #fecaca',
-                    borderRadius: '16px',
-                    padding: '14px 18px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}
-                >
-                  <span style={{ fontSize: '20px' }}>⚠️</span>
-                  <div style={{ fontSize: '13px', color: '#991b1b', lineHeight: 1.5 }}>
-                    <strong>Healthcare Domain Slots are Full:</strong> Registration capacity for the Healthcare track has been reached. Newly registering squads must select either <strong>Agriculture</strong> or <strong>Smart City</strong>.
-                  </div>
-                </div>
-              )}
 
-              {/* Limited Slot Notice */}
-              {selectedDomain.slotsBadge && (
-                <div
-                  style={{
-                    background: '#fffbeb',
-                    border: '1.5px solid #fde68a',
-                    borderRadius: '16px',
-                    padding: '14px 18px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}
-                >
-                  <span style={{ fontSize: '20px' }}>🔥</span>
-                  <div style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.5 }}>
-                    <strong>Final Slot Open:</strong> Only <strong>1 team slot</strong> is currently open for the Smart City domain. Register your team right away before this final spot is claimed!
-                  </div>
-                </div>
-              )}
 
               {/* Core or Software Freedom Highlight */}
               <div

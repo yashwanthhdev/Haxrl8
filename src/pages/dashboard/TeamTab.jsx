@@ -1194,10 +1194,6 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                               <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginTop: 2 }}>
                                 Slots are full (Closed)
                               </div>
-                            ) : domOpt.id === 'Smart City' ? (
-                              <div style={{ fontSize: 11, fontWeight: 800, color: '#b45309', marginTop: 2 }}>
-                                1 slot left for final squad 🔥
-                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -1208,10 +1204,6 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
                         ) : isSelected ? (
                           <span style={{ fontSize: 10.5, fontWeight: 800, color: '#0284c7', background: '#e0f2fe', padding: '3px 8px', borderRadius: 10, border: '1px solid #bae6fd' }}>
                             SELECTED ✓
-                          </span>
-                        ) : domOpt.id === 'Smart City' ? (
-                          <span style={{ fontSize: 10, fontWeight: 900, color: '#b45309', background: '#fffbeb', padding: '4px 8px', borderRadius: 10, border: '1px solid #fde68a', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                            1 SLOT LEFT 🔥
                           </span>
                         ) : null}
                       </div>
