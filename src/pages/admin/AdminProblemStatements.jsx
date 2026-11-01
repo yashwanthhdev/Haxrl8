@@ -696,28 +696,6 @@ export default function AdminProblemStatements() {
                 </p>
               </div>
 
-              {/* Tags */}
-              {problem.tags && (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {problem.tags.map((t, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: '#F1F5F9',
-                        color: '#475569',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        border: '1px solid #E2E8F0'
-                      }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* ─── EXPANDED SQUADS COMPLETE DATA ─── */}
               <AnimatePresence>
                 {isExpanded && (

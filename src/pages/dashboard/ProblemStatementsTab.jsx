@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Download, ExternalLink, CheckCircle2, Lock, AlertTriangle, 
-  Sparkles, ShieldCheck, ArrowRight, Info, Users, Clock, Tag, HelpCircle
+  Sparkles, ShieldCheck, ArrowRight, Info, Users, Clock, HelpCircle
 } from 'lucide-react';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import { 
@@ -752,29 +752,6 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
                 }}>
                   {problem.description}
                 </p>
-
-                {/* Tags */}
-                {problem.tags && problem.tags.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <Tag size={13} color="#94a3b8" />
-                    {problem.tags.map((tag, tIdx) => (
-                      <span
-                        key={tIdx}
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: '#f1f5f9',
-                          color: '#475569',
-                          border: '1px solid #e2e8f0',
-                          padding: '3px 9px',
-                          borderRadius: 8
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })}
