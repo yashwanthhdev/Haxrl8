@@ -46,6 +46,11 @@ export default function AdminProblemStatements() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedProblemId, setExpandedProblemId] = useState(null);
 
+  // Active view: 'catalog' (all challenges) | 'locked' (locked squads directory)
+  const [activeView, setActiveView] = useState('catalog');
+  const [lockedDomainFilter, setLockedDomainFilter] = useState('All');
+  const [lockedSearchQuery, setLockedSearchQuery] = useState('');
+
   // Squad Deletion / Release state
   const [deletingSquad, setDeletingSquad] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -210,6 +215,73 @@ export default function AdminProblemStatements() {
   const totalLockedTeams = selections.length;
   const fullProblemsCount = Object.values(counts).filter(c => c >= MAX_TEAMS_PER_PROBLEM).length;
   const partialProblemsCount = Object.values(counts).filter(c => c > 0 && c < MAX_TEAMS_PER_PROBLEM).length;
+
+  // Filtered Locked Squads for the interactive Locked Squads Directory
+  const filteredLockedSquads = selections.filter(squad => {
+    if (lockedDomainFilter !== 'All') {
+      const d = (squad.domain || '').toLowerCase();
+      const target = lockedDomainFilter.toLowerCase();
+      if (!d.includes(target) && !target.includes(d)) return false;
+    }
+
+    if (lockedSearchQuery.trim()) {
+      const q = lockedSearchQuery.toLowerCase().trim();
+      const matchTeam = (squad.team_name || '').toLowerCase().includes(q);
+      const matchLeader = (squad.leader_name || squad.locked_by || '').toLowerCase().includes(q);
+      const matchEmail = (squad.leader_email || '').toLowerCase().includes(q);
+      const matchPhone = (squad.leader_phone || '').toLowerCase().includes(q);
+      const matchCollege = (squad.college || '').toLowerCase().includes(q);
+      const matchProbId = (squad.problem_statement_id || '').toLowerCase().includes(q);
+      const matchProbTitle = (squad.problem_statement_title || squad.problem_title || '').toLowerCase().includes(q);
+      const matchDomain = (squad.domain || '').toLowerCase().includes(q);
+
+      if (!matchTeam && !matchLeader && !matchEmail && !matchPhone && !matchCollege && !matchProbId && !matchProbTitle && !matchDomain) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Export specifically the locked squads roster to CSV
+  const exportLockedSquadsCSV = () => {
+    const headers = [
+      '#',
+      'Squad Name',
+      'Innovation Domain',
+      'Problem Statement ID',
+      'Challenge #',
+      'Problem Statement Title',
+      'Flight Captain (Leader)',
+      'Leader Email',
+      'Leader Phone',
+      'College Name',
+      'Locked Timestamp'
+    ];
+
+    const rows = filteredLockedSquads.map((s, idx) => [
+      idx + 1,
+      `"${(s.team_name || '').replace(/"/g, '""')}"`,
+      `"${(s.domain || '').replace(/"/g, '""')}"`,
+      `"${(s.problem_statement_id || '').replace(/"/g, '""')}"`,
+      s.problem_statement_num || '',
+      `"${(s.problem_statement_title || s.problem_title || '').replace(/"/g, '""')}"`,
+      `"${(s.leader_name || s.locked_by || '').replace(/"/g, '""')}"`,
+      `"${(s.leader_email || '').replace(/"/g, '""')}"`,
+      `"${(s.leader_phone || '').replace(/"/g, '""')}"`,
+      `"${(s.college || '').replace(/"/g, '""')}"`,
+      `"${s.locked_at || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `HAXLR8_Locked_Squads_Roster_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Master CSV Export
   const exportClaimsCSV = () => {
@@ -488,19 +560,78 @@ export default function AdminProblemStatements() {
 
       {/* ─── QUICK METRICS ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: S.gap }}>
-        <div style={{ background: '#FFFFFF', borderRadius: 18, border: '2px solid #FED7AA', padding: '18px 20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 11.5, fontWeight: 800, color: S.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Challenges</div>
+        <div
+          onClick={() => setActiveView('catalog')}
+          style={{
+            background: activeView === 'catalog' ? '#F0F9FF' : '#FFFFFF',
+            borderRadius: 18,
+            border: activeView === 'catalog' ? '2px solid #0284C7' : '2px solid #FED7AA',
+            padding: '18px 20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          title="Click to view full 45 challenges catalog"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: S.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Challenges</div>
+            <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 10, background: '#E0F2FE', color: '#0369A1' }}>All</span>
+          </div>
           <div style={{ fontSize: 26, fontWeight: 900, color: S.t1, marginTop: 4 }}>45</div>
           <div style={{ fontSize: 12, color: '#0284C7', fontWeight: 700, marginTop: 4 }}>15 per Domain</div>
         </div>
 
-        <div style={{ background: '#FFFFFF', borderRadius: 18, border: '2px solid #FED7AA', padding: '18px 20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <div style={{ fontSize: 11.5, fontWeight: 800, color: S.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Squads Locked In</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#16A34A', marginTop: 4 }}>{totalLockedTeams}</div>
-          <div style={{ fontSize: 12, color: S.t2, fontWeight: 600, marginTop: 4 }}>Across all 3 domains</div>
+        {/* CLICKABLE SQUADS LOCKED IN CARD */}
+        <div
+          onClick={() => setActiveView(activeView === 'locked' ? 'catalog' : 'locked')}
+          style={{
+            background: activeView === 'locked' ? '#F0FDF4' : '#FFFFFF',
+            borderRadius: 18,
+            border: activeView === 'locked' ? '2.5px solid #16A34A' : '2px solid #FED7AA',
+            padding: '18px 20px',
+            boxShadow: activeView === 'locked' ? '0 8px 24px rgba(22, 163, 74, 0.2)' : '0 4px 12px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            position: 'relative'
+          }}
+          title="Click to view full filtered directory of locked squads, leaders, colleges, and problem statements"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: activeView === 'locked' ? '#15803D' : S.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Squads Locked In
+            </div>
+            <span style={{
+              fontSize: 10.5,
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: 12,
+              background: activeView === 'locked' ? '#16A34A' : '#DCFCE7',
+              color: activeView === 'locked' ? '#FFFFFF' : '#15803D'
+            }}>
+              {activeView === 'locked' ? 'Active Filter ✓' : 'Click to Filter'}
+            </span>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#16A34A', marginTop: 4 }}>
+            {totalLockedTeams}
+          </div>
+          <div style={{ fontSize: 12, color: activeView === 'locked' ? '#15803D' : S.t2, fontWeight: 700, marginTop: 4 }}>
+            {activeView === 'locked' ? '✓ Showing Locked Squads Table' : 'Across all 3 domains · Click to View'}
+          </div>
         </div>
 
-        <div style={{ background: '#FFFFFF', borderRadius: 18, border: '2px solid #FED7AA', padding: '18px 20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <div
+          onClick={() => { setActiveView('catalog'); setStatusFilter('Full'); }}
+          style={{
+            background: '#FFFFFF',
+            borderRadius: 18,
+            border: '2px solid #FED7AA',
+            padding: '18px 20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          title="Filter to capacity reached challenges"
+        >
           <div style={{ fontSize: 11.5, fontWeight: 800, color: S.t2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Full Challenges (3/3)</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#DC2626', marginTop: 4 }}>{fullProblemsCount}</div>
           <div style={{ fontSize: 12, color: S.t2, fontWeight: 600, marginTop: 4 }}>Quota capacity reached</div>
@@ -512,6 +643,385 @@ export default function AdminProblemStatements() {
           <div style={{ fontSize: 12, color: S.t2, fontWeight: 600, marginTop: 4 }}>45 challenges × 3 squads max</div>
         </div>
       </div>
+
+      {/* ─── LOCKED SQUADS DIRECTORY (ACTIVATED BY CLICKING 'SQUADS LOCKED IN') ─── */}
+      {activeView === 'locked' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: '#FFFFFF',
+            borderRadius: 22,
+            border: '2.5px solid #86EFAC',
+            padding: '24px',
+            boxShadow: '0 10px 30px rgba(22, 163, 74, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18
+          }}
+        >
+          {/* Header Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: '#16A34A',
+                color: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)'
+              }}>
+                <Lock size={22} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 900, color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Live Claim Registry
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 800, background: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: 10 }}>
+                    {filteredLockedSquads.length} of {totalLockedTeams} Squads Filtered
+                  </span>
+                </div>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: '2px 0 0' }}>
+                  Locked In Squads &amp; Problem Statements
+                </h2>
+                <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>
+                  Showing team names, leaders, college, problem statements locked, and domain tracks.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={exportLockedSquadsCSV}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: 12,
+                  background: '#F0FDF4',
+                  border: '1.5px solid #86EFAC',
+                  color: '#15803D',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <Download size={14} />
+                <span>Export Locked Squads (CSV)</span>
+              </button>
+
+              <button
+                onClick={() => setActiveView('catalog')}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: 12,
+                  background: '#F1F5F9',
+                  border: '1.5px solid #CBD5E1',
+                  color: '#475569',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                ← Return to All 45 Challenges
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Bar for Locked Squads */}
+          <div style={{
+            background: '#F8FAFC',
+            border: '1.5px solid #E2E8F0',
+            borderRadius: 16,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12
+          }}>
+            {/* Domain Filter Buttons */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { id: 'All', label: `All Domains (${selections.length})` },
+                { id: 'Smart City', label: `🏙️ Smart City (${selections.filter(s => (s.domain || '').toLowerCase().includes('smart')).length})` },
+                { id: 'Agriculture', label: `🌾 Agriculture (${selections.filter(s => (s.domain || '').toLowerCase().includes('agri')).length})` },
+                { id: 'Healthcare', label: `🩺 Healthcare (${selections.filter(s => (s.domain || '').toLowerCase().includes('health')).length})` }
+              ].map(d => {
+                const isActive = lockedDomainFilter === d.id;
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => setLockedDomainFilter(d.id)}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 10,
+                      fontSize: 12,
+                      fontWeight: isActive ? 900 : 700,
+                      background: isActive ? '#16A34A' : '#FFFFFF',
+                      color: isActive ? '#FFFFFF' : '#334155',
+                      border: isActive ? 'none' : '1px solid #CBD5E1',
+                      cursor: 'pointer',
+                      boxShadow: isActive ? '0 2px 8px rgba(22, 163, 74, 0.25)' : 'none',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: 260, flex: 1, maxWidth: 420 }}>
+              <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: 12, top: 11 }} />
+              <input
+                type="text"
+                placeholder="Search team, leader, college, problem ID..."
+                value={lockedSearchQuery}
+                onChange={e => setLockedSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 34px',
+                  borderRadius: 10,
+                  border: '1.5px solid #CBD5E1',
+                  background: '#FFFFFF',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: '#0F172A',
+                  boxSizing: 'border-box'
+                }}
+              />
+              {lockedSearchQuery && (
+                <button
+                  onClick={() => setLockedSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: 10,
+                    top: 8,
+                    background: 'none',
+                    border: 'none',
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    fontWeight: 800
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Table / List View */}
+          {filteredLockedSquads.length === 0 ? (
+            <div style={{
+              padding: '36px',
+              textAlign: 'center',
+              background: '#F8FAFC',
+              borderRadius: 16,
+              border: '1.5px dashed #CBD5E1'
+            }}>
+              <div style={{ fontSize: 30, marginBottom: 8 }}>🔍</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>
+                No locked squads match your search criteria
+              </div>
+              <p style={{ fontSize: 13, color: '#64748B', margin: '4px 0 12px' }}>
+                Try clearing your search query or selecting "All Domains".
+              </p>
+              <button
+                onClick={() => { setLockedDomainFilter('All'); setLockedSearchQuery(''); }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 10,
+                  background: '#0284C7',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+              >
+                Clear Search &amp; Filters
+              </button>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', borderRadius: 14, border: '1.5px solid #E2E8F0' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 920 }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>#</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Squad Name</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Domain</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Problem Statement Locked</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Flight Captain (Leader)</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>College</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase' }}>Locked At</th>
+                    <th style={{ padding: '12px 14px', fontSize: 11, fontWeight: 900, color: '#64748B', textTransform: 'uppercase', textAlign: 'center' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLockedSquads.map((squad, idx) => {
+                    const domainNorm = (squad.domain || '').toLowerCase();
+                    const domainBadge = domainNorm.includes('smart')
+                      ? { bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD', icon: '🏙️', label: 'Smart City' }
+                      : domainNorm.includes('agri')
+                      ? { bg: '#F0FDF4', text: '#15803D', border: '#BBF7D0', icon: '🌾', label: 'Agriculture' }
+                      : { bg: '#FFF1F2', text: '#BE123C', border: '#FECDD3', icon: '🩺', label: 'Healthcare' };
+
+                    return (
+                      <tr
+                        key={squad.team_id || idx}
+                        style={{
+                          borderBottom: '1px solid #F1F5F9',
+                          background: idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
+                          transition: 'background 0.15s'
+                        }}
+                      >
+                        {/* Index */}
+                        <td style={{ padding: '14px', fontSize: 12, fontWeight: 800, color: '#94A3B8' }}>
+                          {idx + 1}
+                        </td>
+
+                        {/* Squad Name */}
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontSize: 14.5, fontWeight: 900, color: '#0F172A' }}>
+                            {squad.team_name}
+                          </div>
+                          {squad.team_id && (
+                            <div style={{ fontSize: 10.5, color: '#94A3B8', fontFamily: 'monospace' }}>
+                              ID: {squad.team_id.slice(0, 8)}...
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Domain */}
+                        <td style={{ padding: '14px' }}>
+                          <span style={{
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            padding: '4px 10px',
+                            borderRadius: 12,
+                            background: domainBadge.bg,
+                            color: domainBadge.text,
+                            border: `1px solid ${domainBadge.border}`,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}>
+                            <span>{domainBadge.icon}</span>
+                            <span>{domainBadge.label}</span>
+                          </span>
+                        </td>
+
+                        {/* Problem Statement Locked */}
+                        <td style={{ padding: '14px', maxWidth: 300 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                            <span style={{
+                              fontSize: 11,
+                              fontWeight: 900,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              background: '#0284C7',
+                              color: '#FFFFFF'
+                            }}>
+                              {squad.problem_statement_id || 'PS'}
+                            </span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>
+                              Challenge #{squad.problem_statement_num || '—'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', lineHeight: 1.4 }}>
+                            {squad.problem_statement_title || squad.problem_title || 'Selected Challenge'}
+                          </div>
+                        </td>
+
+                        {/* Flight Captain */}
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>{squad.leader_name || squad.locked_by || 'Captain'}</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FEF3C7', color: '#B45309', padding: '1px 6px', borderRadius: 8 }}>
+                              Lead
+                            </span>
+                          </div>
+                          {squad.leader_email && (
+                            <div style={{ fontSize: 11.5, color: '#0284C7', marginTop: 3 }}>
+                              <a href={`mailto:${squad.leader_email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                {squad.leader_email}
+                              </a>
+                            </div>
+                          )}
+                          {squad.leader_phone && (
+                            <div style={{ fontSize: 11.5, color: '#475569', marginTop: 1 }}>
+                              <a href={`tel:${squad.leader_phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                                📞 {squad.leader_phone}
+                              </a>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* College */}
+                        <td style={{ padding: '14px' }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Building size={14} color="#64748B" style={{ flexShrink: 0 }} />
+                            <span>{squad.college || 'MIT Mysore'}</span>
+                          </div>
+                        </td>
+
+                        {/* Locked Timestamp */}
+                        <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Clock size={13} color="#64748B" />
+                            <span>{squad.locked_at ? new Date(squad.locked_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'Verified'}</span>
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '14px', textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingSquad({
+                              team_id: squad.team_id,
+                              team_name: squad.team_name,
+                              leader_name: squad.leader_name || squad.locked_by,
+                              leader_email: squad.leader_email,
+                              problem_statement_id: squad.problem_statement_id,
+                              problem_title: squad.problem_statement_title || squad.problem_title,
+                              college: squad.college
+                            })}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: 8,
+                              background: '#FEF2F2',
+                              border: '1px solid #FECACA',
+                              color: '#DC2626',
+                              fontSize: 11.5,
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5
+                            }}
+                            title="Release & Delete Locked Selection"
+                          >
+                            <Trash2 size={12} />
+                            <span>Delete Lock</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* ─── OFFICIAL PDF UPLOAD & LINK MANAGEMENT ─── */}
       <div style={{
@@ -692,14 +1202,40 @@ export default function AdminProblemStatements() {
         flexWrap: 'wrap',
         gap: 14
       }}>
-        {/* Domain Tabs */}
+        {/* Domain Tabs & Locked Squads Toggle */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setActiveView(activeView === 'locked' ? 'catalog' : 'locked')}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 900,
+              background: activeView === 'locked' ? '#16A34A' : '#F0FDF4',
+              color: activeView === 'locked' ? '#FFFFFF' : '#15803D',
+              border: activeView === 'locked' ? 'none' : '1.5px solid #86EFAC',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: activeView === 'locked' ? '0 3px 10px rgba(22, 163, 74, 0.3)' : 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            <Lock size={14} />
+            <span>Locked Squads ({totalLockedTeams})</span>
+          </button>
+
           {['All', 'Smart City', 'Agriculture', 'Healthcare'].map(tab => {
-            const isTabActive = selectedDomainFilter === tab;
+            const isTabActive = activeView === 'catalog' && selectedDomainFilter === tab;
             return (
               <button
                 key={tab}
-                onClick={() => setSelectedDomainFilter(tab)}
+                onClick={() => {
+                  setActiveView('catalog');
+                  setSelectedDomainFilter(tab);
+                }}
                 style={{
                   padding: '8px 16px',
                   borderRadius: 12,

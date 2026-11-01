@@ -276,9 +276,16 @@ export const fetchAllProblemSelections = async () => {
           const { data: mems } = await supabase
             .from('team_members')
             .select('team_id, full_name, email, phone_number, college_name, is_leader')
-            .in('team_id', teamIds)
-            .eq('is_leader', true);
-          if (mems) mems.forEach(m => leadersMap.set(m.team_id, m));
+            .in('team_id', teamIds);
+          if (mems) {
+            // Priority: is_leader === true, then first member as fallback
+            mems.forEach(m => {
+              const isTrueLeader = m.is_leader === true || m.is_leader === 'true' || m.is_leader === 1;
+              if (isTrueLeader || !leadersMap.has(m.team_id)) {
+                leadersMap.set(m.team_id, m);
+              }
+            });
+          }
         } catch (ctxErr) {}
       }
 
