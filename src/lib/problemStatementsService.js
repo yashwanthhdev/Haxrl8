@@ -82,7 +82,7 @@ const PS_PDF_TAG = 'PS_PDF_REGISTRY';
 
 export const getAllDomainPdfUrls = () => {
   const defaults = {
-    'Smart City': DOMAIN_METADATA['Smart City']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Smart_City_Problem_Statements.pdf',
+    'Smart City': DOMAIN_METADATA['Smart City']?.defaultPdfUrl || 'https://wpsdmprnwzyfqogpsfui.supabase.co/storage/v1/object/public/id-cards/documents/1793537487385_haxlr8_3.0_smart_city_problem_statements.pdf',
     'Agriculture': DOMAIN_METADATA['Agriculture']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Agriculture_Problem_Statements.pdf',
     'Healthcare': DOMAIN_METADATA['Healthcare']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Healthcare_Problem_Statements.pdf',
   };

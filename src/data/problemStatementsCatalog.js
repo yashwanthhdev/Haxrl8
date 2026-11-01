@@ -19,7 +19,7 @@ export const DOMAIN_METADATA = {
     badgeColor: '#0284c7',
     icon: '🏙️',
     pdfFileName: 'HAXLR8_3.0_Smart_City_Problem_Statements.pdf',
-    defaultPdfUrl: '/assets/documents/HAXLR8_3.0_Smart_City_Problem_Statements.pdf'
+    defaultPdfUrl: 'https://wpsdmprnwzyfqogpsfui.supabase.co/storage/v1/object/public/id-cards/documents/1793537487385_haxlr8_3.0_smart_city_problem_statements.pdf'
   },
   'Agriculture': {
     id: 'agriculture',
@@ -129,9 +129,9 @@ export const PROBLEM_STATEMENTS = [
     id: 'SC-09',
     num: 9,
     domain: 'Smart City',
-    title: 'Intelligent Flood Barrier Control and Proactive Underpass Closure for Low-Lying Roads During Extreme Rainfall',
-    description: 'Vehicle owners drown in underpasses every monsoon because closures happen only after water visibly rises and vehicles are already trapped. Design an intelligent solution that predicts underpass flooding ahead of time and enforces closure before water becomes life-threatening.',
-    tags: ['Flood Barrier Automation', 'Predictive Inundation', 'Emergency Response', 'Underpass Safety']
+    title: 'Intelligent Solar-Integrated EV Charging Management and Dynamic Load Balancing Across Charging Stations',
+    description: 'With the growing adoption of electric vehicles in smart cities, simultaneous charging increases grid demand and electricity costs, while available solar energy often remains underutilized. Develop an intelligent EV charging management system that integrates solar power, dynamically balances loads across multiple charging stations, and optimizes charging schedules to reduce grid overload and promote sustainable urban mobility.',
+    tags: ['EV Charging', 'Solar Integration', 'Dynamic Load Balancing', 'Grid Optimization', 'Smart Mobility']
   },
   {
     id: 'SC-10',
