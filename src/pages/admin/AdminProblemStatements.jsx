@@ -17,6 +17,8 @@ import {
   getSelectionCounts, 
   getDomainPdfUrl, 
   saveDomainPdfUrl,
+  fetchDomainPdfUrls,
+  subscribeToDomainPdfs,
   deleteProblemStatementSelection
 } from '../../lib/problemStatementsService';
 import { uploadDocumentFile } from '../../lib/documentsService';
@@ -64,6 +66,12 @@ export default function AdminProblemStatements() {
       const { counts: c, teamsByProblem: t } = getSelectionCounts(all);
       setCounts(c);
       setTeamsByProblem(t);
+
+      // Also sync latest domain PDF urls from Supabase cloud
+      const cloudPdfs = await fetchDomainPdfUrls();
+      if (cloudPdfs) {
+        setPdfUrls(cloudPdfs);
+      }
     } catch (e) {
       console.warn('Error loading problem statements admin data:', e);
     } finally {
@@ -77,12 +85,19 @@ export default function AdminProblemStatements() {
     const handleSync = () => loadData();
     window.addEventListener('haxlr8_ps_locked', handleSync);
     window.addEventListener('haxlr8_ps_deleted', handleSync);
-    window.addEventListener('haxlr8_ps_pdfs_updated', handleSync);
+    window.addEventListener('haxlr8_ps_pdfs_updated', (e) => {
+      if (e.detail) setPdfUrls(e.detail);
+    });
+
+    const unsubscribePdfs = subscribeToDomainPdfs((urls) => {
+      if (urls) setPdfUrls(urls);
+    });
 
     return () => {
       window.removeEventListener('haxlr8_ps_locked', handleSync);
       window.removeEventListener('haxlr8_ps_deleted', handleSync);
       window.removeEventListener('haxlr8_ps_pdfs_updated', handleSync);
+      if (typeof unsubscribePdfs === 'function') unsubscribePdfs();
     };
   }, []);
 
@@ -117,15 +132,15 @@ export default function AdminProblemStatements() {
     setPdfUrls(prev => ({ ...prev, [domain]: url }));
   };
 
-  // Save PDF URL
-  const handleSavePdf = (domain) => {
+  // Save PDF URL to cloud & local storage
+  const handleSavePdf = async (domain) => {
     const url = pdfUrls[domain];
-    saveDomainPdfUrl(domain, url);
-    setPdfSaveNotice(`PDF link for ${domain} successfully updated and saved!`);
+    await saveDomainPdfUrl(domain, url);
+    setPdfSaveNotice(`PDF link for ${domain} successfully saved and published!`);
     setTimeout(() => setPdfSaveNotice(''), 4000);
   };
 
-  // Upload PDF file
+  // Upload PDF file to Cloudinary and broadcast to all participants
   const handleFileUpload = async (domain, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -135,8 +150,8 @@ export default function AdminProblemStatements() {
       const res = await uploadDocumentFile(file, 'problem_statements');
       if (res?.url) {
         setPdfUrls(prev => ({ ...prev, [domain]: res.url }));
-        saveDomainPdfUrl(domain, res.url);
-        setPdfSaveNotice(`Uploaded new PDF for ${domain}!`);
+        await saveDomainPdfUrl(domain, res.url);
+        setPdfSaveNotice(`Uploaded and published new PDF for ${domain}!`);
         setTimeout(() => setPdfSaveNotice(''), 4000);
       }
     } catch (err) {

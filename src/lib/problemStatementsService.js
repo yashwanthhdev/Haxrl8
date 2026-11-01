@@ -78,31 +78,147 @@ export const getDemoAccount = (email) => {
 };
 
 // ─── DOMAIN PDF URLs ──────────────────────────────────────────────────────────
-export const getDomainPdfUrl = (domain) => {
-  if (!domain) return '/assets/documents/HAXLR8_3.0_Smart_City_Problem_Statements.pdf';
-  
+const PS_PDF_TAG = 'PS_PDF_REGISTRY';
+
+export const getAllDomainPdfUrls = () => {
+  const defaults = {
+    'Smart City': DOMAIN_METADATA['Smart City']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Smart_City_Problem_Statements.pdf',
+    'Agriculture': DOMAIN_METADATA['Agriculture']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Agriculture_Problem_Statements.pdf',
+    'Healthcare': DOMAIN_METADATA['Healthcare']?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Healthcare_Problem_Statements.pdf',
+  };
+
   try {
     const raw = localStorage.getItem(STORAGE_PDFS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed[domain]) return parsed[domain];
+      if (parsed && typeof parsed === 'object') {
+        return { ...defaults, ...parsed };
+      }
     }
   } catch (e) {}
 
-  const meta = DOMAIN_METADATA[domain];
-  return meta?.defaultPdfUrl || '/assets/documents/HAXLR8_3.0_Smart_City_Problem_Statements.pdf';
+  return defaults;
 };
 
-export const saveDomainPdfUrl = (domain, url) => {
-  if (!domain || !url) return;
+export const getDomainPdfUrl = (domain) => {
+  const urls = getAllDomainPdfUrls();
+  return (domain && urls[domain]) || urls['Smart City'];
+};
+
+export const fetchDomainPdfUrls = async () => {
   try {
-    const raw = localStorage.getItem(STORAGE_PDFS_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    parsed[domain] = url.trim();
-    localStorage.setItem(STORAGE_PDFS_KEY, JSON.stringify(parsed));
-    window.dispatchEvent(new CustomEvent('haxlr8_ps_pdfs_updated', { detail: parsed }));
-  } catch (e) {
-    console.warn('saveDomainPdfUrl error:', e);
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('id, content, created_at')
+      .eq('tag', PS_PDF_TAG)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (!error && data && data[0]?.content) {
+      try {
+        const parsed = JSON.parse(data[0].content);
+        if (parsed && typeof parsed === 'object') {
+          const currentLocal = getAllDomainPdfUrls();
+          const merged = { ...currentLocal, ...parsed };
+          localStorage.setItem(STORAGE_PDFS_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('haxlr8_ps_pdfs_updated', { detail: merged }));
+          return merged;
+        }
+      } catch (parseErr) {
+        console.warn('Error parsing cloud PS PDF registry:', parseErr);
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase fetchDomainPdfUrls notice:', err);
+  }
+
+  return getAllDomainPdfUrls();
+};
+
+export const saveDomainPdfUrl = async (domain, url) => {
+  if (!domain || !url) return;
+  const current = getAllDomainPdfUrls();
+  current[domain] = url.trim();
+
+  // 1. Save locally for instant UI update
+  try {
+    localStorage.setItem(STORAGE_PDFS_KEY, JSON.stringify(current));
+    window.dispatchEvent(new CustomEvent('haxlr8_ps_pdfs_updated', { detail: current }));
+  } catch (e) {}
+
+  // 2. Persist to Supabase cloud announcements
+  try {
+    const { data: existing } = await supabase
+      .from('announcements')
+      .select('id')
+      .eq('tag', PS_PDF_TAG)
+      .limit(1);
+
+    const payloadStr = JSON.stringify(current);
+
+    if (existing && existing.length > 0) {
+      await supabase
+        .from('announcements')
+        .update({
+          title: 'HAXLR8 Problem Statements Dossier PDFs',
+          message: 'Official domain problem statement PDF links',
+          content: payloadStr,
+        })
+        .eq('id', existing[0].id);
+    } else {
+      await supabase
+        .from('announcements')
+        .insert([{
+          title: 'HAXLR8 Problem Statements Dossier PDFs',
+          tag: PS_PDF_TAG,
+          message: 'Official domain problem statement PDF links',
+          content: payloadStr,
+        }]);
+    }
+  } catch (cloudErr) {
+    console.warn('Cloud saveDomainPdfUrl notice:', cloudErr);
+  }
+
+  return current;
+};
+
+export const subscribeToDomainPdfs = (onUpdate) => {
+  try {
+    const channel = supabase
+      .channel('public:ps_pdfs_sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'announcements',
+          filter: `tag=eq.${PS_PDF_TAG}`
+        },
+        (payload) => {
+          if (payload.new && payload.new.content) {
+            try {
+              const parsed = JSON.parse(payload.new.content);
+              if (parsed && typeof parsed === 'object') {
+                const currentLocal = getAllDomainPdfUrls();
+                const merged = { ...currentLocal, ...parsed };
+                localStorage.setItem(STORAGE_PDFS_KEY, JSON.stringify(merged));
+                window.dispatchEvent(new CustomEvent('haxlr8_ps_pdfs_updated', { detail: merged }));
+                if (typeof onUpdate === 'function') onUpdate(merged);
+              }
+            } catch (err) {
+              console.warn('Error parsing realtime domain PDF payload:', err);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (err) {
+    console.warn('Failed to subscribe to domain PDFs realtime:', err);
+    return () => {};
   }
 };
 
