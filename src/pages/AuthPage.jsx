@@ -17,7 +17,7 @@ import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
 
 // Flight Repair Mode: Toggle to suspend logins/registrations if needed
-export const FLIGHT_REPAIR_MODE = false;
+export const FLIGHT_REPAIR_MODE = true;
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ export default function AuthPage() {
   const handleAuth = async (e) => {
     e.preventDefault();
     if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Flight repairs are currently in progress. Registrations and logins are temporarily suspended.');
+      setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
       setLoading(false);
       return;
     }
@@ -209,7 +209,7 @@ export default function AuthPage() {
   // Native Google SSO: Direct Redirect to Google Accounts
   const handleGoogleAuth = async () => {
     if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Flight repairs are currently in progress. Registrations and logins are temporarily suspended.');
+      setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
       return;
     }
     playCrewmatePopSound();
@@ -721,6 +721,46 @@ export default function AuthPage() {
               </div>
             </div>
           </div>
+
+          {/* Flight Works in Progress Notice Banner */}
+          {FLIGHT_REPAIR_MODE && (
+            <div
+              style={{
+                backgroundColor: '#fff7ed',
+                border: '2px solid #fed7aa',
+                borderRadius: '16px',
+                padding: '14px 16px',
+                marginBottom: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                boxShadow: '0 4px 14px rgba(251, 146, 60, 0.1)',
+              }}
+            >
+              <div
+                style={{
+                  background: '#ffedd5',
+                  borderRadius: '50%',
+                  width: '38px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Wrench size={19} color="#ea580c" />
+              </div>
+              <div>
+                <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#9a3412', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  Flight Works Going On 🛠️
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#c2410c', fontWeight: 700, lineHeight: 1.45 }}>
+                  Mission control pre-flight maintenance is currently underway. Dashboard logins are temporarily paused. Please <strong>come back by 12:00 to login</strong>.
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Title on Desktop */}
           <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>
