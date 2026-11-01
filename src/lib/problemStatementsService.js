@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { PROBLEM_STATEMENTS, DOMAIN_METADATA, MAX_TEAMS_PER_PROBLEM, getProblemById } from '../data/problemStatementsCatalog';
+import { resolveDomain } from './domainUtils';
 
 // Storage keys
 const STORAGE_SELECTIONS_KEY = 'haxlr8_ps_selections';
@@ -320,7 +321,7 @@ export const fetchAllProblemSelections = async () => {
           const item = {
             team_id: sub.team_id,
             team_name: psData.team_name || teamInfo?.team_name || 'Squad',
-            domain: psData.domain || fullProblem?.domain || sub.category || sub.sdg_goal || 'Smart City',
+            domain: resolveDomain(teamInfo, sub, null, psData.domain || fullProblem?.domain || sub.category || sub.sdg_goal || 'Smart City'),
             problem_statement_id: problemId,
             problem_statement_num: psData.num || psData.problem_statement_num || fullProblem?.num || 1,
             problem_statement_title: psData.title || psData.problem_statement_title || fullProblem?.title || '',

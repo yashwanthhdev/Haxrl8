@@ -8,6 +8,19 @@
 
 export const VALID_DOMAINS = ['Healthcare', 'Agriculture', 'Smart City'];
 
+export const SQUAD_DOMAIN_OVERRIDES = {
+  // Pulse squad explicitly mapped to Agriculture domain track
+  '47fdbbbb-d546-4683-b53e-e7884dbe1a87': 'Agriculture',
+  'pulse': 'Agriculture'
+};
+
+const PULSE_CREW_EMAILS = [
+  'ovaissyed872@gmail.com',
+  'sarikam.aids@sjcit.ac.in',
+  'srushtiumesh23@gmail.com',
+  'chandanal3006@gmail.com'
+];
+
 /**
  * Resolves the canonical domain string from team, submission, or user cache.
  * Protects against buggy values like 'Registration Verified' or undefined.
@@ -19,6 +32,21 @@ export const VALID_DOMAINS = ['Healthcare', 'Agriculture', 'Smart City'];
  * @returns {string} - Canonical domain name (e.g. 'Healthcare', 'Agriculture', 'Smart City')
  */
 export function resolveDomain(team = null, sub = null, user = null, defaultDomain = 'Healthcare') {
+  // 0. Explicit Squad Domain Overrides (requested by organizers)
+  const teamId = team?.id || sub?.team_id || (typeof team === 'string' ? team : null);
+  const teamName = (team?.team_name || sub?.team_name || (typeof team === 'string' ? team : '')).trim().toLowerCase();
+  if (teamId && SQUAD_DOMAIN_OVERRIDES[teamId]) {
+    return SQUAD_DOMAIN_OVERRIDES[teamId];
+  }
+  if (teamName === 'pulse') {
+    return 'Agriculture';
+  }
+
+  const userEmail = (user?.email || user?.user_metadata?.email || '').trim().toLowerCase();
+  if (userEmail && PULSE_CREW_EMAILS.includes(userEmail)) {
+    return 'Agriculture';
+  }
+
   // 1. Direct valid domain on team object
   if (team?.domain && typeof team.domain === 'string') {
     const trimmed = team.domain.trim();
