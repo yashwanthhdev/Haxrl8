@@ -657,7 +657,7 @@ export default function AdminProblemStatements() {
                       alignItems: 'center',
                       gap: 5
                     }}>
-                      ○ 0 / 3 Claimed · 3 Slots Available
+                      ○ Open (Available)
                     </span>
                   )}
                 </div>

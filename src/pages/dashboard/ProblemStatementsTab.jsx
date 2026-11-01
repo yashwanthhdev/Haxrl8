@@ -597,39 +597,9 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
                         gap: 5
                       }}>
                         <Lock size={12} />
-                        3 / 3 FULL · Capacity Reached
+                        Capacity Reached (3/3)
                       </span>
-                    ) : slotsLeft === 1 ? (
-                      <span style={{
-                        fontSize: 11.5,
-                        fontWeight: 800,
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        background: '#fff7ed',
-                        color: '#c2410c',
-                        border: '1px solid #fdba74',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5
-                      }}>
-                        🔥 2 / 3 Claimed · 1 Final Slot Left!
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontSize: 11.5,
-                        fontWeight: 800,
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        background: '#f0fdf4',
-                        color: '#15803d',
-                        border: '1px solid #bbf7d0',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5
-                      }}>
-                        ● {count} / 3 Claimed · {slotsLeft} Slots Available
-                      </span>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Action / Select Button */}
