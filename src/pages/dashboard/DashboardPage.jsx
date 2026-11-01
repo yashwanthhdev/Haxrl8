@@ -8,19 +8,36 @@ import PaymentTab     from './PaymentTab';
 import TicketTab      from './TicketTab';
 import ResourcesTab   from './ResourcesTab';
 import AnnouncementsTab from './AnnouncementsTab';
+import ProblemStatementsTab from './ProblemStatementsTab';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
 import { filterRealAnnouncements } from '../../lib/announcementsService';
 import { resolveDomain } from '../../lib/domainUtils';
 import { recordUserActivity } from '../../lib/userTrackingService';
+import { isDemoEmail } from '../../lib/problemStatementsService';
 import { FLIGHT_REPAIR_MODE } from '../AuthPage';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // If Flight Repair Mode is active, block dashboard access completely
-  if (FLIGHT_REPAIR_MODE) {
+  // If Flight Repair Mode is active, allow verified demo accounts to bypass for test & evaluation
+  const checkIsDemoSession = () => {
+    try {
+      const local = localStorage.getItem('haxlr8_leader_session');
+      if (local) {
+        const parsed = JSON.parse(local);
+        const email = parsed?.email || parsed?.user?.email;
+        if (isDemoEmail(email)) return true;
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  const isDemoSession = checkIsDemoSession();
+
+  // If Flight Repair Mode is active and not a demo account, show maintenance card
+  if (FLIGHT_REPAIR_MODE && !isDemoSession) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -747,6 +764,16 @@ export default function DashboardPage() {
   return (
     <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} hasTeam={hasTeam} announcements={announcements} user={user} teamData={teamData} teamMembers={teamMembers}>
       {activeTab === 'overview'   && <OverviewTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} announcements={announcements} onRefresh={() => fetchDashboardData(user, true)} />}
+      {activeTab === 'problem-statements' && (
+        <ProblemStatementsTab
+          teamData={teamData}
+          teamMembers={teamMembers}
+          user={user}
+          onStatementLocked={(updatedTeam) => {
+            setTeamData(updatedTeam);
+          }}
+        />
+      )}
       {activeTab === 'team'       && <TeamTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setTeamMembers={setTeamMembers} setTeamData={setTeamData} setHasTeam={setHasTeam} setActiveTab={setActiveTab} />}
       {activeTab === 'payment'    && <PaymentTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} onPaymentUpdated={(p) => { if (teamData) setTeamData({ ...teamData, payment_status: 'submitted', payment_utr: p.transaction_id }); }} />}
       {activeTab === 'ticket'     && <TicketTab hasTeam={hasTeam} teamData={teamData} teamMembers={teamMembers} submissions={submissions} user={user} setActiveTab={setActiveTab} />}

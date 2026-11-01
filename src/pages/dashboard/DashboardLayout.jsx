@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell, KeyRound } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell, KeyRound, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DomainWheel from '../../components/ui/DomainWheel';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
@@ -12,12 +12,13 @@ export { DomainWheel };
 export const SDGWheel = DomainWheel;
 
 const NAV = [
-  { id:'overview',      icon: LayoutDashboard, label:'Overview',       shortLabel:'Overview' },
-  { id:'team',          icon: Users,           label:'My Team',        shortLabel:'Team'     },
-  { id:'payment',       icon: CreditCard,      label:'Payment & Verify', shortLabel:'Payment' },
-  { id:'ticket',        icon: Receipt,         label:'Payment Receipt',  shortLabel:'Receipt' },
-  { id:'resources',     icon: BookOpen,        label:'Participant Desk', shortLabel:'Desk'     },
-  { id:'announcements', icon: Bell,            label:'Announcements',  shortLabel:'Alerts'   },
+  { id:'overview',           icon: LayoutDashboard, label:'Overview',           shortLabel:'Overview' },
+  { id:'problem-statements', icon: Target,          label:'Problem Statements', shortLabel:'Problems' },
+  { id:'team',               icon: Users,           label:'My Team',            shortLabel:'Team'     },
+  { id:'payment',            icon: CreditCard,      label:'Payment & Verify',   shortLabel:'Payment' },
+  { id:'ticket',             icon: Receipt,         label:'Payment Receipt',    shortLabel:'Receipt' },
+  { id:'resources',          icon: BookOpen,        label:'Participant Desk',   shortLabel:'Desk'     },
+  { id:'announcements',      icon: Bell,            label:'Announcements',      shortLabel:'Alerts'   },
 ];
 
 export default function DashboardLayout({ activeTab, setActiveTab, children, hasTeam, announcements, user, teamData, teamMembers }) {

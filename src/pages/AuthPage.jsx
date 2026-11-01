@@ -15,6 +15,7 @@ import haxlr8LogoDark from '../assets/logo/haxlr8-logo-dark.png';
 import { sendAccountWelcomeEmail, sendLoginNotificationEmail } from '../lib/emailService';
 import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
+import { isDemoEmail, getDemoAccount, DEMO_ACCOUNTS } from '../lib/problemStatementsService';
 
 // Flight Repair Mode: Toggle to suspend logins/registrations if needed
 export const FLIGHT_REPAIR_MODE = true;
@@ -74,13 +75,71 @@ export default function AuthPage() {
     playCrewmatePopSound();
   };
 
+  // Instant 1-tap Demo Authentication for testing Problem Statements & flows
+  const handleDemoQuickLogin = (demoEmail) => {
+    const demoData = getDemoAccount(demoEmail);
+    if (!demoData) return;
+
+    setEmail(demoData.email);
+    setPassword(demoData.password);
+    setErrorMsg('');
+
+    const demoUser = {
+      id: demoData.id,
+      email: demoData.email,
+      user_metadata: {
+        full_name: demoData.name,
+        email: demoData.email
+      }
+    };
+    const demoTeam = {
+      id: demoData.teamId,
+      team_name: demoData.teamName,
+      domain: demoData.domain,
+      leader_id: demoData.id,
+      leader_name: demoData.leaderName,
+      leader_email: demoData.email,
+      leader_phone: demoData.leaderPhone,
+      college: demoData.college,
+      payment_status: 'submitted',
+      payment_utr: 'DEMO-VERIFIED-UTR',
+      score: 0
+    };
+
+    try {
+      localStorage.setItem('haxlr8_leader_session', JSON.stringify({
+        user: demoUser,
+        email: demoData.email,
+        role: 'team_leader'
+      }));
+      localStorage.setItem(`haxlr8_team_${demoUser.id}`, JSON.stringify(demoTeam));
+      localStorage.setItem(`haxlr8_team_${demoData.email}`, JSON.stringify(demoTeam));
+      localStorage.setItem(`haxlr8_members_${demoUser.id}`, JSON.stringify(demoData.members));
+      localStorage.setItem(`haxlr8_members_${demoData.email}`, JSON.stringify(demoData.members));
+    } catch (e) {}
+
+    playTaskCompleteSound();
+    navigate('/dashboard?tab=problem-statements');
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
+    const cleanEmail = sanitizeInput(email).trim().toLowerCase();
+    const cleanName = sanitizeInput(name).trim();
+
+    // 1. Check if testing with authorized Demo Accounts
+    if (isDemoEmail(cleanEmail) || cleanEmail.startsWith('demo.')) {
+      handleDemoQuickLogin(cleanEmail);
+      return;
+    }
+
+    // 2. Flight Repair Mode: Suspend public squad logins until 12:00
     if (FLIGHT_REPAIR_MODE) {
       setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
       setLoading(false);
       return;
     }
+
     if (mode !== 'login') {
       setErrorMsg('Registrations for HAXLR8 3.0 are officially closed. No new squads can be registered.');
       setLoading(false);
@@ -89,9 +148,6 @@ export default function AuthPage() {
     setErrorMsg('');
     setSuccessMsg('');
     setLoading(true);
-
-    const cleanEmail = sanitizeInput(email).trim().toLowerCase();
-    const cleanName = sanitizeInput(name).trim();
 
     if (!cleanEmail || !isValidEmail(cleanEmail)) {
       setErrorMsg('Please enter a valid email address.');
@@ -761,6 +817,95 @@ export default function AuthPage() {
               </div>
             </div>
           )}
+
+          {/* ── 3 DEMO ACCOUNTS TEST BAR (For Evaluation & Verification) ── */}
+          <div
+            style={{
+              backgroundColor: '#f0f9ff',
+              border: '1.5px solid #bae6fd',
+              borderRadius: '16px',
+              padding: '12px 14px',
+              marginBottom: '18px',
+              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.05)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={14} color="#0284c7" />
+                <span style={{ fontSize: '11px', fontWeight: 900, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Demo Accounts (Test Problem Selection)
+                </span>
+              </div>
+              <span style={{ fontSize: '10px', color: '#0284c7', fontWeight: 800, background: '#e0f2fe', padding: '2px 6px', borderRadius: 6 }}>
+                Bypasses 12:00 Lock
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 10,
+                  background: '#ffffff',
+                  border: '1.5px solid #7dd3fc',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  color: '#0369a1',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  boxShadow: '0 1px 4px rgba(2, 132, 199, 0.1)',
+                  transition: 'all 0.15s',
+                }}
+                title="Login as Smart City Demo Squad (UrbanMatrix)"
+              >
+                🏙️ Smart City
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 10,
+                  background: '#ffffff',
+                  border: '1.5px solid #86efac',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  color: '#15803d',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  boxShadow: '0 1px 4px rgba(22, 163, 74, 0.1)',
+                  transition: 'all 0.15s',
+                }}
+                title="Login as Agriculture Demo Squad (AgroVision)"
+              >
+                🌾 Agriculture
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 10,
+                  background: '#ffffff',
+                  border: '1.5px solid #fecdd3',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  color: '#be123c',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  boxShadow: '0 1px 4px rgba(225, 29, 72, 0.1)',
+                  transition: 'all 0.15s',
+                }}
+                title="Login as Healthcare Demo Squad (MedPulse)"
+              >
+                🩺 Healthcare
+              </button>
+            </div>
+          </div>
 
           {/* Title on Desktop */}
           <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>

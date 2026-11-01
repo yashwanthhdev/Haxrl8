@@ -13,6 +13,8 @@ import {
   subscribeToSquadronsConfig 
 } from '../../lib/crewSquadronsService';
 import { resolveDomain, formatDomainWithBadge } from '../../lib/domainUtils';
+import { Target, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { getTeamSelection } from '../../lib/problemStatementsService';
 
 const TIMELINE_STEPS = [
   { title: 'Registration', date: 'Oct 09' },
@@ -161,6 +163,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
     (teamMembers?.find(m => m.email?.toLowerCase().trim() === user?.email?.toLowerCase().trim())?.is_leader)
   );
   const currentDomain = resolveDomain(teamData, submissions?.[0], user, 'Healthcare');
+  const lockedPs = getTeamSelection(teamData?.id, user?.email);
 
   const overallProgress = hasTeam ? (isPaid ? 100 : 60) : 25; 
   // Timeline indices: 0: Registration, 1: Squad Lock, 2: Fee Verify, 3: Pass Issued, 4: Grand Finale
@@ -451,6 +454,92 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
               {isPaid ? 'View Payment Receipt →' : 'Submit Fee Verification →'}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── PROBLEM STATEMENT DIRECTIVE CARD ── */}
+      {hasTeam && (
+        <div style={{
+          background: lockedPs 
+            ? 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)' 
+            : 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)',
+          borderRadius: 20,
+          border: lockedPs ? '2px solid #86efac' : '2px solid #7dd3fc',
+          padding: '20px 24px',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 280 }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: lockedPs ? '#16a34a' : '#0284c7',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22,
+              flexShrink: 0,
+              boxShadow: lockedPs ? '0 4px 12px rgba(22, 163, 74, 0.28)' : '0 4px 12px rgba(2, 132, 199, 0.28)'
+            }}>
+              {lockedPs ? <CheckCircle2 size={24} /> : <Target size={24} />}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: lockedPs ? '#dcfce7' : '#e0f2fe',
+                  color: lockedPs ? '#15803d' : '#0284c7',
+                  border: lockedPs ? '1px solid #86efac' : '1px solid #bae6fd'
+                }}>
+                  {lockedPs ? 'Mission Challenge Locked' : 'Official Challenges Live'}
+                </span>
+                <span style={{ fontSize: 11.5, color: '#64748b', fontWeight: 700 }}>
+                  {formatDomainWithBadge(currentDomain)} • Max 3 Squads Quota
+                </span>
+              </div>
+              <h3 style={{ fontSize: 16.5, fontWeight: 900, color: '#0f172a', margin: '4px 0 2px' }}>
+                {lockedPs ? `[${lockedPs.problem_statement_id}] ${lockedPs.problem_statement_title}` : `15 Official Challenges Released for ${currentDomain}`}
+              </h3>
+              <p style={{ fontSize: 12.5, color: '#475569', margin: 0, fontWeight: 500 }}>
+                {lockedPs 
+                  ? `Locked by Flight Captain ${lockedPs.locked_by || leader?.full_name} on ${new Date(lockedPs.locked_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}. Selection is permanent.` 
+                  : 'Review the official problem statements dossier and lock in your squad’s challenge before quota fills up.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab && setActiveTab('problem-statements')}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 12,
+              background: lockedPs ? '#16a34a' : '#0284c7',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 800,
+              color: '#ffffff',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: lockedPs ? '0 3px 10px rgba(22, 163, 74, 0.28)' : '0 3px 10px rgba(2, 132, 199, 0.28)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <span>{lockedPs ? 'View Problem Statement & PDF' : 'Explore 15 Challenges & Lock In'}</span>
+            <ArrowRight size={15} />
+          </button>
         </div>
       )}
 
