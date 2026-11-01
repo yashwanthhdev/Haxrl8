@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Target, FileText, Download, ExternalLink, Users, Search, 
   Filter, CheckCircle2, AlertTriangle, Lock, RefreshCw, Upload,
-  Save, Eye, ArrowUpRight, Phone, Mail, Building, Clock, ChevronDown, ChevronUp
+  Save, Eye, ArrowUpRight, Phone, Mail, Building, Clock, ChevronDown, ChevronUp, Trash2
 } from 'lucide-react';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import { isOrganizerAuthorized } from './adminAuth';
@@ -16,7 +16,8 @@ import {
   fetchAllProblemSelections, 
   getSelectionCounts, 
   getDomainPdfUrl, 
-  saveDomainPdfUrl 
+  saveDomainPdfUrl,
+  deleteProblemStatementSelection
 } from '../../lib/problemStatementsService';
 import { uploadDocumentFile } from '../../lib/documentsService';
 
@@ -40,6 +41,11 @@ export default function AdminProblemStatements() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedProblemId, setExpandedProblemId] = useState(null);
+
+  // Squad Deletion / Release state
+  const [deletingSquad, setDeletingSquad] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteFeedback, setDeleteFeedback] = useState(null);
 
   // PDF Management state
   const [pdfUrls, setPdfUrls] = useState({
@@ -67,7 +73,44 @@ export default function AdminProblemStatements() {
 
   useEffect(() => {
     loadData();
+
+    const handleSync = () => loadData();
+    window.addEventListener('haxlr8_ps_locked', handleSync);
+    window.addEventListener('haxlr8_ps_deleted', handleSync);
+    window.addEventListener('haxlr8_ps_pdfs_updated', handleSync);
+
+    return () => {
+      window.removeEventListener('haxlr8_ps_locked', handleSync);
+      window.removeEventListener('haxlr8_ps_deleted', handleSync);
+      window.removeEventListener('haxlr8_ps_pdfs_updated', handleSync);
+    };
   }, []);
+
+  // Admin delete/release squad lock
+  const handleConfirmDelete = async () => {
+    if (!deletingSquad) return;
+    setIsDeleting(true);
+    try {
+      await deleteProblemStatementSelection({
+        teamId: deletingSquad.team_id,
+        leaderEmail: deletingSquad.leader_email
+      });
+      setDeleteFeedback({
+        type: 'success',
+        message: `Successfully released locked problem statement [${deletingSquad.problem_statement_id || 'Challenge'}] for squad "${deletingSquad.team_name}". The slot has been reopened!`
+      });
+      setDeletingSquad(null);
+      await loadData();
+    } catch (err) {
+      setDeleteFeedback({
+        type: 'error',
+        message: `Failed to delete selection: ${err.message || 'Unknown error'}`
+      });
+    } finally {
+      setIsDeleting(false);
+      setTimeout(() => setDeleteFeedback(null), 6000);
+    }
+  };
 
   // Handle PDF URL change
   const handlePdfUrlChange = (domain, url) => {
@@ -277,6 +320,39 @@ export default function AdminProblemStatements() {
           </button>
         </div>
       </div>
+
+      {/* ─── ACTION FEEDBACK BANNER ─── */}
+      {deleteFeedback && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            padding: '14px 20px',
+            borderRadius: 14,
+            background: deleteFeedback.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+            border: `1.5px solid ${deleteFeedback.type === 'success' ? '#86EFAC' : '#FCA5A5'}`,
+            color: deleteFeedback.type === 'success' ? '#15803D' : '#DC2626',
+            fontSize: 13.5,
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {deleteFeedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            <span>{deleteFeedback.message}</span>
+          </div>
+          <button
+            onClick={() => setDeleteFeedback(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 900, fontSize: 18 }}
+          >
+            ×
+          </button>
+        </motion.div>
+      )}
 
       {/* ─── QUICK METRICS ─── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: S.gap }}>
@@ -787,6 +863,49 @@ export default function AdminProblemStatements() {
                                 </div>
                               )}
                             </div>
+
+                            {/* DELETE / RELEASE LOCK BUTTON */}
+                            <div style={{
+                              marginTop: 6,
+                              paddingTop: 10,
+                              borderTop: '1px solid #E2E8F0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 8
+                            }}>
+                              <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700 }}>
+                                Squad Locked Slot
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setDeletingSquad({
+                                  ...team,
+                                  problem_statement_id: problem.id,
+                                  problem_title: problem.title
+                                })}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  background: '#FEF2F2',
+                                  border: '1.5px solid #FCA5A5',
+                                  borderRadius: 8,
+                                  padding: '5px 12px',
+                                  fontSize: 11.5,
+                                  fontWeight: 800,
+                                  color: '#DC2626',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#FEF2F2'; }}
+                                title="Delete squad's locked choice and release quota slot"
+                              >
+                                <Trash2 size={13} />
+                                <span>Delete Squad Lock</span>
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -798,6 +917,134 @@ export default function AdminProblemStatements() {
           );
         })}
       </div>
+
+      {/* ─── DELETE / RELEASE SQUAD LOCK MODAL ─── */}
+      <AnimatePresence>
+        {deletingSquad && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                background: '#FFFFFF',
+                borderRadius: 22,
+                maxWidth: 480,
+                width: '100%',
+                padding: '24px 26px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '2px solid #FCA5A5',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  background: '#FEE2E2',
+                  color: '#DC2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Trash2 size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 900, color: '#991B1B', margin: 0 }}>
+                    Delete Squad's Locked Statement?
+                  </h3>
+                  <p style={{ fontSize: 12.5, color: '#64748B', margin: '2px 0 0', fontWeight: 600 }}>
+                    Organizer Management Override
+                  </p>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.6, margin: 0 }}>
+                Are you sure you want to release and delete the locked problem statement for squad <strong>"{deletingSquad.team_name}"</strong>?
+              </p>
+
+              <div style={{
+                background: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
+                borderRadius: 14,
+                padding: '14px 16px',
+                fontSize: 13,
+                color: '#1E293B',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div><strong>Challenge:</strong> [{deletingSquad.problem_statement_id}] {deletingSquad.problem_title}</div>
+                <div><strong>Captain:</strong> {deletingSquad.leader_name} ({deletingSquad.leader_email || 'No email'})</div>
+                {deletingSquad.college && <div><strong>College:</strong> {deletingSquad.college}</div>}
+                <div style={{ color: '#0369A1', fontSize: 12, fontWeight: 700, marginTop: 4 }}>
+                  ℹ Effect: The claimed slot will immediately reopen for other squads, and this squad will be freed to choose another problem statement.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDeletingSquad(null)}
+                  style={{
+                    flex: 1,
+                    padding: '11px 16px',
+                    borderRadius: 12,
+                    background: '#F1F5F9',
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: '#475569',
+                    cursor: isDeleting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  style={{
+                    flex: 1.4,
+                    padding: '11px 16px',
+                    borderRadius: 12,
+                    background: '#DC2626',
+                    border: 'none',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    color: '#FFFFFF',
+                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}
+                >
+                  <Trash2 size={16} />
+                  <span>{isDeleting ? 'Deleting Selection...' : 'Yes, Delete Selection'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

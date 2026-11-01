@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Download, ExternalLink, CheckCircle2, Lock, AlertTriangle, 
-  Sparkles, ShieldCheck, ArrowRight, Info, Users, Clock, HelpCircle
+  Sparkles, ShieldCheck, ArrowRight, Info, Users, Clock, HelpCircle, Trash2
 } from 'lucide-react';
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import { 
@@ -17,6 +17,7 @@ import {
   getSelectionCounts, 
   getTeamSelection, 
   lockProblemStatement,
+  deleteProblemStatementSelection,
   getDomainPdfUrl
 } from '../../lib/problemStatementsService';
 import { formatDomainWithBadge } from '../../lib/domainUtils';
@@ -63,6 +64,8 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
   // Confirmation Modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -84,6 +87,9 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
       if (myLock) {
         setLockedSelection(myLock);
         setSelectedProblemId(myLock.problem_statement_id);
+      } else {
+        setLockedSelection(null);
+        setSelectedProblemId(null);
       }
     } catch (e) {
       console.warn('Error fetching problem selections:', e);
@@ -98,13 +104,47 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
     // Listen for live updates
     const handleUpdate = () => refreshData();
     window.addEventListener('haxlr8_ps_locked', handleUpdate);
+    window.addEventListener('haxlr8_ps_deleted', handleUpdate);
     window.addEventListener('haxlr8_ps_pdfs_updated', handleUpdate);
 
     return () => {
       window.removeEventListener('haxlr8_ps_locked', handleUpdate);
+      window.removeEventListener('haxlr8_ps_deleted', handleUpdate);
       window.removeEventListener('haxlr8_ps_pdfs_updated', handleUpdate);
     };
   }, [teamData, userEmail]);
+
+  // Squad Delete Selection Handler
+  const handleDeleteLock = async () => {
+    setDeleting(true);
+    setErrorMsg('');
+    try {
+      await deleteProblemStatementSelection({
+        teamId: teamData?.id,
+        leaderEmail: userEmail
+      });
+      setLockedSelection(null);
+      setSelectedProblemId(null);
+      setShowDeleteModal(false);
+      setSuccessMsg('Locked selection successfully deleted. Your squad can now select another problem statement.');
+      if (onStatementLocked) {
+        onStatementLocked({
+          ...teamData,
+          problem_statement_id: null,
+          problem_statement_num: null,
+          problem_statement_title: null,
+          problem_statement_locked: false,
+          problem_statement_locked_at: null,
+          problem_statement_locked_by: null
+        });
+      }
+      await refreshData();
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to delete problem statement.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Open confirmation modal
   const handleInitiateLock = (problemId) => {
@@ -399,20 +439,49 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
               </div>
             </div>
 
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#ffffff',
-              border: '1.5px solid #86efac',
-              borderRadius: 14,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 800,
-              color: '#15803d'
-            }}>
-              <Lock size={14} />
-              <span>Permanent Selection · Finalized</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#ffffff',
+                border: '1.5px solid #86efac',
+                borderRadius: 14,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 800,
+                color: '#15803d'
+              }}>
+                <Lock size={14} />
+                <span>Locked In · Finalized</span>
+              </div>
+
+              {isLeader && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: '#fee2e2',
+                    border: '1.5px solid #fca5a5',
+                    borderRadius: 14,
+                    padding: '6px 14px',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: '#dc2626',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+                  title="Delete locked problem statement and release slot"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete Selection</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -434,7 +503,7 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
 
           <div style={{ fontSize: 12, color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Info size={14} />
-            <span>Per official event regulations, problem statement selection is locked and cannot be changed or canceled.</span>
+            <span>Problem statement is locked for your squad. Flight Captain can delete selection to switch challenges if needed.</span>
           </div>
         </div>
       ) : (
@@ -866,6 +935,135 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
                 >
                   <Lock size={16} />
                   <span>{submitting ? 'Locking in...' : 'Yes, Lock In Choice'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Delete / Release Locked Statement Modal */}
+        {showDeleteModal && lockedSelection && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20
+          }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                background: '#ffffff',
+                borderRadius: 24,
+                maxWidth: 480,
+                width: '100%',
+                padding: '28px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '2px solid #fca5a5',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 18
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 16,
+                  background: '#fee2e2',
+                  color: '#dc2626',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Trash2 size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 900, color: '#991B1B', margin: 0 }}>
+                    Delete Locked Selection?
+                  </h3>
+                  <p style={{ fontSize: 12.5, color: '#64748b', margin: '2px 0 0', fontWeight: 600 }}>
+                    Release Problem Statement
+                  </p>
+                </div>
+              </div>
+
+              {/* Message */}
+              <div style={{ fontSize: 13.5, color: '#334155', lineHeight: 1.6 }}>
+                Are you sure you want to delete and release <strong>[{lockedSelection.problem_statement_id}] {lockedSelection.problem_statement_title}</strong>?
+              </div>
+
+              {/* Details card */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: 14,
+                padding: '14px 16px',
+                fontSize: 13,
+                color: '#1e293b',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div><strong>Squad:</strong> {teamData?.team_name || lockedSelection.team_name}</div>
+                <div><strong>Locked by:</strong> {lockedSelection.locked_by || leaderMember?.full_name}</div>
+                <div style={{ color: '#0369a1', fontSize: 12, fontWeight: 700, marginTop: 4 }}>
+                  ℹ Releasing this will open the slot for other squads and allow your squad to pick another problem statement.
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: '#f1f5f9',
+                    border: '1.5px solid #cbd5e1',
+                    fontSize: 13.5,
+                    fontWeight: 800,
+                    color: '#475569',
+                    cursor: deleting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Keep Selection
+                </button>
+
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleDeleteLock}
+                  style={{
+                    flex: 1.4,
+                    padding: '12px',
+                    borderRadius: 14,
+                    background: '#dc2626',
+                    border: 'none',
+                    fontSize: 13.5,
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    cursor: deleting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}
+                >
+                  <Trash2 size={16} />
+                  <span>{deleting ? 'Deleting...' : 'Yes, Delete Selection'}</span>
                 </button>
               </div>
             </motion.div>

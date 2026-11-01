@@ -63,7 +63,18 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
   const [showRulebook, setShowRulebook] = useState(false);
   const [showNotification, setShowNotification] = useState(true);
   const [documents, setDocuments] = useState(() => getLocalDocuments());
+  const [psUpdateTick, setPsUpdateTick] = useState(0);
   const rulebookDoc = getOfficialRulebook(documents);
+
+  useEffect(() => {
+    const handlePsChange = () => setPsUpdateTick(t => t + 1);
+    window.addEventListener('haxlr8_ps_locked', handlePsChange);
+    window.addEventListener('haxlr8_ps_deleted', handlePsChange);
+    return () => {
+      window.removeEventListener('haxlr8_ps_locked', handlePsChange);
+      window.removeEventListener('haxlr8_ps_deleted', handlePsChange);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;

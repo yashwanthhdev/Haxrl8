@@ -405,3 +405,97 @@ export const lockProblemStatement = async ({
 
   return lockedRecord;
 };
+
+/**
+ * Delete / Release a squad's locked problem statement
+ * Clears local storage registries and Supabase submission problem statement data
+ */
+export const deleteProblemStatementSelection = async ({ teamId, leaderEmail }) => {
+  const cleanEmail = (leaderEmail || '').trim().toLowerCase();
+
+  // 1. Remove from local selections registry
+  try {
+    const all = getLocalSelections();
+    const updated = all.filter(s => {
+      if (teamId && s.team_id === teamId) return false;
+      if (cleanEmail && s.leader_email?.toLowerCase() === cleanEmail) return false;
+      return true;
+    });
+    saveLocalSelections(updated);
+
+    if (teamId) {
+      localStorage.removeItem(`haxlr8_ps_team_${teamId}`);
+    }
+    if (cleanEmail) {
+      localStorage.removeItem(`haxlr8_ps_team_${cleanEmail}`);
+    }
+
+    // Clean up cached team record if present
+    const teamKey = teamId ? `haxlr8_team_${teamId}` : null;
+    const emailKey = cleanEmail ? `haxlr8_team_${cleanEmail}` : null;
+    [teamKey, emailKey].filter(Boolean).forEach(k => {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const pt = JSON.parse(raw);
+          delete pt.problem_statement_id;
+          delete pt.problem_statement_num;
+          delete pt.problem_statement_title;
+          pt.problem_statement_locked = false;
+          delete pt.problem_statement_locked_at;
+          delete pt.problem_statement_locked_by;
+          localStorage.setItem(k, JSON.stringify(pt));
+        }
+      } catch (e) {}
+    });
+  } catch (e) {
+    console.warn('Local storage error in deleteProblemStatementSelection:', e);
+  }
+
+  // 2. Cloud Supabase cleanup (for real registered squads)
+  if (teamId && !isDemoId(teamId) && !isDemoEmail(cleanEmail)) {
+    try {
+      const { data: existingSubs } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('team_id', teamId);
+
+      if (existingSubs && existingSubs.length > 0) {
+        for (const sub of existingSubs) {
+          let updatedNotes = sub.evaluation_notes;
+          if (updatedNotes) {
+            try {
+              const parsed = typeof updatedNotes === 'string' ? JSON.parse(updatedNotes) : updatedNotes;
+              delete parsed.problem_statement;
+              delete parsed.locked_at;
+              delete parsed.problem_statement_id;
+              updatedNotes = JSON.stringify(parsed);
+            } catch (e) {
+              updatedNotes = null;
+            }
+          }
+          const updatedScores = sub.evaluation_scores || {};
+          delete updatedScores.problem_statement;
+
+          await supabase
+            .from('submissions')
+            .update({
+              evaluation_notes: updatedNotes,
+              evaluation_scores: updatedScores,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', sub.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Cloud submission cleanup notice:', err);
+    }
+  }
+
+  // 3. Dispatch global events so participant & admin UIs re-render immediately
+  window.dispatchEvent(new CustomEvent('haxlr8_ps_locked', { detail: null }));
+  window.dispatchEvent(new CustomEvent('haxlr8_ps_deleted', { detail: { teamId, leaderEmail } }));
+
+  return true;
+};
+
