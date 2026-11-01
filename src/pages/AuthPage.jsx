@@ -17,40 +17,14 @@ import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
 import { isDemoEmail, getDemoAccount, DEMO_ACCOUNTS } from '../lib/problemStatementsService';
 
-// Official Launch Timestamp: Exactly 7:00 PM Indian Standard Time (IST) on November 1, 2026 (13:30:00 UTC)
-export const LAUNCH_TIME_MS = new Date('2026-11-01T19:00:00+05:30').getTime();
-export const isFlightLocked = () => Date.now() < LAUNCH_TIME_MS;
-export const FLIGHT_REPAIR_MODE = isFlightLocked();
+// Public Logins Officially OPEN for HAXLR8 3.0 Dashboard
+export const FLIGHT_REPAIR_MODE = false;
+export const isFlightLocked = () => false;
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-
-  // Automatic Lock State with live tick to unlock at exact 7:00 PM IST
-  const [isLocked, setIsLocked] = useState(() => Date.now() < LAUNCH_TIME_MS);
-  const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((LAUNCH_TIME_MS - Date.now()) / 1000)));
-
-  useEffect(() => {
-    const updateLock = () => {
-      const now = Date.now();
-      const locked = now < LAUNCH_TIME_MS;
-      setIsLocked(locked);
-      setSecondsLeft(Math.max(0, Math.floor((LAUNCH_TIME_MS - now) / 1000)));
-      return locked;
-    };
-
-    if (!updateLock()) return;
-
-    const interval = setInterval(() => {
-      const stillLocked = updateLock();
-      if (!stillLocked) {
-        clearInterval(interval);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Demo URL Secret Access: strictly hidden from public, accessible ONLY via secret URL parameter
   const demoParam = (searchParams.get('demo') || searchParams.get('test') || searchParams.get('secret') || '').toLowerCase().trim();
@@ -78,7 +52,6 @@ export default function AuthPage() {
   // Check if session already exists or returning from OAuth
   useEffect(() => {
     const checkSession = async () => {
-      if (isLocked) return;
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user) {
         try {
@@ -180,13 +153,6 @@ export default function AuthPage() {
     // 1. Check if testing with authorized Demo Accounts
     if (isDemoEmail(cleanEmail) || cleanEmail.startsWith('demo.')) {
       handleDemoQuickLogin(cleanEmail);
-      return;
-    }
-
-    // 2. Flight Repair Mode: Suspend public squad logins until exact 7:00 PM IST
-    if (Date.now() < LAUNCH_TIME_MS) {
-      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open automatically at 7:00 PM IST.');
-      setLoading(false);
       return;
     }
 
@@ -314,10 +280,6 @@ export default function AuthPage() {
 
   // Native Google SSO: Direct Redirect to Google Accounts
   const handleGoogleAuth = async () => {
-    if (Date.now() < LAUNCH_TIME_MS) {
-      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open automatically at 7:00 PM IST.');
-      return;
-    }
     playCrewmatePopSound();
     setErrorMsg('');
     setGoogleLoading(true);
@@ -827,47 +789,6 @@ export default function AuthPage() {
               </div>
             </div>
           </div>
-
-          {/* Pre-Flight Maintenance Banner (Removes automatically at exact 7:00 PM IST) */}
-          {isLocked && (
-            <div
-              style={{
-                backgroundColor: '#fff7ed',
-                border: '2px solid #fed7aa',
-                borderRadius: '16px',
-                padding: '14px 16px',
-                marginBottom: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 4px 14px rgba(251, 146, 60, 0.1)',
-              }}
-            >
-              <div
-                style={{
-                  background: '#ffedd5',
-                  borderRadius: '50%',
-                  width: '38px',
-                  height: '38px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Wrench size={19} color="#ea580c" />
-              </div>
-              <div>
-                <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#9a3412', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                  Pre-Flight Maintenance Underway 🛠️
-                </div>
-                <div style={{ fontSize: '12.5px', color: '#c2410c', fontWeight: 700, lineHeight: 1.45 }}>
-                  Mission control pre-flight maintenance is underway. Dashboard logins will open at <strong>7:00 PM IST</strong>
-                  {secondsLeft > 0 && ` (in ${Math.floor(secondsLeft / 60)}m ${secondsLeft % 60}s)`}.
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Title on Desktop */}
           <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>

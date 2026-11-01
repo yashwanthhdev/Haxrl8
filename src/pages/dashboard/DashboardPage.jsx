@@ -15,24 +15,10 @@ import { filterRealAnnouncements } from '../../lib/announcementsService';
 import { resolveDomain } from '../../lib/domainUtils';
 import { recordUserActivity } from '../../lib/userTrackingService';
 import { isDemoEmail, getDemoAccount } from '../../lib/problemStatementsService';
-import { isFlightLocked, LAUNCH_TIME_MS } from '../AuthPage';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
-  // Dynamic launch timer: unlocks automatically at exact 7:00 PM IST
-  const [isFlightLockedNow, setIsFlightLockedNow] = useState(() => isFlightLocked());
-
-  useEffect(() => {
-    if (!isFlightLocked()) return;
-    const interval = setInterval(() => {
-      const locked = isFlightLocked();
-      setIsFlightLockedNow(locked);
-      if (!locked) clearInterval(interval);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const tabParam = searchParams.get('tab') || 'overview';
   const demoParam = (searchParams.get('demo') || searchParams.get('test') || '').toLowerCase().trim();
@@ -637,118 +623,7 @@ export default function DashboardPage() {
     );
   }
 
-  // If Flight Repair Mode is active and user is not an authorized demo evaluator, show maintenance card
-  const isDemoAuthorized = checkIsDemoSession() || 
-                           isDemoEmail(user?.email) || 
-                           isDemoEmail(userRef.current?.email) || 
-                           Boolean(resolveDemoEmail(demoParam));
 
-  if (isFlightLockedNow && !isDemoAuthorized) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        minHeight: '100dvh', 
-        width: '100%',
-        background: '#fffaf3', 
-        fontFamily: "'Plus Jakarta Sans', sans-serif", 
-        padding: '24px 16px',
-        boxSizing: 'border-box'
-      }}>
-        <div style={{ 
-          maxWidth: 460, 
-          width: '100%', 
-          background: '#ffffff', 
-          borderRadius: 24, 
-          padding: '36px 26px', 
-          textAlign: 'center', 
-          border: '2px solid #fed7aa', 
-          boxShadow: '0 16px 40px rgba(0,0,0,0.06)',
-          boxSizing: 'border-box'
-        }}>
-          {/* Logo Header */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <img src={haxlr8LogoDark} alt="HAXLR8 3.0" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
-          </div>
-
-          {/* Commander Mascot */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <AmongUsCrewmate color="orange" size={68} hat="visor" speechText="Flight Works in Progress! 🛠️" />
-          </div>
-
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 20, padding: '5px 14px', marginBottom: 12 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              ● Pre-Flight Maintenance Protocol
-            </span>
-          </div>
-
-          <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', margin: '0 0 10px' }}>
-            Flight Works Going On 🛠️
-          </h2>
-          <p style={{ fontSize: 13.5, color: '#475569', margin: '0 0 22px', lineHeight: 1.6, fontWeight: 500 }}>
-            Mission control telemetry and flight systems are currently undergoing maintenance before the official release. Dashboard access is temporarily disabled.
-          </p>
-
-          <div style={{
-            background: '#fffbeb',
-            border: '1.5px solid #fde68a',
-            borderRadius: 16,
-            padding: '14px 18px',
-            marginBottom: 24,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            textAlign: 'left'
-          }}>
-            <span style={{ fontSize: 26 }}>⏰</span>
-            <div style={{ fontSize: 13, color: '#92400e', fontWeight: 700, lineHeight: 1.5 }}>
-              Please <strong>come back by 12:00 to login</strong> and access your squad dashboard.
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                width: '100%',
-                padding: '13px 20px',
-                borderRadius: 14,
-                background: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.28)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
-            >
-              <span>Go to Login Screen →</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                padding: '8px',
-                background: 'transparent',
-                border: 'none',
-                color: '#64748b',
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              ← Back to Main Base Site
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // If no user is logged in, show helpful Commander Authentication gate instead of a blank screen
   if (!user && !loading) {
