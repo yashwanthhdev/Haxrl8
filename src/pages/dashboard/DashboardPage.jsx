@@ -15,11 +15,24 @@ import { filterRealAnnouncements } from '../../lib/announcementsService';
 import { resolveDomain } from '../../lib/domainUtils';
 import { recordUserActivity } from '../../lib/userTrackingService';
 import { isDemoEmail, getDemoAccount } from '../../lib/problemStatementsService';
-import { FLIGHT_REPAIR_MODE } from '../AuthPage';
+import { isFlightLocked, LAUNCH_TIME_MS } from '../AuthPage';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Dynamic launch timer: unlocks automatically at exact 7:00 PM IST
+  const [isFlightLockedNow, setIsFlightLockedNow] = useState(() => isFlightLocked());
+
+  useEffect(() => {
+    if (!isFlightLocked()) return;
+    const interval = setInterval(() => {
+      const locked = isFlightLocked();
+      setIsFlightLockedNow(locked);
+      if (!locked) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const tabParam = searchParams.get('tab') || 'overview';
   const demoParam = (searchParams.get('demo') || searchParams.get('test') || '').toLowerCase().trim();
@@ -630,7 +643,7 @@ export default function DashboardPage() {
                            isDemoEmail(userRef.current?.email) || 
                            Boolean(resolveDemoEmail(demoParam));
 
-  if (FLIGHT_REPAIR_MODE && !isDemoAuthorized) {
+  if (isFlightLockedNow && !isDemoAuthorized) {
     return (
       <div style={{ 
         display: 'flex', 

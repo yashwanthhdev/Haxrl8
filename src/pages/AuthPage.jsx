@@ -17,13 +17,40 @@ import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
 import { isDemoEmail, getDemoAccount, DEMO_ACCOUNTS } from '../lib/problemStatementsService';
 
-// Flight Repair Mode: Turned ON to pause logins until 7:00 PM launch
-export const FLIGHT_REPAIR_MODE = true;
+// Official Launch Timestamp: Exactly 7:00 PM Indian Standard Time (IST) on November 1, 2026 (13:30:00 UTC)
+export const LAUNCH_TIME_MS = new Date('2026-11-01T19:00:00+05:30').getTime();
+export const isFlightLocked = () => Date.now() < LAUNCH_TIME_MS;
+export const FLIGHT_REPAIR_MODE = isFlightLocked();
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Automatic Lock State with live tick to unlock at exact 7:00 PM IST
+  const [isLocked, setIsLocked] = useState(() => Date.now() < LAUNCH_TIME_MS);
+  const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((LAUNCH_TIME_MS - Date.now()) / 1000)));
+
+  useEffect(() => {
+    const updateLock = () => {
+      const now = Date.now();
+      const locked = now < LAUNCH_TIME_MS;
+      setIsLocked(locked);
+      setSecondsLeft(Math.max(0, Math.floor((LAUNCH_TIME_MS - now) / 1000)));
+      return locked;
+    };
+
+    if (!updateLock()) return;
+
+    const interval = setInterval(() => {
+      const stillLocked = updateLock();
+      if (!stillLocked) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Demo URL Secret Access: strictly hidden from public, accessible ONLY via secret URL parameter
   const demoParam = (searchParams.get('demo') || searchParams.get('test') || searchParams.get('secret') || '').toLowerCase().trim();
@@ -51,7 +78,7 @@ export default function AuthPage() {
   // Check if session already exists or returning from OAuth
   useEffect(() => {
     const checkSession = async () => {
-      if (FLIGHT_REPAIR_MODE) return;
+      if (isLocked) return;
       const { data } = await supabase.auth.getSession();
       if (data?.session?.user) {
         try {
@@ -156,9 +183,9 @@ export default function AuthPage() {
       return;
     }
 
-    // 2. Flight Repair Mode: Suspend public squad logins until 7:00 PM
-    if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open at 7:00 PM. Please check back at 7:00 PM.');
+    // 2. Flight Repair Mode: Suspend public squad logins until exact 7:00 PM IST
+    if (Date.now() < LAUNCH_TIME_MS) {
+      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open automatically at 7:00 PM IST.');
       setLoading(false);
       return;
     }
@@ -287,8 +314,8 @@ export default function AuthPage() {
 
   // Native Google SSO: Direct Redirect to Google Accounts
   const handleGoogleAuth = async () => {
-    if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open at 7:00 PM.');
+    if (Date.now() < LAUNCH_TIME_MS) {
+      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open automatically at 7:00 PM IST.');
       return;
     }
     playCrewmatePopSound();
@@ -801,8 +828,8 @@ export default function AuthPage() {
             </div>
           </div>
 
-          {/* Flight Works in Progress Notice Banner */}
-          {FLIGHT_REPAIR_MODE && (
+          {/* Pre-Flight Maintenance Banner (Removes automatically at exact 7:00 PM IST) */}
+          {isLocked && (
             <div
               style={{
                 backgroundColor: '#fff7ed',
@@ -835,7 +862,8 @@ export default function AuthPage() {
                   Pre-Flight Maintenance Underway 🛠️
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#c2410c', fontWeight: 700, lineHeight: 1.45 }}>
-                  Mission control pre-flight maintenance is currently underway. Dashboard logins will open at <strong>7:00 PM</strong>.
+                  Mission control pre-flight maintenance is underway. Dashboard logins will open at <strong>7:00 PM IST</strong>
+                  {secondsLeft > 0 && ` (in ${Math.floor(secondsLeft / 60)}m ${secondsLeft % 60}s)`}.
                 </div>
               </div>
             </div>
