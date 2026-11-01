@@ -21,6 +21,17 @@ import {
 } from '../../lib/problemStatementsService';
 import { formatDomainWithBadge } from '../../lib/domainUtils';
 
+const formatDateSafe = (dateVal) => {
+  if (!dateVal) return 'Verified';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (e) {
+    return String(dateVal);
+  }
+};
+
 export default function ProblemStatementsTab({ teamData, teamMembers, user, onStatementLocked }) {
   // Determine squad's domain
   const squadDomain = teamData?.domain || 'Smart City';
@@ -417,7 +428,7 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
             fontWeight: 600
           }}>
             <span>Flight Captain: <strong>{lockedSelection.locked_by || leaderMember?.full_name}</strong></span>
-            <span>Locked At: <strong>{new Date(lockedSelection.locked_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
+            <span>Locked At: <strong>{formatDateSafe(lockedSelection.locked_at)}</strong></span>
             <span>Squad: <strong>{teamData?.team_name || lockedSelection.team_name}</strong></span>
           </div>
 

@@ -513,7 +513,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
               </h3>
               <p style={{ fontSize: 12.5, color: '#475569', margin: 0, fontWeight: 500 }}>
                 {lockedPs 
-                  ? `Locked by Flight Captain ${lockedPs.locked_by || leader?.full_name} on ${new Date(lockedPs.locked_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}. Selection is permanent.` 
+                  ? `Locked by Flight Captain ${lockedPs.locked_by || leader?.full_name}${lockedPs.locked_at ? ` on ${(() => { try { return new Date(lockedPs.locked_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }); } catch(e) { return ''; } })()}` : ''}. Selection is permanent.` 
                   : 'Review the official problem statements dossier and lock in your squad’s challenge before quota fills up.'}
               </p>
             </div>

@@ -124,7 +124,7 @@ export default function AuthPage() {
     } catch (e) {}
 
     playTaskCompleteSound();
-    navigate('/dashboard?tab=problem-statements');
+    window.location.href = '/dashboard?tab=problem-statements';
   };
 
   // Instant direct entry if specific track requested in URL (e.g., ?demo=smartcity)

@@ -8,54 +8,54 @@ const STORAGE_PDFS_KEY = 'haxlr8_ps_custom_pdfs';
 // ─── 3 DEMO ACCOUNTS ──────────────────────────────────────────────────────────
 export const DEMO_ACCOUNTS = {
   'demo.smartcity@haxlr8.mit.ac.in': {
-    id: 'demo-user-smartcity-01',
+    id: 'd0000001-0000-4000-8000-000000000001',
     email: 'demo.smartcity@haxlr8.mit.ac.in',
     password: 'demo123',
     name: 'Captain Aaditya Rao',
     domain: 'Smart City',
-    teamId: 'demo-team-smartcity-01',
+    teamId: 'd0000001-0000-4000-8000-000000000002',
     teamName: 'UrbanMatrix',
     leaderName: 'Aaditya Rao',
     leaderPhone: '+91 98765 43210',
     college: 'MIT Mysore',
     members: [
-      { id: 'm-sc-1', full_name: 'Aaditya Rao', email: 'demo.smartcity@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 98765 43210', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' },
-      { id: 'm-sc-2', full_name: 'Bhavya Sharma', email: 'bhavya.sc@gmail.com', role: 'IoT & Telemetry Engineer', is_leader: false, phone_number: '+91 98765 43211', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' },
-      { id: 'm-sc-3', full_name: 'Chirag Patel', email: 'chirag.sc@gmail.com', role: 'Fullstack Urban Systems', is_leader: false, phone_number: '+91 98765 43212', dept: 'CSE', year: '3rd Year', college_name: 'MIT Mysore' }
+      { id: 'd0000001-0000-4000-8000-000000000003', full_name: 'Aaditya Rao', email: 'demo.smartcity@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 98765 43210', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' },
+      { id: 'd0000001-0000-4000-8000-000000000004', full_name: 'Bhavya Sharma', email: 'bhavya.sc@gmail.com', role: 'IoT & Telemetry Engineer', is_leader: false, phone_number: '+91 98765 43211', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' },
+      { id: 'd0000001-0000-4000-8000-000000000005', full_name: 'Chirag Patel', email: 'chirag.sc@gmail.com', role: 'Fullstack Urban Systems', is_leader: false, phone_number: '+91 98765 43212', dept: 'CSE', year: '3rd Year', college_name: 'MIT Mysore' }
     ]
   },
   'demo.agritech@haxlr8.mit.ac.in': {
-    id: 'demo-user-agritech-02',
+    id: 'd0000002-0000-4000-8000-000000000001',
     email: 'demo.agritech@haxlr8.mit.ac.in',
     password: 'demo123',
     name: 'Captain Sneha Kulkarni',
     domain: 'Agriculture',
-    teamId: 'demo-team-agritech-02',
+    teamId: 'd0000002-0000-4000-8000-000000000002',
     teamName: 'AgroVision',
     leaderName: 'Sneha Kulkarni',
     leaderPhone: '+91 98450 12345',
     college: 'MIT Mysore',
     members: [
-      { id: 'm-ag-1', full_name: 'Sneha Kulkarni', email: 'demo.agritech@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 98450 12345', dept: 'AI & DS', year: '3rd Year', college_name: 'MIT Mysore' },
-      { id: 'm-ag-2', full_name: 'Darshan Gowda', email: 'darshan.ag@gmail.com', role: 'Edge AI & Drone Vision', is_leader: false, phone_number: '+91 98450 12346', dept: 'AI & DS', year: '3rd Year', college_name: 'MIT Mysore' },
-      { id: 'm-ag-3', full_name: 'Esha Reddy', email: 'esha.ag@gmail.com', role: 'Embedded Systems & Robotics', is_leader: false, phone_number: '+91 98450 12347', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' }
+      { id: 'd0000002-0000-4000-8000-000000000003', full_name: 'Sneha Kulkarni', email: 'demo.agritech@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 98450 12345', dept: 'AI & DS', year: '3rd Year', college_name: 'MIT Mysore' },
+      { id: 'd0000002-0000-4000-8000-000000000004', full_name: 'Darshan Gowda', email: 'darshan.ag@gmail.com', role: 'Edge AI & Drone Vision', is_leader: false, phone_number: '+91 98450 12346', dept: 'AI & DS', year: '3rd Year', college_name: 'MIT Mysore' },
+      { id: 'd0000002-0000-4000-8000-000000000005', full_name: 'Esha Reddy', email: 'esha.ag@gmail.com', role: 'Embedded Systems & Robotics', is_leader: false, phone_number: '+91 98450 12347', dept: 'ECE', year: '3rd Year', college_name: 'MIT Mysore' }
     ]
   },
   'demo.healthtech@haxlr8.mit.ac.in': {
-    id: 'demo-user-healthtech-03',
+    id: 'd0000003-0000-4000-8000-000000000001',
     email: 'demo.healthtech@haxlr8.mit.ac.in',
     password: 'demo123',
     name: 'Captain Rohan Deshmukh',
     domain: 'Healthcare',
-    teamId: 'demo-team-healthtech-03',
+    teamId: 'd0000003-0000-4000-8000-000000000002',
     teamName: 'MedPulse',
     leaderName: 'Rohan Deshmukh',
     leaderPhone: '+91 97412 67890',
     college: 'MIT Mysore',
     members: [
-      { id: 'm-hc-1', full_name: 'Rohan Deshmukh', email: 'demo.healthtech@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 97412 67890', dept: 'Biomedical / CSE', year: '4th Year', college_name: 'MIT Mysore' },
-      { id: 'm-hc-2', full_name: 'Farhan Ali', email: 'farhan.hc@gmail.com', role: 'Biosignal DSP & Firmware', is_leader: false, phone_number: '+91 97412 67891', dept: 'ECE', year: '4th Year', college_name: 'MIT Mysore' },
-      { id: 'm-hc-3', full_name: 'Geetha N', email: 'geetha.hc@gmail.com', role: 'Clinical Data & Backend Lead', is_leader: false, phone_number: '+91 97412 67892', dept: 'CSE', year: '4th Year', college_name: 'MIT Mysore' }
+      { id: 'd0000003-0000-4000-8000-000000000003', full_name: 'Rohan Deshmukh', email: 'demo.healthtech@haxlr8.mit.ac.in', role: 'Flight Captain', is_leader: true, phone_number: '+91 97412 67890', dept: 'Biomedical / CSE', year: '4th Year', college_name: 'MIT Mysore' },
+      { id: 'd0000003-0000-4000-8000-000000000004', full_name: 'Farhan Ali', email: 'farhan.hc@gmail.com', role: 'Biosignal DSP & Firmware', is_leader: false, phone_number: '+91 97412 67891', dept: 'ECE', year: '4th Year', college_name: 'MIT Mysore' },
+      { id: 'd0000003-0000-4000-8000-000000000005', full_name: 'Geetha N', email: 'geetha.hc@gmail.com', role: 'Clinical Data & Backend Lead', is_leader: false, phone_number: '+91 97412 67892', dept: 'CSE', year: '4th Year', college_name: 'MIT Mysore' }
     ]
   }
 };
@@ -63,7 +63,12 @@ export const DEMO_ACCOUNTS = {
 export const isDemoEmail = (email) => {
   if (!email) return false;
   const clean = email.trim().toLowerCase();
-  return Boolean(DEMO_ACCOUNTS[clean]);
+  return Boolean(DEMO_ACCOUNTS[clean]) || clean.startsWith('demo.');
+};
+
+export const isDemoId = (id) => {
+  if (!id) return false;
+  return typeof id === 'string' && (id.startsWith('d000000') || id.startsWith('demo-'));
 };
 
 export const getDemoAccount = (email) => {
@@ -349,7 +354,7 @@ export const lockProblemStatement = async ({
   }
 
   // 2. Cloud Persistence in Supabase `submissions`
-  if (teamId && !teamId.startsWith('demo-')) {
+  if (teamId && !isDemoId(teamId) && !isDemoEmail(leaderEmail)) {
     try {
       // Find existing submission or insert
       const { data: existingSubs } = await supabase
