@@ -17,8 +17,8 @@ import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
 import { isDemoEmail, getDemoAccount, DEMO_ACCOUNTS } from '../lib/problemStatementsService';
 
-// Flight Repair Mode: Set to false to open public logins for participants
-export const FLIGHT_REPAIR_MODE = false;
+// Flight Repair Mode: Turned ON to pause logins until 7:00 PM launch
+export const FLIGHT_REPAIR_MODE = true;
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -156,9 +156,9 @@ export default function AuthPage() {
       return;
     }
 
-    // 2. Flight Repair Mode: Suspend public squad logins until 12:00
+    // 2. Flight Repair Mode: Suspend public squad logins until 7:00 PM
     if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
+      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open at 7:00 PM. Please check back at 7:00 PM.');
       setLoading(false);
       return;
     }
@@ -288,7 +288,7 @@ export default function AuthPage() {
   // Native Google SSO: Direct Redirect to Google Accounts
   const handleGoogleAuth = async () => {
     if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
+      setErrorMsg('Pre-flight maintenance underway! Dashboard logins will open at 7:00 PM.');
       return;
     }
     playCrewmatePopSound();
@@ -832,10 +832,10 @@ export default function AuthPage() {
               </div>
               <div>
                 <div style={{ fontSize: '13.5px', fontWeight: 900, color: '#9a3412', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                  Flight Works Going On 🛠️
+                  Pre-Flight Maintenance Underway 🛠️
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#c2410c', fontWeight: 700, lineHeight: 1.45 }}>
-                  Mission control pre-flight maintenance is currently underway. Dashboard logins are temporarily paused. Please <strong>come back by 12:00 to login</strong>.
+                  Mission control pre-flight maintenance is currently underway. Dashboard logins will open at <strong>7:00 PM</strong>.
                 </div>
               </div>
             </div>
