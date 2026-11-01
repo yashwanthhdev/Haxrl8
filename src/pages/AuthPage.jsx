@@ -80,6 +80,13 @@ export default function AuthPage() {
     playCrewmatePopSound();
   };
 
+  const handleFillCredentials = (accEmail, accPass = 'demo123') => {
+    setEmail(accEmail);
+    setPassword(accPass);
+    setErrorMsg('');
+    playCrewmatePopSound();
+  };
+
   // Instant 1-tap Demo Authentication for testing Problem Statements & flows
   const handleDemoQuickLogin = (demoEmail) => {
     const demoData = getDemoAccount(demoEmail);
@@ -151,7 +158,7 @@ export default function AuthPage() {
 
     // 2. Flight Repair Mode: Suspend public squad logins until 12:00
     if (FLIGHT_REPAIR_MODE) {
-      setErrorMsg('Flight works going on! Dashboard login is temporarily disabled. Please come back by 12:00 to login.');
+      setErrorMsg('Flight works going on! Dashboard login is temporarily restricted. Only the 3 authorized evaluation accounts listed above can log in right now. Please come back by 12:00 to login.');
       setLoading(false);
       return;
     }
@@ -834,96 +841,234 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* ── DEMO ACCOUNTS TEST BAR (Visible ONLY via secret URL parameter ?demo=1 or ?demo=true) ── */}
-          {isDemoUrlAccess && (
-            <div
-              style={{
-                backgroundColor: '#f0f9ff',
-                border: '1.5px solid #bae6fd',
-                borderRadius: '16px',
-                padding: '12px 14px',
-                marginBottom: '18px',
-                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.05)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={14} color="#0284c7" />
-                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Secret Coordinator Test Mode
-                  </span>
+          {/* ── AUTHORIZED EVALUATION CREDENTIALS (Strictly only these 3 emails are active) ── */}
+          <div
+            style={{
+              backgroundColor: '#fffbeb',
+              border: '2px solid #fde68a',
+              borderRadius: '18px',
+              padding: '16px 18px',
+              marginBottom: '20px',
+              boxShadow: '0 4px 16px rgba(245, 158, 11, 0.08)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>🔑</span>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 900, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Active Evaluation Credentials
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#b45309', fontWeight: 600 }}>
+                    Only these 3 accounts can log in during flight maintenance
+                  </div>
                 </div>
-                <span style={{ fontSize: '10px', color: '#0284c7', fontWeight: 800, background: '#e0f2fe', padding: '2px 6px', borderRadius: 6 }}>
-                  URL Parameter Active
-                </span>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in')}
-                  style={{
-                    padding: '8px 4px',
-                    borderRadius: 10,
-                    background: '#ffffff',
-                    border: '1.5px solid #7dd3fc',
-                    fontSize: '11.5px',
-                    fontWeight: 800,
-                    color: '#0369a1',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    boxShadow: '0 1px 4px rgba(2, 132, 199, 0.1)',
-                    transition: 'all 0.15s',
-                  }}
-                  title="Login as Smart City Demo Squad (UrbanMatrix)"
-                >
-                  🏙️ Smart City
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in')}
-                  style={{
-                    padding: '8px 4px',
-                    borderRadius: 10,
-                    background: '#ffffff',
-                    border: '1.5px solid #86efac',
-                    fontSize: '11.5px',
-                    fontWeight: 800,
-                    color: '#15803d',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    boxShadow: '0 1px 4px rgba(22, 163, 74, 0.1)',
-                    transition: 'all 0.15s',
-                  }}
-                  title="Login as Agriculture Demo Squad (AgroVision)"
-                >
-                  🌾 Agriculture
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in')}
-                  style={{
-                    padding: '8px 4px',
-                    borderRadius: 10,
-                    background: '#ffffff',
-                    border: '1.5px solid #fecdd3',
-                    fontSize: '11.5px',
-                    fontWeight: 800,
-                    color: '#be123c',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    boxShadow: '0 1px 4px rgba(225, 29, 72, 0.1)',
-                    transition: 'all 0.15s',
-                  }}
-                  title="Login as Healthcare Demo Squad (MedPulse)"
-                >
-                  🩺 Healthcare
-                </button>
+              <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 800, background: '#fef3c7', border: '1px solid #fde68a', padding: '4px 10px', borderRadius: '10px' }}>
+                Password for all: <code style={{ fontFamily: 'monospace', fontWeight: 900, color: '#b45309', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>demo123</code>
               </div>
             </div>
-          )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Smart City Account */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #bae6fd',
+                  borderRadius: '14px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>🏙️</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 900, color: '#0369a1' }}>Smart City Domain</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>• Squad: UrbanMatrix</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700, fontFamily: 'monospace', marginTop: '3px' }}>
+                    demo.smartcity@haxlr8.mit.ac.in
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('demo.smartcity@haxlr8.mit.ac.in', 'demo123')}
+                    style={{
+                      padding: '7px 11px',
+                      borderRadius: '8px',
+                      background: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      color: '#0369a1',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                    title="Fill into email and password inputs"
+                  >
+                    Fill Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in')}
+                    style={{
+                      padding: '7px 13px',
+                      borderRadius: '8px',
+                      background: '#0284c7',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.25)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span>1-Tap Login</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Agriculture Account */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #bbf7d0',
+                  borderRadius: '14px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>🌾</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 900, color: '#15803d' }}>Agriculture Domain</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>• Squad: AgroVision</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700, fontFamily: 'monospace', marginTop: '3px' }}>
+                    demo.agritech@haxlr8.mit.ac.in
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('demo.agritech@haxlr8.mit.ac.in', 'demo123')}
+                    style={{
+                      padding: '7px 11px',
+                      borderRadius: '8px',
+                      background: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      color: '#15803d',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                    title="Fill into email and password inputs"
+                  >
+                    Fill Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in')}
+                    style={{
+                      padding: '7px 13px',
+                      borderRadius: '8px',
+                      background: '#16a34a',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span>1-Tap Login</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Healthcare Account */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #fecdd3',
+                  borderRadius: '14px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>🩺</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 900, color: '#be123c' }}>Healthcare Domain</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>• Squad: MedPulse</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700, fontFamily: 'monospace', marginTop: '3px' }}>
+                    demo.healthtech@haxlr8.mit.ac.in
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('demo.healthtech@haxlr8.mit.ac.in', 'demo123')}
+                    style={{
+                      padding: '7px 11px',
+                      borderRadius: '8px',
+                      background: '#fff1f2',
+                      border: '1px solid #fecdd3',
+                      color: '#be123c',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                    title="Fill into email and password inputs"
+                  >
+                    Fill Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in')}
+                    style={{
+                      padding: '7px 13px',
+                      borderRadius: '8px',
+                      background: '#e11d48',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '11.5px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(225, 29, 72, 0.25)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <span>1-Tap Login</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Title on Desktop */}
           <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>
