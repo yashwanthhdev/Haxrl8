@@ -666,7 +666,7 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
                         gap: 5
                       }}>
                         <Lock size={12} />
-                        Capacity Reached (3/3)
+                        Capacity Reached
                       </span>
                     ) : null}
                   </div>
@@ -723,7 +723,7 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
                         }}
                       >
                         <Lock size={13} />
-                        <span>Closed (3/3 Full)</span>
+                        <span>Selection Closed</span>
                       </button>
                     ) : isLeader ? (
                       <button
