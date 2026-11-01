@@ -17,8 +17,8 @@ import { recordUserActivity } from '../lib/userTrackingService';
 import { checkRegistrationEligibility } from '../lib/whitelistService';
 import { isDemoEmail, getDemoAccount, DEMO_ACCOUNTS } from '../lib/problemStatementsService';
 
-// Flight Repair Mode: Toggle to suspend logins/registrations if needed
-export const FLIGHT_REPAIR_MODE = true;
+// Flight Repair Mode: Set to false to open public logins for participants
+export const FLIGHT_REPAIR_MODE = false;
 
 export default function AuthPage() {
   const navigate = useNavigate();
