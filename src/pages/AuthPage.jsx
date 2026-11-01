@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../lib/supabaseClient';
@@ -23,6 +23,11 @@ export const FLIGHT_REPAIR_MODE = true;
 export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Demo URL Secret Access: strictly hidden from public, accessible ONLY via secret URL parameter
+  const demoParam = (searchParams.get('demo') || searchParams.get('test') || searchParams.get('secret') || '').toLowerCase().trim();
+  const isDemoUrlAccess = demoParam === 'true' || demoParam === '1' || demoParam === 'haxlr8' || ['smartcity', 'agritech', 'healthtech'].includes(demoParam);
 
   // Mode: strictly locked to 'login' since new registrations are officially closed
   const [mode, setMode] = useState('login');
@@ -121,6 +126,17 @@ export default function AuthPage() {
     playTaskCompleteSound();
     navigate('/dashboard?tab=problem-statements');
   };
+
+  // Instant direct entry if specific track requested in URL (e.g., ?demo=smartcity)
+  useEffect(() => {
+    if (demoParam === 'smartcity') {
+      handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in');
+    } else if (demoParam === 'agritech') {
+      handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in');
+    } else if (demoParam === 'healthtech') {
+      handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in');
+    }
+  }, [demoParam]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -818,94 +834,96 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* ── 3 DEMO ACCOUNTS TEST BAR (For Evaluation & Verification) ── */}
-          <div
-            style={{
-              backgroundColor: '#f0f9ff',
-              border: '1.5px solid #bae6fd',
-              borderRadius: '16px',
-              padding: '12px 14px',
-              marginBottom: '18px',
-              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.05)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={14} color="#0284c7" />
-                <span style={{ fontSize: '11px', fontWeight: 900, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Demo Accounts (Test Problem Selection)
+          {/* ── DEMO ACCOUNTS TEST BAR (Visible ONLY via secret URL parameter ?demo=1 or ?demo=true) ── */}
+          {isDemoUrlAccess && (
+            <div
+              style={{
+                backgroundColor: '#f0f9ff',
+                border: '1.5px solid #bae6fd',
+                borderRadius: '16px',
+                padding: '12px 14px',
+                marginBottom: '18px',
+                boxShadow: '0 2px 8px rgba(2, 132, 199, 0.05)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={14} color="#0284c7" />
+                  <span style={{ fontSize: '11px', fontWeight: 900, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Secret Coordinator Test Mode
+                  </span>
+                </div>
+                <span style={{ fontSize: '10px', color: '#0284c7', fontWeight: 800, background: '#e0f2fe', padding: '2px 6px', borderRadius: 6 }}>
+                  URL Parameter Active
                 </span>
               </div>
-              <span style={{ fontSize: '10px', color: '#0284c7', fontWeight: 800, background: '#e0f2fe', padding: '2px 6px', borderRadius: 6 }}>
-                Bypasses 12:00 Lock
-              </span>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #7dd3fc',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: '#0369a1',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    boxShadow: '0 1px 4px rgba(2, 132, 199, 0.1)',
+                    transition: 'all 0.15s',
+                  }}
+                  title="Login as Smart City Demo Squad (UrbanMatrix)"
+                >
+                  🏙️ Smart City
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #86efac',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: '#15803d',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    boxShadow: '0 1px 4px rgba(22, 163, 74, 0.1)',
+                    transition: 'all 0.15s',
+                  }}
+                  title="Login as Agriculture Demo Squad (AgroVision)"
+                >
+                  🌾 Agriculture
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: 10,
+                    background: '#ffffff',
+                    border: '1.5px solid #fecdd3',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    color: '#be123c',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    boxShadow: '0 1px 4px rgba(225, 29, 72, 0.1)',
+                    transition: 'all 0.15s',
+                  }}
+                  title="Login as Healthcare Demo Squad (MedPulse)"
+                >
+                  🩺 Healthcare
+                </button>
+              </div>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin('demo.smartcity@haxlr8.mit.ac.in')}
-                style={{
-                  padding: '8px 4px',
-                  borderRadius: 10,
-                  background: '#ffffff',
-                  border: '1.5px solid #7dd3fc',
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: '#0369a1',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  boxShadow: '0 1px 4px rgba(2, 132, 199, 0.1)',
-                  transition: 'all 0.15s',
-                }}
-                title="Login as Smart City Demo Squad (UrbanMatrix)"
-              >
-                🏙️ Smart City
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin('demo.agritech@haxlr8.mit.ac.in')}
-                style={{
-                  padding: '8px 4px',
-                  borderRadius: 10,
-                  background: '#ffffff',
-                  border: '1.5px solid #86efac',
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: '#15803d',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  boxShadow: '0 1px 4px rgba(22, 163, 74, 0.1)',
-                  transition: 'all 0.15s',
-                }}
-                title="Login as Agriculture Demo Squad (AgroVision)"
-              >
-                🌾 Agriculture
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin('demo.healthtech@haxlr8.mit.ac.in')}
-                style={{
-                  padding: '8px 4px',
-                  borderRadius: 10,
-                  background: '#ffffff',
-                  border: '1.5px solid #fecdd3',
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: '#be123c',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  boxShadow: '0 1px 4px rgba(225, 29, 72, 0.1)',
-                  transition: 'all 0.15s',
-                }}
-                title="Login as Healthcare Demo Squad (MedPulse)"
-              >
-                🩺 Healthcare
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Title on Desktop */}
           <div className="auth-desktop-title-row" style={{ marginBottom: '20px' }}>
