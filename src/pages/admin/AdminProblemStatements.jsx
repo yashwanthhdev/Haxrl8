@@ -22,6 +22,8 @@ import {
   deleteProblemStatementSelection
 } from '../../lib/problemStatementsService';
 import { uploadDocumentFile } from '../../lib/documentsService';
+import { supabase } from '../../lib/supabaseClient';
+import { sendProblemStatementsLiveEmail } from '../../lib/emailService';
 
 const S = {
   card: '#FFFFFF',
@@ -57,6 +59,15 @@ export default function AdminProblemStatements() {
   });
   const [uploadingDomain, setUploadingDomain] = useState(null);
   const [pdfSaveNotice, setPdfSaveNotice] = useState('');
+
+  // Problem Statements Live Broadcast state
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastProgress, setBroadcastProgress] = useState({ total: 0, sent: 0, failed: 0 });
+  const [broadcastDone, setBroadcastDone] = useState(false);
+  const [testEmailInput, setTestEmailInput] = useState('');
+  const [testSending, setTestSending] = useState(false);
+  const [testResultMsg, setTestResultMsg] = useState('');
 
   const loadData = async () => {
     setLoading(true);
@@ -270,6 +281,91 @@ export default function AdminProblemStatements() {
     document.body.removeChild(link);
   };
 
+  const handleSendTestLiveEmail = async () => {
+    const target = testEmailInput.trim();
+    if (!target || !target.includes('@')) {
+      setTestResultMsg('Please enter a valid test email address.');
+      return;
+    }
+    setTestSending(true);
+    setTestResultMsg('');
+    try {
+      const res = await sendProblemStatementsLiveEmail({
+        recipientEmail: target,
+        recipientName: 'Innovator (Test Preview)',
+        teamName: 'Demo Squad',
+        domain: 'Smart City'
+      });
+      if (res.success) {
+        setTestResultMsg(`✓ Test broadcast preview successfully delivered to ${target}!`);
+      } else {
+        setTestResultMsg(`Failed: ${res.error || 'Server error'}`);
+      }
+    } catch (e) {
+      setTestResultMsg(`Error: ${e.message}`);
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  const handleBroadcastLiveEmails = async () => {
+    setBroadcasting(true);
+    setBroadcastDone(false);
+    try {
+      const { data: members, error: mErr } = await supabase.from('team_members').select('*');
+      if (mErr) throw mErr;
+
+      const { data: teams } = await supabase.from('teams').select('*');
+      const teamMap = new Map();
+      (teams || []).forEach(t => teamMap.set(t.id, t));
+
+      const recipientsMap = new Map();
+      (members || []).forEach(m => {
+        const email = (m.email || '').trim().toLowerCase();
+        if (email && email.includes('@')) {
+          const t = teamMap.get(m.team_id);
+          recipientsMap.set(email, {
+            email,
+            name: (m.full_name || 'Haxlr8 Innovator').trim(),
+            teamName: t?.team_name || 'Squad',
+            domain: t?.domain || 'Smart City'
+          });
+        }
+      });
+
+      const recipients = Array.from(recipientsMap.values());
+      setBroadcastProgress({ total: recipients.length, sent: 0, failed: 0 });
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < recipients.length; i++) {
+        const r = recipients[i];
+        try {
+          const res = await sendProblemStatementsLiveEmail({
+            recipientEmail: r.email,
+            recipientName: r.name,
+            teamName: r.teamName,
+            domain: r.domain
+          });
+          if (res.success) sentCount++;
+          else failedCount++;
+        } catch (e) {
+          failedCount++;
+        }
+        setBroadcastProgress({ total: recipients.length, sent: sentCount, failed: failedCount });
+        await new Promise(res => setTimeout(res, 220));
+      }
+
+      setBroadcastDone(true);
+    } catch (err) {
+      console.error('Broadcast failed:', err);
+      alert('Broadcast encountered an error: ' + err.message);
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       
@@ -332,6 +428,27 @@ export default function AdminProblemStatements() {
           >
             <Download size={15} />
             <span>Export Claims Matrix (CSV)</span>
+          </button>
+
+          <button
+            onClick={() => setShowBroadcastModal(true)}
+            style={{
+              padding: '10px 20px',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #FF3B69 0%, #EA580C 100%)',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 900,
+              color: '#FFFFFF',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              boxShadow: '0 4px 14px rgba(255, 59, 105, 0.35)'
+            }}
+          >
+            <Mail size={15} />
+            <span>Broadcast "PS Live" Email</span>
           </button>
         </div>
       </div>
@@ -1054,6 +1171,216 @@ export default function AdminProblemStatements() {
                 >
                   <Trash2 size={16} />
                   <span>{isDeleting ? 'Deleting Selection...' : 'Yes, Delete Selection'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ─── BROADCAST 'PROBLEM STATEMENTS LIVE' MODAL ─── */}
+        {showBroadcastModal && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16
+          }}>
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              style={{
+                background: '#FFFFFF',
+                borderRadius: 22,
+                maxWidth: 540,
+                width: '100%',
+                padding: '28px 30px',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 18,
+                border: '2px solid #FED7AA'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  background: 'linear-gradient(135deg, #FF3B69 0%, #EA580C 100%)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)'
+                }}>
+                  <Mail size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                    Broadcast "Problem Statements Live"
+                  </h3>
+                  <p style={{ fontSize: 12.5, color: '#64748B', margin: '2px 0 0', fontWeight: 600 }}>
+                    Official announcement to all registered captains and crewmates
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#FFF7ED',
+                border: '1.5px solid #FED7AA',
+                borderRadius: 14,
+                padding: '14px 16px',
+                fontSize: 13,
+                color: '#7C2D12',
+                lineHeight: 1.55
+              }}>
+                <strong>Transmission Details:</strong> This will dispatch an official HAXLR8 3.0 notification email to all registered participants (captains &amp; teammates) announcing that problem statements are live, highlighting the 3-squad quota cap, and providing direct access to the dashboard.
+              </div>
+
+              {/* Test Dispatch Box */}
+              <div style={{
+                background: '#F8FAFC',
+                border: '1.5px solid #CBD5E1',
+                borderRadius: 14,
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Send Test Preview First:
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="email"
+                    placeholder="Enter preview email (e.g. your email)"
+                    value={testEmailInput}
+                    onChange={e => setTestEmailInput(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1.5px solid #CBD5E1',
+                      fontSize: 12.5
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={testSending || broadcasting}
+                    onClick={handleSendTestLiveEmail}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 10,
+                      background: '#0284C7',
+                      border: 'none',
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: testSending ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {testSending ? 'Sending...' : 'Send Test'}
+                  </button>
+                </div>
+                {testResultMsg && (
+                  <div style={{ fontSize: 12, fontWeight: 700, color: testResultMsg.startsWith('✓') ? '#16A34A' : '#DC2626' }}>
+                    {testResultMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Live Progress Bar */}
+              {broadcasting && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, color: '#0F172A' }}>
+                    <span>Broadcasting Transmission...</span>
+                    <span>{broadcastProgress.sent + broadcastProgress.failed} / {broadcastProgress.total}</span>
+                  </div>
+                  <div style={{ height: 8, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${broadcastProgress.total ? ((broadcastProgress.sent + broadcastProgress.failed) / broadcastProgress.total) * 100 : 0}%`,
+                        background: '#0284C7',
+                        transition: 'width 0.2s'
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>
+                    Sent: {broadcastProgress.sent} &bull; Failed: {broadcastProgress.failed}
+                  </div>
+                </div>
+              )}
+
+              {broadcastDone && (
+                <div style={{
+                  background: '#F0FDF4',
+                  border: '1.5px solid #86EFAC',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  color: '#15803D',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  <CheckCircle2 size={16} />
+                  <span>Broadcast successfully completed! ({broadcastProgress.sent} sent)</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  type="button"
+                  disabled={broadcasting}
+                  onClick={() => setShowBroadcastModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '11px 16px',
+                    borderRadius: 12,
+                    background: '#F1F5F9',
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: '#475569',
+                    cursor: broadcasting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  disabled={broadcasting || broadcastDone}
+                  onClick={handleBroadcastLiveEmails}
+                  style={{
+                    flex: 1.5,
+                    padding: '11px 16px',
+                    borderRadius: 12,
+                    background: 'linear-gradient(135deg, #FF3B69 0%, #EA580C 100%)',
+                    border: 'none',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    color: '#FFFFFF',
+                    cursor: (broadcasting || broadcastDone) ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(255, 59, 105, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}
+                >
+                  <Mail size={16} />
+                  <span>{broadcasting ? 'Broadcasting Now...' : '🚀 Send Broadcast to All Participants'}</span>
                 </button>
               </div>
             </motion.div>

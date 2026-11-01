@@ -1065,6 +1065,288 @@ export async function sendRegistrationExtendedEmail({ recipientEmail, recipientN
   }
 }
 
+/**
+ * Generate rich HTML confirmation email when a squad locks in a problem statement
+ */
+export function generateProblemStatementLockedEmailHtml({ 
+  leaderName, 
+  teamName, 
+  domain, 
+  problemId, 
+  problemNum, 
+  problemTitle, 
+  problemDescription, 
+  lockedAt 
+}) {
+  const formattedDate = lockedAt 
+    ? new Date(lockedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Confirmed & Logged';
 
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge Locked: ${problemId} - HAXLR8 3.0</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; margin: 0; padding: 24px 10px; color: #0f172a;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border: 1px solid #1e293b;">
+    ${renderEmailHeader('🔒 OFFICIAL MISSION DIRECTIVE • PROBLEM STATEMENT LOCKED')}
 
+    <div style="padding: 32px 28px; line-height: 1.6;">
+      <div style="display: inline-block; background-color: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;">
+        <span style="color: #059669; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+          🔒 OFFICIAL CHALLENGE SECURED
+        </span>
+      </div>
 
+      <h2 style="font-size: 22px; color: #0f172a; margin: 0 0 12px; font-weight: 900; letter-spacing: -0.02em;">
+        Challenge Officially Locked In! 🚀
+      </h2>
+
+      <p style="margin: 0 0 16px; color: #1e293b; font-size: 14.5px; font-weight: 600;">
+        Salutations Flight Captain <strong>${leaderName || 'Captain'}</strong> and Innovators of Squad <strong>"${teamName || 'Your Squad'}"</strong>,
+      </p>
+
+      <p style="margin: 0 0 20px; color: #334155; font-size: 14px; line-height: 1.65;">
+        Your squad's problem statement has been permanently recorded in the <strong>HAXLR8 3.0 Space Flight Command Registry</strong>. Per hackathon protocol, each challenge is strictly capped at a <strong>maximum of 3 squads</strong>, and your squad has officially secured its position!
+      </p>
+
+      <!-- Problem Statement Details Card -->
+      <div style="background-color: #f8fafc; border: 2px solid #0284c7; border-radius: 16px; padding: 22px; margin: 20px 0;">
+        <div style="margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+          <span style="background: #0284c7; color: #ffffff; font-weight: 900; font-size: 12px; padding: 4px 10px; border-radius: 8px; letter-spacing: 0.05em;">
+            ${problemId || 'CHALLENGE'}
+          </span>
+          <span style="color: #64748b; font-size: 12px; font-weight: 700; margin-left: 8px;">
+            ${domain || 'Domain Track'} • Challenge #${problemNum || '1'}
+          </span>
+        </div>
+
+        <h3 style="font-size: 16.5px; font-weight: 900; color: #0f172a; margin: 0 0 10px; line-height: 1.45;">
+          ${problemTitle || 'Selected Problem Statement'}
+        </h3>
+
+        ${problemDescription ? `
+        <div style="font-size: 13px; color: #475569; line-height: 1.6; background: #ffffff; border-radius: 10px; padding: 12px 14px; border: 1px solid #cbd5e1; margin-top: 10px;">
+          <strong style="color: #0f172a; display: block; margin-bottom: 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em;">Mission Scope:</strong>
+          ${problemDescription}
+        </div>
+        ` : ''}
+
+        <!-- Metadata Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12.5px;">
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 7px 0; color: #64748b; font-weight: 700;">Squad Name</td>
+            <td style="padding: 7px 0; color: #0f172a; font-weight: 800; text-align: right;">${teamName || 'Squad'}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 7px 0; color: #64748b; font-weight: 700;">Innovation Domain</td>
+            <td style="padding: 7px 0; color: #0284c7; font-weight: 800; text-align: right;">${domain || 'Domain Track'}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 7px 0; color: #64748b; font-weight: 700;">Locked By</td>
+            <td style="padding: 7px 0; color: #0f172a; font-weight: 800; text-align: right;">${leaderName || 'Flight Captain'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 7px 0; color: #64748b; font-weight: 700;">Timestamp</td>
+            <td style="padding: 7px 0; color: #0f172a; font-weight: 800; text-align: right;">${formattedDate}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Protocol Notice -->
+      <div style="background-color: #fff7ed; border-left: 4px solid #ea580c; padding: 14px 18px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #7c2d12; line-height: 1.6;">
+        <strong>Strict Event Regulation:</strong> Problem statement selections are officially locked and cannot be changed or deleted. Your squad owns this challenge for the 24-hour hackathon build.
+      </div>
+
+      <!-- Next Steps -->
+      <div style="margin: 22px 0;">
+        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.04em;">
+          Next Steps for Your Squad:
+        </h4>
+        <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: #334155; line-height: 1.8;">
+          <li>Review the official <strong>${domain} Problem Statements PDF dossier</strong> in your dashboard for in-depth technical requirements.</li>
+          <li>Gather your crew to architect the solution, system diagrams, and hardware/software components.</li>
+          <li>Prepare for the 24-hour offline build on <strong>November 06–07, 2026</strong> at <strong>Maharaja Institute of Technology Mysore</strong>.</li>
+        </ul>
+      </div>
+
+      <!-- Action Button -->
+      <div style="text-align: center; margin: 28px 0 16px;">
+        <a href="${HAXLR8_PORTAL_URL}/login" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #1e1b4b 100%); color: #ffffff !important; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35);">
+          Open Participant Dashboard →
+        </a>
+      </div>
+
+      <p style="margin: 20px 0 0; font-size: 12.5px; color: #64748b; text-align: center; font-weight: 600;">
+        #HAXLR83 &nbsp;&bull;&nbsp; #Hackathon2026 &nbsp;&bull;&nbsp; #MITMysore &nbsp;&bull;&nbsp; #IdeasTakeFlight
+      </p>
+    </div>
+
+    ${renderEmailFooter()}
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Dispatch automated lock confirmation email to squad leader and crewmates
+ */
+export async function sendProblemStatementLockedEmail({
+  recipientEmails = [],
+  leaderName,
+  teamName,
+  domain,
+  problemId,
+  problemNum,
+  problemTitle,
+  problemDescription,
+  lockedAt
+}) {
+  const recipients = Array.isArray(recipientEmails) 
+    ? recipientEmails.filter(e => e && typeof e === 'string' && e.includes('@'))
+    : [recipientEmails].filter(e => e && typeof e === 'string' && e.includes('@'));
+
+  if (recipients.length === 0) {
+    return { success: false, error: 'No valid recipient email addresses provided' };
+  }
+
+  // Deduplicate emails
+  const uniqueRecipients = Array.from(new Set(recipients.map(e => e.trim().toLowerCase())));
+
+  const subject = `🔒 Challenge Locked: [${problemId}] ${problemTitle} — Squad ${teamName || 'Your Squad'}`;
+  const html = generateProblemStatementLockedEmailHtml({
+    leaderName,
+    teamName,
+    domain,
+    problemId,
+    problemNum,
+    problemTitle,
+    problemDescription,
+    lockedAt
+  });
+
+  const emailPayload = {
+    to: uniqueRecipients.join(', '),
+    subject,
+    html,
+    teamName,
+    leaderName
+  };
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+    const data = await res.json().catch(() => ({}));
+    return { success: res.ok, data };
+  } catch (err) {
+    console.warn('[HAXLR8] PS lock email dispatch error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Generate rich HTML broadcast email announcing Problem Statements are Live
+ */
+export function generateProblemStatementsLiveEmailHtml({ 
+  recipientName = 'Haxlr8 Innovator',
+  teamName = '',
+  domain = ''
+}) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Problem Statements are Officially LIVE - HAXLR8 3.0</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; margin: 0; padding: 24px 10px; color: #0f172a;">
+  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border: 1px solid #1e293b;">
+    ${renderEmailHeader('🚀 MISSION DISPATCH • PROBLEM STATEMENTS ARE LIVE')}
+
+    <div style="padding: 32px 28px; line-height: 1.6;">
+      <div style="display: inline-block; background-color: #fef3c7; border: 1.5px solid #fde68a; border-radius: 20px; padding: 5px 14px; margin-bottom: 16px;">
+        <span style="color: #b45309; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+          ⚡ CHALLENGES OFFICIALLY RELEASED
+        </span>
+      </div>
+
+      <h2 style="font-size: 23px; color: #0f172a; margin: 0 0 12px; font-weight: 900; letter-spacing: -0.02em;">
+        Problem Statements are Officially LIVE! 🚀
+      </h2>
+
+      <p style="margin: 0 0 16px; color: #1e293b; font-size: 15px; font-weight: 600;">
+        Hello ${recipientName || 'Haxlr8 Innovator'}${teamName ? ` (Squad: ${teamName})` : ''},
+      </p>
+
+      <p style="margin: 0 0 16px; color: #334155; font-size: 14.5px; line-height: 1.65;">
+        The wait is over! Mission Control has officially unlocked the <strong>HAXLR8 3.0 Problem Statements</strong>. 45 high-impact engineering challenges (15 in Smart City, 15 in Agriculture, 15 in Healthcare) are now live on your participant dashboard.
+      </p>
+
+      <!-- Highlights Box -->
+      <div style="background-color: #fff7ed; border: 2px solid #fed7aa; border-radius: 16px; padding: 20px; margin: 22px 0;">
+        <div style="font-weight: 900; font-size: 13px; color: #ea580c; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">
+          ⚡ CRITICAL PARTICIPATION DIRECTIVES
+        </div>
+        <div style="font-size: 13.5px; color: #7c2d12; line-height: 1.7;">
+          <div>• <strong>Strict Quota Limit:</strong> Each problem statement has a <strong>maximum cap of 3 squads</strong>. Once 3 squads claim a challenge, it locks automatically.</div>
+          <div>• <strong>First-Come, First-Served:</strong> Slots are secured in real time upon confirmation.</div>
+          <div>• <strong>Flight Captain Clearance:</strong> Only the Flight Captain (Team Leader) can submit and permanently lock in your squad's choice.</div>
+          <div>• <strong>Crewmate Access:</strong> All crewmates can log in, view the full challenge list for their domain, and download the official PDF dossier.</div>
+          ${domain ? `<div>• <strong>Your Registered Domain:</strong> <strong>${domain}</strong></div>` : ''}
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div style="text-align: center; margin: 28px 0 20px;">
+        <a href="${HAXLR8_PORTAL_URL}/login" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #ff3b69 100%); color: #ffffff !important; padding: 15px 36px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 15px; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4); letter-spacing: 0.02em;">
+          🚀 Log In &amp; Lock Your Challenge Now →
+        </a>
+      </div>
+
+      <p style="margin: 20px 0 12px; font-size: 14px; color: #0f172a; font-weight: 700; text-align: center;">
+        Coordinate with your squad immediately to finalize your problem statement!
+      </p>
+
+      <p style="margin: 0; font-size: 12.5px; color: #64748b; text-align: center; font-weight: 600;">
+        #HAXLR83 &nbsp;&bull;&nbsp; #Hackathon2026 &nbsp;&bull;&nbsp; #MITMysore &nbsp;&bull;&nbsp; #IdeasTakeFlight
+      </p>
+    </div>
+
+    ${renderEmailFooter()}
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Dispatch Problem Statements Live announcement email to a single recipient
+ */
+export async function sendProblemStatementsLiveEmail({ recipientEmail, recipientName, teamName, domain }) {
+  if (!recipientEmail) return { success: false, error: 'Recipient email required' };
+
+  const emailPayload = {
+    to: recipientEmail,
+    subject: '🚀 Problem Statements are LIVE on HAXLR8 3.0! Select Your Domain Challenge Now',
+    html: generateProblemStatementsLiveEmailHtml({ recipientName, teamName, domain })
+  };
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+    return { success: res.ok };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}

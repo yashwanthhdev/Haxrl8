@@ -21,7 +21,8 @@ import {
   fetchDomainPdfUrls,
   subscribeToDomainPdfs
 } from '../../lib/problemStatementsService';
-import { formatDomainWithBadge } from '../../lib/domainUtils';
+import { resolveDomain, formatDomainWithBadge } from '../../lib/domainUtils';
+import { sendProblemStatementLockedEmail } from '../../lib/emailService';
 
 const formatDateSafe = (dateVal) => {
   if (!dateVal) return 'Verified';
@@ -35,8 +36,8 @@ const formatDateSafe = (dateVal) => {
 };
 
 export default function ProblemStatementsTab({ teamData, teamMembers, user, onStatementLocked }) {
-  // Determine squad's domain
-  const squadDomain = teamData?.domain || 'Smart City';
+  // Determine squad's domain safely using canonical resolver
+  const squadDomain = resolveDomain(teamData, null, user, teamData?.domain || 'Smart City');
   const domainMeta = DOMAIN_METADATA[squadDomain] || DOMAIN_METADATA['Smart City'];
   const domainProblems = getProblemsByDomain(squadDomain);
 
@@ -176,6 +177,26 @@ export default function ProblemStatementsTab({ teamData, teamMembers, user, onSt
       setLockedSelection(result);
       setShowConfirmModal(false);
       setSuccessMsg(`Mission directive confirmed! Challenge [${result.problem_statement_id}] has been permanently locked for squad "${teamData?.team_name || 'Squad'}".`);
+
+      // Collect all squad recipient emails (leader + all registered crewmates)
+      const squadEmails = Array.from(new Set([
+        userEmail,
+        leaderMember?.email,
+        ...(teamMembers || []).map(m => m.email)
+      ])).filter(e => e && typeof e === 'string' && e.includes('@'));
+
+      // Dispatch automated lock confirmation email to entire squad (fail-safe)
+      sendProblemStatementLockedEmail({
+        recipientEmails: squadEmails,
+        leaderName: leaderMember?.full_name || user?.user_metadata?.full_name || 'Flight Captain',
+        teamName: teamData?.team_name || 'Squad',
+        domain: squadDomain,
+        problemId: result.problem_statement_id,
+        problemNum: result.problem_statement_num,
+        problemTitle: result.problem_statement_title,
+        problemDescription: selectedProblem?.description || '',
+        lockedAt: result.locked_at
+      }).catch(mailErr => console.warn('[HAXLR8] PS Locked automated email notice:', mailErr));
 
       if (onStatementLocked) {
         onStatementLocked({
