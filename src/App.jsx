@@ -5,6 +5,7 @@ import PlayfulNavbar from './components/layout/PlayfulNavbar';
 import PlayfulFooter from './components/layout/PlayfulFooter';
 import EntryVideoPopup from './components/ui/EntryVideoPopup';
 import RegistrationExtendedModal from './components/ui/RegistrationExtendedModal';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -106,12 +107,13 @@ function App() {
     <Router>
       <ScrollToTop />
       <RegistrationExtendedModal />
-      <Suspense fallback={
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fffaf3', color: '#0f172a', gap: 16, fontFamily: "'Fredoka', sans-serif" }}>
-          <div style={{ width: 44, height: 44, border: '4px solid #fecaca', borderTopColor: '#ff3b69', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.04em', color: '#ff3b69' }}>LAUNCHING HAXLR8 3.0...</span>
-        </div>
-      }>
+      <ErrorBoundary>
+        <Suspense fallback={
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fffaf3', color: '#0f172a', gap: 16, fontFamily: "'Fredoka', sans-serif" }}>
+            <div style={{ width: 44, height: 44, border: '4px solid #fecaca', borderTopColor: '#ff3b69', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.04em', color: '#ff3b69' }}>LAUNCHING HAXLR8 3.0...</span>
+          </div>
+        }>
         <Routes>
           {/* Auth page — standalone, no Navbar/Footer */}
           <Route path="/register" element={<AuthPage />} />
@@ -187,6 +189,7 @@ function App() {
           } />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </Router>
   );
 }

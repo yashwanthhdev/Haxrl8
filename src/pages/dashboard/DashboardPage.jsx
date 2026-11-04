@@ -20,8 +20,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const tabParam = searchParams.get('tab') || 'overview';
   const demoParam = (searchParams.get('demo') || searchParams.get('test') || '').toLowerCase().trim();
+  const tabParam = searchParams.get('tab') || (demoParam ? 'ticket' : 'overview');
 
   const resolveDemoEmail = (param) => {
     if (!param) return null;
