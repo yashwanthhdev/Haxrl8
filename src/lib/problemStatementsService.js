@@ -376,6 +376,32 @@ export const getSelectionCounts = (selections = []) => {
 export const getTeamSelection = (teamId, userEmail = '') => {
   if (!teamId && !userEmail) return null;
 
+  // 0. Demo Accounts Pre-Assigned Problem Statements
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  if (isDemoEmail(cleanEmail) || isDemoId(teamId)) {
+    const demo = getDemoAccount(cleanEmail) || Object.values(DEMO_ACCOUNTS).find(d => d.teamId === teamId || d.id === teamId);
+    if (demo) {
+      const defaultProbId = demo.domain === 'Smart City' ? 'SC-01' : demo.domain === 'Agriculture' ? 'AG-01' : 'HC-01';
+      const fullProblem = getProblemById(defaultProbId);
+      return {
+        team_id: demo.teamId,
+        team_name: demo.teamName,
+        domain: demo.domain,
+        problem_statement_id: defaultProbId,
+        problem_statement_num: fullProblem?.num || 1,
+        problem_statement_title: fullProblem?.title || 'Selected Challenge',
+        problem_statement_desc: fullProblem?.description || '',
+        locked_at: new Date('2026-11-01T19:00:00Z').toISOString(),
+        locked_by: demo.leaderName,
+        leader_name: demo.leaderName,
+        leader_email: demo.email,
+        leader_phone: demo.leaderPhone,
+        college: demo.college,
+        members: demo.members
+      };
+    }
+  }
+
   // 1. Check scoped local storage
   if (teamId) {
     try {

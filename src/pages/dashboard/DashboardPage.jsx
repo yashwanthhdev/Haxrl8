@@ -153,6 +153,40 @@ export default function DashboardPage() {
             localStorage.setItem(`haxlr8_team_${demoData.email}`, JSON.stringify(demoTeam));
             localStorage.setItem(`haxlr8_members_${demoData.id}`, JSON.stringify(demoData.members));
             localStorage.setItem(`haxlr8_members_${demoData.email}`, JSON.stringify(demoData.members));
+
+            const defaultProbId = demoData.domain === 'Smart City' ? 'SC-01' : demoData.domain === 'Agriculture' ? 'AG-01' : 'HC-01';
+            const demoLock = {
+              team_id: demoData.teamId,
+              team_name: demoData.teamName,
+              domain: demoData.domain,
+              problem_statement_id: defaultProbId,
+              problem_statement_num: 1,
+              problem_statement_title: defaultProbId === 'SC-01'
+                ? 'AI-Powered Adaptive Traffic Flow Optimization with Emergency Vehicle Preemption'
+                : defaultProbId === 'AG-01'
+                ? 'Autonomous Robotic Fruit Harvesting System'
+                : 'Real-Time Remote ECG & Vital Telemetry with Automated Arrhythmia Alerting',
+              locked_at: new Date('2026-11-01T19:00:00Z').toISOString(),
+              locked_by: demoData.leaderName,
+              leader_name: demoData.leaderName,
+              leader_email: demoData.email,
+              leader_phone: demoData.leaderPhone,
+              college: demoData.college
+            };
+            localStorage.setItem(`haxlr8_payment_${demoData.id}`, JSON.stringify({
+              transaction_id: 'DEMO-VERIFIED-UTR',
+              amount: 1200,
+              status: 'submitted',
+              submitted_at: new Date('2026-11-01T19:00:00Z').toISOString()
+            }));
+            localStorage.setItem(`haxlr8_payment_${demoData.email}`, JSON.stringify({
+              transaction_id: 'DEMO-VERIFIED-UTR',
+              amount: 1200,
+              status: 'submitted',
+              submitted_at: new Date('2026-11-01T19:00:00Z').toISOString()
+            }));
+            localStorage.setItem(`haxlr8_ps_team_${demoData.teamId}`, JSON.stringify(demoLock));
+            localStorage.setItem(`haxlr8_ps_team_${demoData.email.toLowerCase()}`, JSON.stringify(demoLock));
           } catch (e) {}
           return;
         }
@@ -187,6 +221,41 @@ export default function DashboardPage() {
                     payment_utr: 'DEMO-VERIFIED-UTR',
                     score: 0
                   };
+                  const defaultProbId = demoData.domain === 'Smart City' ? 'SC-01' : demoData.domain === 'Agriculture' ? 'AG-01' : 'HC-01';
+                  const demoLock = {
+                    team_id: demoData.teamId,
+                    team_name: demoData.teamName,
+                    domain: demoData.domain,
+                    problem_statement_id: defaultProbId,
+                    problem_statement_num: 1,
+                    problem_statement_title: defaultProbId === 'SC-01'
+                      ? 'AI-Powered Adaptive Traffic Flow Optimization with Emergency Vehicle Preemption'
+                      : defaultProbId === 'AG-01'
+                      ? 'Autonomous Robotic Fruit Harvesting System'
+                      : 'Real-Time Remote ECG & Vital Telemetry with Automated Arrhythmia Alerting',
+                    locked_at: new Date('2026-11-01T19:00:00Z').toISOString(),
+                    locked_by: demoData.leaderName,
+                    leader_name: demoData.leaderName,
+                    leader_email: demoData.email,
+                    leader_phone: demoData.leaderPhone,
+                    college: demoData.college
+                  };
+                  try {
+                    localStorage.setItem(`haxlr8_payment_${demoData.id}`, JSON.stringify({
+                      transaction_id: 'DEMO-VERIFIED-UTR',
+                      amount: 1200,
+                      status: 'submitted',
+                      submitted_at: new Date('2026-11-01T19:00:00Z').toISOString()
+                    }));
+                    localStorage.setItem(`haxlr8_payment_${demoData.email}`, JSON.stringify({
+                      transaction_id: 'DEMO-VERIFIED-UTR',
+                      amount: 1200,
+                      status: 'submitted',
+                      submitted_at: new Date('2026-11-01T19:00:00Z').toISOString()
+                    }));
+                    localStorage.setItem(`haxlr8_ps_team_${demoData.teamId}`, JSON.stringify(demoLock));
+                    localStorage.setItem(`haxlr8_ps_team_${demoData.email.toLowerCase()}`, JSON.stringify(demoLock));
+                  } catch(e) {}
                   setHasTeam(true);
                   setTeamData(demoTeam);
                   setTeamMembers(demoData.members);

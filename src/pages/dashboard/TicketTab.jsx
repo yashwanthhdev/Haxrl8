@@ -19,7 +19,7 @@ import mitLogo from '../../assets/logo/mit-mysore-logo.png';
 import heroCharacter from '../../assets/playful/hero_character.png';
 import { resolveDomain } from '../../lib/domainUtils';
 import { getProblemById } from '../../data/problemStatementsCatalog';
-import { getTeamSelection, fetchAllProblemSelections } from '../../lib/problemStatementsService';
+import { getTeamSelection, fetchAllProblemSelections, isDemoEmail, isDemoId, getDemoAccount, DEMO_ACCOUNTS } from '../../lib/problemStatementsService';
 
 export default function TicketTab({ 
   hasTeam, 
@@ -67,7 +67,18 @@ export default function TicketTab({
     }
   }
 
-  const isVerified = Boolean(paymentRecord?.transaction_id || teamData?.payment_status === 'submitted' || teamData?.payment_utr);
+  const cleanEmail = (user?.email || user?.user_metadata?.email || '').trim().toLowerCase();
+  const isDemo = Boolean(isDemoEmail(cleanEmail) || isDemoId(teamData?.id));
+  if (!paymentRecord && isDemo) {
+    paymentRecord = {
+      transaction_id: 'DEMO-VERIFIED-UTR',
+      amount: 1200,
+      status: 'submitted',
+      submitted_at: new Date('2026-11-01T19:00:00Z').toISOString()
+    };
+  }
+
+  const isVerified = Boolean(paymentRecord?.transaction_id || teamData?.payment_status === 'submitted' || teamData?.payment_utr || isDemo);
 
   // Authoritative Leader & Crew Resolution
   const leader = teamMembers?.find(m => m.is_leader) || 
