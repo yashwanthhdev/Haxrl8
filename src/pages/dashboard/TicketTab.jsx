@@ -436,7 +436,7 @@ export default function TicketTab({
                     {teamData?.team_name || 'Innovators'}
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: 600 }}>
-                    Flight Captain: <strong style="color: #0f172a;">{leader?.full_name}</strong>
+                    Flight Captain: <strong style={{ color: '#0f172a' }}>{leader?.full_name}</strong>
                   </div>
                 </div>
 
