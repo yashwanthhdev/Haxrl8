@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell, KeyRound, Target } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Receipt, BookOpen, Bell, KeyRound, Target, Ticket as TicketIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DomainWheel from '../../components/ui/DomainWheel';
 import haxlr8LogoDark from '../../assets/logo/haxlr8-logo-dark.png';
@@ -16,7 +16,7 @@ const NAV = [
   { id:'problem-statements', icon: Target,          label:'Problem Statements', shortLabel:'Problems' },
   { id:'team',               icon: Users,           label:'My Team',            shortLabel:'Team'     },
   { id:'payment',            icon: CreditCard,      label:'Payment & Verify',   shortLabel:'Payment' },
-  { id:'ticket',             icon: Receipt,         label:'Payment Receipt',    shortLabel:'Receipt' },
+  { id:'ticket',             icon: TicketIcon,      label:'Flight Ticket',      shortLabel:'Ticket'   },
   { id:'resources',          icon: BookOpen,        label:'Participant Desk',   shortLabel:'Desk'     },
   { id:'announcements',      icon: Bell,            label:'Announcements',      shortLabel:'Alerts'   },
 ];

@@ -1350,3 +1350,329 @@ export async function sendProblemStatementsLiveEmail({ recipientEmail, recipient
     return { success: false, error: err.message };
   }
 }
+
+// ─── OFFICIAL FLIGHT TICKET / BOARDING PASS EMAIL ─────────────────────────────
+export const HAXLR8_MIT_LOGO_URL = 'https://raw.githubusercontent.com/yashuhb18/Haxrl8/main/src/assets/logo/mit-mysore-logo.png';
+export const HAXLR8_EMITERS_SEAL_URL = 'https://raw.githubusercontent.com/yashuhb18/Haxrl8/main/src/assets/logo/emiters-seal.png';
+export const HAXLR8_AMONGUS_PILOT_URL = 'https://raw.githubusercontent.com/yashuhb18/Haxrl8/main/src/assets/playful/hero_character.png';
+
+/**
+ * Generate authentic Space Flight Ticket / Boarding Pass HTML email
+ */
+export function generateFlightTicketEmailHtml({
+  recipientName = 'Innovator',
+  recipientEmail = '',
+  teamName = 'Squad',
+  domain = 'Healthcare',
+  problemStatementId = 'HC-01',
+  problemStatementNum = 1,
+  problemStatementTitle = 'Selected Challenge',
+  problemStatementDesc = '',
+  leaderName = 'Flight Captain',
+  leaderPhone = '',
+  leaderEmail = '',
+  college = 'Maharaja Institute of Technology Mysore',
+  members = [],
+  transactionId = 'VERIFIED',
+  flightNo = 'HX-3026',
+  gate = 'GATE 01 • CIVIL SEMINAR HALL',
+  reportingTime = '08:30 AM IST (Friday, Nov 06, 2026)',
+  venue = 'Maharaja Institute of Technology Mysore',
+  venueAddress = 'Belawadi, PB No. 28, Srirangapatna Taluk, Mandya / Mysuru, Karnataka - 571477'
+}) {
+  const domainBadge = domain === 'Agriculture'
+    ? { icon: '🌾', label: 'Agriculture', color: '#16a34a', bg: '#f0fdf4', border: '#86efac' }
+    : domain === 'Smart City'
+    ? { icon: '🏙️', label: 'Smart City', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' }
+    : { icon: '🩺', label: 'Healthcare', color: '#e11d48', bg: '#fff1f2', border: '#fecdd3' };
+
+  // Member roster rows
+  const rosterRows = (members && members.length > 0)
+    ? members.map((m, idx) => {
+        const isLead = m.is_leader === true || m.is_leader === 'true' || idx === 0;
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9; background: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+            <td style="padding: 10px 12px; font-size: 13px; font-weight: 800; color: #0f172a;">
+              ${m.full_name || m.name || `Crewmate ${idx + 1}`}
+              ${isLead ? '<span style="background: #fef3c7; color: #b45309; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">CAPTAIN</span>' : '<span style="background: #e2e8f0; color: #475569; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">CREWMATE</span>'}
+            </td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #334155; font-weight: 600;">
+              ${m.college_name || college}
+              ${m.dept ? `<br><span style="color: #64748b; font-size: 11px;">Dept: ${m.dept}${m.reg_no ? ` • USN: ${m.reg_no}` : ''}</span>` : (m.reg_no ? `<br><span style="color: #64748b; font-size: 11px;">USN: ${m.reg_no}</span>` : '')}
+            </td>
+            <td style="padding: 10px 12px; font-size: 12px; font-weight: 700; color: #0f172a; text-align: right; white-space: nowrap;">
+              ${m.phone_number || m.phone || '—'}<br>
+              <span style="font-size: 11px; color: #0284c7; font-weight: 600;">${m.email || ''}</span>
+            </td>
+          </tr>
+        `;
+      }).join('')
+    : `
+        <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff;">
+          <td style="padding: 10px 12px; font-size: 13px; font-weight: 800; color: #0f172a;">
+            ${leaderName}
+            <span style="background: #fef3c7; color: #b45309; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">CAPTAIN</span>
+          </td>
+          <td style="padding: 10px 12px; font-size: 12px; color: #334155; font-weight: 600;">
+            ${college}
+          </td>
+          <td style="padding: 10px 12px; font-size: 12px; font-weight: 700; color: #0f172a; text-align: right;">
+            ${leaderPhone}<br>
+            <span style="font-size: 11px; color: #0284c7; font-weight: 600;">${leaderEmail}</span>
+          </td>
+        </tr>
+      `;
+
+  const barcodeId = `TKT-${(problemStatementId || 'HAX3').replace(/[^a-zA-Z0-9]/g, '')}-${(teamName || 'SQUAD').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase()}-2026`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Flight Ticket &amp; Boarding Pass • HAXLR8 3.0</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; margin: 0; padding: 20px 8px; color: #0f172a;">
+  <div style="max-width: 660px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.45); border: 2.5px solid #0f172a;">
+    
+    <!-- ══ TOP BANNER ══ -->
+    <div style="background-color: #030712; text-align: center; line-height: 0;">
+      <a href="${HAXLR8_PORTAL_URL}" target="_blank" style="display: block; text-decoration: none;">
+        <img src="${HAXLR8_BANNER_URL}" alt="HAXLR8 3.0" width="660" style="width: 100%; max-width: 660px; height: auto; display: block; margin: 0 auto; border: 0;" />
+      </a>
+    </div>
+
+    <!-- ══ FLIGHT TICKET HEADER WITH 3 OFFICIAL LOGOS ══ -->
+    <div style="background: linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #0f172a 100%); padding: 22px 26px; border-bottom: 4px solid #ea580c; color: #ffffff;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <!-- College Logo -->
+          <td style="width: 70px; vertical-align: middle; text-align: left;">
+            <div style="background: #ffffff; padding: 6px; border-radius: 12px; display: inline-block;">
+              <img src="${HAXLR8_MIT_LOGO_URL}" alt="MIT Mysore" style="height: 48px; width: auto; max-width: 70px; display: block; object-fit: contain;" />
+            </div>
+          </td>
+
+          <!-- Among Us Mascot in Center -->
+          <td style="vertical-align: middle; text-align: center; padding: 0 10px;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+              <img src="${HAXLR8_AMONGUS_PILOT_URL}" alt="Among Us Pilot" style="height: 52px; width: auto; display: inline-block;" />
+              <div style="text-align: left;">
+                <div style="font-size: 10px; font-weight: 900; color: #ea580c; letter-spacing: 0.12em; text-transform: uppercase;">
+                  BOARDING PASS &bull; FINAL PASS
+                </div>
+                <div style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; line-height: 1.2;">
+                  HAXLR8 3.0 FLIGHT TICKET
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">
+                  National Level 24-Hour Hackathon &bull; MIT Mysore
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- Department / EMITERS Seal -->
+          <td style="width: 70px; vertical-align: middle; text-align: right;">
+            <div style="background: #ffffff; padding: 4px; border-radius: 50%; display: inline-block;">
+              <img src="${HAXLR8_EMITERS_SEAL_URL}" alt="EMITERS ECE" style="height: 50px; width: 50px; border-radius: 50%; display: block; object-fit: cover;" />
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Department subtitle -->
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15); text-align: center; font-size: 11.5px; color: #cbd5e1; font-weight: 600;">
+        Maharaja Institute of Technology Mysore &bull; Department of Electronics &amp; Communication Engineering
+      </div>
+    </div>
+
+    <!-- ══ FLIGHT TELEMETRY RIBBON (AIRLINE STYLE) ══ -->
+    <div style="background: #f8fafc; border-bottom: 2px dashed #cbd5e1; padding: 16px 24px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <tr>
+          <td style="padding: 4px 8px; vertical-align: top;">
+            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block;">FLIGHT</span>
+            <strong style="font-size: 16px; font-weight: 900; color: #ea580c; font-family: monospace;">${flightNo}</strong>
+          </td>
+          <td style="padding: 4px 8px; vertical-align: top;">
+            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block;">GATE</span>
+            <strong style="font-size: 14px; font-weight: 900; color: #0f172a;">${gate}</strong>
+          </td>
+          <td style="padding: 4px 8px; vertical-align: top;">
+            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block;">DATE</span>
+            <strong style="font-size: 14px; font-weight: 900; color: #0f172a;">NOV 06, 2026</strong>
+          </td>
+          <td style="padding: 4px 8px; vertical-align: top; text-align: right;">
+            <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block;">REPORTING TIME</span>
+            <strong style="font-size: 14px; font-weight: 900; color: #15803d;">08:30 AM IST</strong>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ══ PASSENGER SQUAD & DOMAIN CARD ══ -->
+    <div style="padding: 24px 26px;">
+      
+      <!-- Squad Name & Domain Banner -->
+      <div style="background: #fff7ed; border: 2px solid #fed7aa; border-radius: 16px; padding: 18px 20px; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <div style="font-size: 11px; font-weight: 800; color: #ea580c; text-transform: uppercase; letter-spacing: 0.06em;">
+                SQUAD NAME
+              </div>
+              <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin-top: 2px; letter-spacing: -0.02em;">
+                ${teamName}
+              </div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px; font-weight: 600;">
+                Flight Captain: <strong style="color: #0f172a;">${leaderName}</strong> &bull; Total Crew: <strong>${members?.length || 1} Members</strong>
+              </div>
+            </td>
+            <td style="vertical-align: middle; text-align: right;">
+              <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">
+                INNOVATION DOMAIN
+              </div>
+              <span style="display: inline-block; background: ${domainBadge.bg}; color: ${domainBadge.color}; border: 1.5px solid ${domainBadge.border}; padding: 6px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800;">
+                ${domainBadge.icon} ${domainBadge.label}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ══ PROMINENT LOCKED PROBLEM STATEMENT BOX ══ -->
+      <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: 16px; padding: 20px 22px; margin-bottom: 22px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.08);">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="vertical-align: top;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="background: #15803d; color: #ffffff; font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 6px; letter-spacing: 0.05em;">
+                  ${problemStatementId || 'PS'}
+                </span>
+                <span style="font-size: 11.5px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.06em;">
+                  OFFICIALLY LOCKED PROBLEM STATEMENT &bull; CHALLENGE #${problemStatementNum || '1'}
+                </span>
+              </div>
+              <div style="font-size: 17px; font-weight: 900; color: #0f172a; line-height: 1.4; margin-top: 6px;">
+                ${problemStatementTitle}
+              </div>
+              ${problemStatementDesc ? `<div style="font-size: 12.5px; color: #475569; margin-top: 6px; line-height: 1.5;">${problemStatementDesc.slice(0, 220)}...</div>` : ''}
+              <div style="margin-top: 10px; font-size: 11.5px; color: #15803d; font-weight: 700;">
+                ✓ Verified &amp; Claimed &bull; Allocated 1 of 3 Available Track Slots
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ══ REPORTING LOCATION & CAMPUS VENUE ══ -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 16px; padding: 18px 20px; margin-bottom: 22px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="width: 36px; vertical-align: top; padding-right: 12px;">
+              <div style="width: 36px; height: 36px; border-radius: 10px; background: #fee2e2; color: #dc2626; font-size: 20px; text-align: center; line-height: 36px;">
+                📍
+              </div>
+            </td>
+            <td style="vertical-align: top;">
+              <div style="font-size: 11px; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.06em;">
+                OFFICIAL REPORTING VENUE
+              </div>
+              <div style="font-size: 15px; font-weight: 900; color: #0f172a; margin-top: 2px;">
+                ${venue}
+              </div>
+              <div style="font-size: 12.5px; color: #334155; margin-top: 2px; font-weight: 600;">
+                ${venueAddress}
+              </div>
+              <div style="font-size: 12px; color: #0284c7; margin-top: 4px; font-weight: 700;">
+                🏛️ Check-in Desk: Civil Seminar Hall (Ground Floor) &bull; ECE Department Innovation Labs
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ══ AUTHORIZED CREW ROSTER & TEAMMATES ══ -->
+      <div style="margin-bottom: 22px;">
+        <div style="font-size: 12px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">
+          👥 AUTHORIZED CREW MANIFEST &bull; ${members?.length || 1} REGISTERED PASSENGERS
+        </div>
+        <div style="border: 1.5px solid #e2e8f0; border-radius: 14px; overflow: hidden;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: #0f172a; color: #ffffff;">
+                <th style="padding: 10px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase;">Member Name</th>
+                <th style="padding: 10px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase;">College &amp; Dept / USN</th>
+                <th style="padding: 10px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: right;">Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rosterRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ MANDATORY CHECKLIST BEFORE DEPARTURE ══ -->
+      <div style="background: #f1f5f9; border-left: 4px solid #ea580c; border-radius: 10px; padding: 14px 16px; margin-bottom: 22px; font-size: 12.5px; line-height: 1.6; color: #334155;">
+        <strong style="color: #0f172a; display: block; margin-bottom: 4px; font-size: 13px;">⚠️ Mandatory Check-in Protocol:</strong>
+        <div>&bull; <strong>Print this Flight Ticket</strong> or download the official PDF from your portal to present at the registration desk.</div>
+        <div>&bull; <strong>Original College Student ID Card:</strong> All squad members must carry original physical college IDs.</div>
+        <div>&bull; <strong>Hardware / Tech:</strong> Bring your laptops, power cords, and multi-plugs. (Hardware prototypes are completely optional; software and AI projects are fully eligible).</div>
+        <div>&bull; <strong>Direct Entry Pass:</strong> No screening elimination; your 24-hour hackathon starts immediately on November 6th.</div>
+      </div>
+
+      <!-- ══ DOWNLOAD BUTTON ══ -->
+      <div style="text-align: center; margin: 26px 0 16px;">
+        <a href="${HAXLR8_PORTAL_URL}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: #ffffff; font-size: 15px; font-weight: 900; text-decoration: none; padding: 14px 34px; border-radius: 14px; box-shadow: 0 4px 18px rgba(234, 88, 12, 0.4); letter-spacing: -0.01em;">
+          ✈️ Open Portal &amp; Download Flight Ticket (PDF) &rarr;
+        </a>
+      </div>
+
+      <!-- ══ BARCODE & TICKET REF (AIRLINE STUB) ══ -->
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 2px dashed #cbd5e1; text-align: center;">
+        <div style="font-family: 'Courier New', monospace; font-size: 26px; letter-spacing: 5px; color: #0f172a; font-weight: 900; line-height: 1;">
+          ||||| ||| |||||| ||||| ||||||| |||| ||||| |||||| |||
+        </div>
+        <div style="font-family: monospace; font-size: 11px; font-weight: 800; color: #64748b; margin-top: 6px; letter-spacing: 0.1em;">
+          ${barcodeId} &bull; UTR: ${transactionId}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ FOOTER WITH STUDENT COORDINATORS ══ -->
+    ${renderEmailFooter()}
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Dispatch Flight Ticket / Boarding Pass email to a recipient
+ */
+export async function sendFlightTicketEmail(payload) {
+  if (!payload || !payload.recipientEmail) {
+    return { success: false, error: 'Recipient email required' };
+  }
+
+  const emailPayload = {
+    to: payload.recipientEmail,
+    subject: `✈️ Official Flight Ticket & Boarding Pass: HAXLR8 3.0 • Squad ${payload.teamName || 'Innovator'} [${payload.problemStatementId || 'PS'}]`,
+    html: generateFlightTicketEmailHtml(payload)
+  };
+
+  try {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+    return { success: res.ok };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+

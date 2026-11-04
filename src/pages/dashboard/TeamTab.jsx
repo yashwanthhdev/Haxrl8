@@ -1786,7 +1786,7 @@ export default function TeamTab({ hasTeam, teamData, teamMembers, submissions, u
             boxShadow: isPaid ? '0 4px 16px rgba(22, 163, 74, 0.35)' : '0 4px 14px rgba(2, 132, 199, 0.3)' 
           }}
         >
-          {isPaid ? 'View Payment Receipt →' : 'Proceed to Payment & Verification (₹1,200) →'}
+          {isPaid ? 'View Flight Ticket &amp; Pass →' : 'Proceed to Payment & Verification (₹1,200) →'}
         </button>
       </div>
 

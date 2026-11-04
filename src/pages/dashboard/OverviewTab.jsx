@@ -462,7 +462,7 @@ export default function OverviewTab({ hasTeam, teamData, teamMembers, submission
                 boxShadow: isPaid ? '0 2px 8px rgba(22, 163, 74, 0.25)' : '0 2px 8px rgba(2, 132, 199, 0.25)'
               }}
             >
-              {isPaid ? 'View Payment Receipt →' : 'Submit Fee Verification →'}
+              {isPaid ? 'View Flight Ticket & Pass →' : 'Submit Fee Verification →'}
             </button>
           </div>
         </div>

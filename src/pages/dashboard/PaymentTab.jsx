@@ -446,7 +446,7 @@ export default function PaymentTab({
             }}
           >
             <TicketIcon size={18} />
-            <span>View Payment Receipt →</span>
+            <span>View Flight Ticket &amp; Pass →</span>
           </button>
         )}
       </div>
@@ -550,7 +550,7 @@ export default function PaymentTab({
                   onClick={() => { if (setActiveTab) setActiveTab('ticket'); }}
                   style={{ flex: 1, ...styles.buttonPrimary, padding: '11px' }}
                 >
-                  View Payment Receipt →
+                  View Flight Ticket →
                 </button>
               </div>
             </div>
@@ -572,8 +572,8 @@ export default function PaymentTab({
                   Registration Desk Instructions:
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#0f172a', lineHeight: 1.6 }}>
-                  <li>Bring your downloaded or printed <strong>Payment Receipt</strong> to registration desk.</li>
-                  <li>Official Hackathon Flight Passes will be issued on <strong>November 2nd</strong> after problem statements are assigned.</li>
+                  <li>Bring your downloaded or printed <strong>Flight Ticket / Boarding Pass</strong> to the registration desk.</li>
+                  <li>Confirm your locked problem statement challenge before departure.</li>
                   <li>All 3–4 members must present valid College ID cards at venue.</li>
                   <li>Reporting begins 8:30 AM on <strong>November 6, 2026</strong> at MIT Mysore.</li>
                 </ul>
@@ -585,7 +585,7 @@ export default function PaymentTab({
               style={{ ...styles.buttonPrimary, width: '100%' }}
             >
               <TicketIcon size={18} />
-              <span>Claim &amp; Print Payment Receipt</span>
+              <span>Claim &amp; Print Flight Ticket</span>
             </button>
           </div>
         </div>
