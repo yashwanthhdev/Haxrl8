@@ -334,7 +334,7 @@ export default function TicketTab({
           }}>
             
             {/* ══ HEADER RIBBON WITH 3 OFFICIAL LOGOS ══ */}
-            <div style={{
+            <div className="ticket-header" style={{
               background: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #0f172a 100%)',
               color: '#ffffff',
               padding: '24px 30px',
@@ -379,13 +379,13 @@ export default function TicketTab({
               </div>
 
               {/* Department Subtitle Banner */}
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: '#e2e8f0', fontWeight: 600 }}>
+              <div className="ticket-header-sub" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: '#e2e8f0', fontWeight: 600 }}>
                 Department of Electronics &amp; Communication Engineering &bull; Maharaja Institute of Technology Mysore
               </div>
             </div>
 
             {/* ══ AVIATION TELEMETRY STRIP ══ */}
-            <div style={{
+            <div className="ticket-telemetry" style={{
               background: '#f8fafc',
               borderBottom: '2px dashed #cbd5e1',
               padding: '14px 28px',
@@ -416,10 +416,10 @@ export default function TicketTab({
             </div>
 
             {/* ══ TICKET BODY ══ */}
-            <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div className="ticket-body" style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 22 }}>
               
               {/* Squad Name & Domain Banner */}
-              <div style={{
+              <div className="ticket-squad-row" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: 16,
@@ -432,7 +432,7 @@ export default function TicketTab({
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     SQUAD / TEAM NAME
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', marginTop: 2 }}>
+                  <div className="ticket-squad-name" style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', marginTop: 2 }}>
                     {teamData?.team_name || 'Innovators'}
                   </div>
                   <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: 600 }}>
@@ -473,7 +473,7 @@ export default function TicketTab({
               </div>
 
               {/* ══ LOCKED PROBLEM STATEMENT (CRITICAL REQUIREMENT) ══ */}
-              <div style={{
+              <div className="ticket-problem-box" style={{
                 background: lockedProblem ? '#f0fdf4' : '#fffbeb',
                 border: `2px solid ${lockedProblem ? '#86efac' : '#fde68a'}`,
                 borderRadius: 18,
@@ -508,12 +508,12 @@ export default function TicketTab({
                       </span>
                     </div>
 
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.4, marginTop: 6 }}>
+                    <div className="ticket-problem-title" style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.4, marginTop: 6 }}>
                       {lockedProblem.title}
                     </div>
 
                     {lockedProblem.description && (
-                      <div style={{ fontSize: 12.5, color: '#475569', marginTop: 6, lineHeight: 1.5 }}>
+                      <div className="ticket-problem-desc" style={{ fontSize: 12.5, color: '#475569', marginTop: 6, lineHeight: 1.5 }}>
                         {lockedProblem.description.slice(0, 240)}...
                       </div>
                     )}
@@ -549,7 +549,7 @@ export default function TicketTab({
               </div>
 
               {/* ══ VENUE & REPORTING LOCATION (PROMINENT REQUIREMENT) ══ */}
-              <div style={{
+              <div className="ticket-venue-box" style={{
                 background: '#f8fafc',
                 border: '1.5px solid #cbd5e1',
                 borderRadius: 18,
@@ -574,13 +574,13 @@ export default function TicketTab({
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       OFFICIAL REPORTING VENUE &amp; LOCATION
                     </div>
-                    <div style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', marginTop: 2 }}>
+                    <div className="ticket-venue-title" style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', marginTop: 2 }}>
                       Maharaja Institute of Technology Mysore (MIT Mysore)
                     </div>
-                    <div style={{ fontSize: 13, color: '#334155', marginTop: 3, fontWeight: 600 }}>
+                    <div className="ticket-venue-sub" style={{ fontSize: 13, color: '#334155', marginTop: 3, fontWeight: 600 }}>
                       Belawadi, PB No. 28, Srirangapatna Taluk, Mandya / Mysuru, Karnataka - 571477
                     </div>
-                    <div style={{ fontSize: 12.5, color: '#0284c7', marginTop: 4, fontWeight: 700 }}>
+                    <div className="ticket-venue-desk" style={{ fontSize: 12.5, color: '#0284c7', marginTop: 4, fontWeight: 700 }}>
                       🏛️ Check-in Desk: Civil Seminar Hall (Ground Floor) &bull; Department of Electronics &amp; Communication Engineering
                     </div>
                   </div>
@@ -588,15 +588,15 @@ export default function TicketTab({
               </div>
 
               {/* ══ AUTHORIZED CREW ROSTER & TEAMMATES ══ */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', marginBottom: 12 }}>
+              <div className="ticket-crew-section">
+                <div className="ticket-crew-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', marginBottom: 12 }}>
                   <Users size={16} color="#ea580c" />
                   <span>Authorized Crew Manifest ({teamMembers?.length || 1} Registered Passengers)</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                <div className="ticket-crew-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                   {/* Captain */}
-                  <div style={{
+                  <div className="ticket-crew-card" style={{
                     padding: '14px 16px',
                     background: '#eff6ff',
                     borderRadius: 14,
@@ -627,7 +627,7 @@ export default function TicketTab({
 
                   {/* Crewmates */}
                   {crew.map((cm, idx) => (
-                    <div key={cm.id || idx} style={{
+                    <div key={cm.id || idx} className="ticket-crew-card" style={{
                       padding: '14px 16px',
                       background: '#f8fafc',
                       borderRadius: 14,
@@ -659,81 +659,83 @@ export default function TicketTab({
                 </div>
               </div>
 
-              {/* ══ MANDATORY PROTOCOL ══ */}
-              <div style={{
-                background: '#f1f5f9',
-                borderLeft: '4px solid #ea580c',
-                borderRadius: 12,
-                padding: '14px 18px',
-                fontSize: 12.5,
-                lineHeight: 1.6,
-                color: '#334155'
-              }}>
-                <strong style={{ color: '#0f172a', display: 'block', marginBottom: 4, fontSize: 13 }}>
-                  ⚠️ Mandatory Check-in Protocol:
-                </strong>
-                <div>&bull; <strong>Print this Flight Ticket:</strong> Bring a physical printout or saved PDF to the registration desk.</div>
-                <div>&bull; <strong>Original College Student ID Card:</strong> All members must present valid physical college ID cards for campus entry.</div>
-                <div>&bull; <strong>Hardware / Tech:</strong> Bring your laptops, power cords, and multi-plugs. (Hardware prototypes are completely optional; software and AI projects are fully eligible).</div>
-                <div>&bull; <strong>Direct Entry Pass:</strong> No screening elimination; your 24-hour hackathon starts immediately on November 6th.</div>
-              </div>
-
-              {/* ══ STUDENT COORDINATORS SUPPORT ══ */}
-              <div style={{
-                padding: '16px 20px',
-                background: '#f0f9ff',
-                borderRadius: 16,
-                border: '1.5px solid #bae6fd',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 16
-              }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    STUDENT COORDINATORS SUPPORT
-                  </div>
-                  <div style={{ fontSize: 12.5, color: '#334155', fontWeight: 600, marginTop: 2 }}>
-                    For campus arrival queries or registration desk directions:
-                  </div>
+              {/* ══ PROTOCOL & COORDINATORS META GRID ══ */}
+              <div className="ticket-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
+                {/* ══ MANDATORY PROTOCOL ══ */}
+                <div className="ticket-protocol-box" style={{
+                  background: '#f1f5f9',
+                  borderLeft: '4px solid #ea580c',
+                  borderRadius: 12,
+                  padding: '14px 18px',
+                  fontSize: 12.5,
+                  lineHeight: 1.6,
+                  color: '#334155'
+                }}>
+                  <strong style={{ color: '#0f172a', display: 'block', marginBottom: 4, fontSize: 13 }}>
+                    ⚠️ Mandatory Check-in Protocol:
+                  </strong>
+                  <div>&bull; <strong>Print this Flight Ticket:</strong> Bring physical printout or saved PDF.</div>
+                  <div>&bull; <strong>Original College ID Card:</strong> All members must present valid physical college ID.</div>
+                  <div>&bull; <strong>Hardware / Tech:</strong> Bring laptops, cords &amp; multi-plugs. (Hardware prototypes optional).</div>
+                  <div>&bull; <strong>Direct Entry Pass:</strong> No screening elimination; 24h sprint starts Nov 6.</div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-                      <Phone size={15} />
+                {/* ══ STUDENT COORDINATORS SUPPORT ══ */}
+                <div className="ticket-support-box" style={{
+                  padding: '14px 18px',
+                  background: '#f0f9ff',
+                  borderRadius: 14,
+                  border: '1.5px solid #bae6fd',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: 10
+                }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      STUDENT COORDINATORS SUPPORT
                     </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>Yashwanth H B</div>
-                      <a href="tel:8050614849" style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-                        8050614849
-                      </a>
+                    <div style={{ fontSize: 11.5, color: '#475569', fontWeight: 600, marginTop: 1 }}>
+                      For campus arrival queries or registration directions:
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-                      <Phone size={15} />
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+                        <Phone size={13} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Yashwanth H B</div>
+                        <a href="tel:8050614849" style={{ fontSize: 11.5, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
+                          8050614849
+                        </a>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>Chethan Kumar B</div>
-                      <a href="tel:9945507099" style={{ fontSize: 12, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-                        99455 07099
-                      </a>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+                        <Phone size={13} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Chethan Kumar B</div>
+                        <a href="tel:9945507099" style={{ fontSize: 11.5, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
+                          99455 07099
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* ══ AIRLINE BARCODE STUB ══ */}
-              <div style={{
+              <div className="ticket-barcode-stub" style={{
                 marginTop: 6,
                 paddingTop: 16,
                 borderTop: '2px dashed #cbd5e1',
                 textAlign: 'center'
               }}>
-                <div style={{
+                <div className="ticket-barcode-lines" style={{
                   fontFamily: "'Courier New', Courier, monospace",
                   fontSize: 26,
                   letterSpacing: 5,
@@ -743,7 +745,7 @@ export default function TicketTab({
                 }}>
                   ||||| ||| |||||| ||||| ||||||| |||| ||||| |||||| |||
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800, color: '#64748b', marginTop: 6, letterSpacing: '0.08em' }}>
+                <div className="ticket-barcode-text" style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800, color: '#64748b', marginTop: 6, letterSpacing: '0.08em' }}>
                   {barcodeId} &bull; UTR: {paymentRecord?.transaction_id || 'VERIFIED'}
                 </div>
               </div>
@@ -751,7 +753,7 @@ export default function TicketTab({
             </div>
 
             {/* Ticket Footer Strip */}
-            <div style={{
+            <div className="ticket-footer-strip" style={{
               background: '#0f172a',
               padding: '14px 32px',
               display: 'flex',
@@ -775,25 +777,190 @@ export default function TicketTab({
         </>
       )}
 
-      {/* Print-specific style: Fits on a single clean page without sidebars */}
+      {/* Print-specific style: Fits on exactly one single clean page without sidebars */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 4mm 5mm !important;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box !important;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            overflow: hidden !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
             visibility: hidden;
           }
           .official-ticket-card, .official-ticket-card * {
             visibility: visible;
           }
-          .official-ticket-card {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100% !important;
-            box-shadow: none !important;
-            border: 2px solid #000 !important;
-          }
           .ticket-action-bar, .dash-sidebar, .dash-header, .dash-bottom-nav {
             display: none !important;
+          }
+          .official-ticket-card {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            border: 2px solid #0f172a !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          /* Compact Single-Page Print Overrides */
+          .ticket-header {
+            padding: 8px 16px !important;
+            border-bottom: 3px solid #ea580c !important;
+          }
+          .ticket-header img {
+            max-height: 32px !important;
+          }
+          .ticket-header h1 {
+            font-size: 16px !important;
+          }
+          .ticket-header-sub {
+            margin-top: 4px !important;
+            padding-top: 4px !important;
+            font-size: 9px !important;
+          }
+
+          .ticket-telemetry {
+            padding: 5px 14px !important;
+            gap: 6px !important;
+          }
+          .ticket-telemetry span {
+            font-size: 8px !important;
+          }
+          .ticket-telemetry strong {
+            font-size: 11px !important;
+          }
+
+          .ticket-body {
+            padding: 8px 14px !important;
+            gap: 6px !important;
+          }
+
+          .ticket-squad-row {
+            padding: 6px 12px !important;
+            gap: 6px !important;
+          }
+          .ticket-squad-name {
+            font-size: 16px !important;
+            margin-top: 1px !important;
+          }
+
+          .ticket-problem-box {
+            padding: 6px 10px !important;
+            border-radius: 10px !important;
+          }
+          .ticket-problem-title {
+            font-size: 12.5px !important;
+            line-height: 1.25 !important;
+            margin-top: 2px !important;
+          }
+          .ticket-problem-desc {
+            font-size: 9px !important;
+            line-height: 1.3 !important;
+            margin-top: 2px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
+
+          .ticket-venue-box {
+            padding: 5px 10px !important;
+            border-radius: 10px !important;
+          }
+          .ticket-venue-title {
+            font-size: 12.5px !important;
+          }
+          .ticket-venue-sub {
+            font-size: 9.5px !important;
+            margin-top: 1px !important;
+          }
+          .ticket-venue-desk {
+            font-size: 9.5px !important;
+            margin-top: 2px !important;
+          }
+
+          .ticket-crew-section {
+            margin: 0 !important;
+          }
+          .ticket-crew-title {
+            font-size: 10px !important;
+            margin-bottom: 3px !important;
+          }
+          .ticket-crew-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 6px !important;
+          }
+          .ticket-crew-card {
+            padding: 4px 8px !important;
+            gap: 2px !important;
+            border-radius: 8px !important;
+          }
+          .ticket-crew-card strong {
+            font-size: 11px !important;
+          }
+          .ticket-crew-card span, .ticket-crew-card div {
+            font-size: 9px !important;
+          }
+
+          .ticket-meta-grid {
+            display: grid !important;
+            grid-template-columns: 1.15fr 0.85fr !important;
+            gap: 6px !important;
+          }
+          .ticket-protocol-box {
+            padding: 5px 8px !important;
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
+            border-radius: 8px !important;
+          }
+          .ticket-protocol-box strong {
+            font-size: 9px !important;
+          }
+          .ticket-support-box {
+            padding: 5px 8px !important;
+            gap: 4px !important;
+            border-radius: 8px !important;
+          }
+          .ticket-support-box div, .ticket-support-box a {
+            font-size: 9px !important;
+          }
+
+          .ticket-barcode-stub {
+            margin-top: 1px !important;
+            padding-top: 4px !important;
+          }
+          .ticket-barcode-lines {
+            font-size: 16px !important;
+            letter-spacing: 2.5px !important;
+          }
+          .ticket-barcode-text {
+            font-size: 8.5px !important;
+            margin-top: 2px !important;
+          }
+
+          .ticket-footer-strip {
+            padding: 4px 14px !important;
+            font-size: 9px !important;
           }
         }
       `}</style>
