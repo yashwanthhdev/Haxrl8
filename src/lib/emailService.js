@@ -1374,8 +1374,8 @@ export function generateFlightTicketEmailHtml({
   college = 'Maharaja Institute of Technology Mysore',
   members = [],
   transactionId = 'VERIFIED',
-  flightNo = 'HX-3026',
-  gate = 'GATE 01 • CIVIL SEMINAR HALL',
+  flightNo = 'Haxlr8 -2026',
+  gate = 'MAIN GATE • NEW LIBRARY',
   reportingTime = '08:30 AM IST (Friday, Nov 06, 2026)',
   venue = 'Maharaja Institute of Technology Mysore',
   venueAddress = 'Belawadi, PB No. 28, Srirangapatna Taluk, Mandya / Mysuru, Karnataka - 571477'
@@ -1586,7 +1586,7 @@ export function generateFlightTicketEmailHtml({
                 ${venueAddress}
               </div>
               <div style="font-size: 12px; color: #0284c7; margin-top: 4px; font-weight: 700;">
-                🏛️ Check-in Desk: Civil Seminar Hall (Ground Floor) &bull; ECE Department Innovation Labs
+                🏛️ Check-in Desk: Main Gate &amp; New Library &bull; Department of Electronics &amp; Communication Engineering
               </div>
             </td>
           </tr>
@@ -1620,7 +1620,6 @@ export function generateFlightTicketEmailHtml({
         <div>&bull; <strong>Print this Flight Ticket</strong> or download the official PDF from your portal to present at the registration desk.</div>
         <div>&bull; <strong>Original College Student ID Card:</strong> All squad members must carry original physical college IDs.</div>
         <div>&bull; <strong>Hardware / Tech:</strong> Bring your laptops, power cords, and multi-plugs. (Hardware prototypes are completely optional; software and AI projects are fully eligible).</div>
-        <div>&bull; <strong>Direct Entry Pass:</strong> No screening elimination; your 24-hour hackathon starts immediately on November 6th.</div>
       </div>
 
       <!-- ══ DOWNLOAD BUTTON ══ -->

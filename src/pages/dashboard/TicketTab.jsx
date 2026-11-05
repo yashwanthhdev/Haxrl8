@@ -16,7 +16,7 @@ import {
 import AmongUsCrewmate from '../../components/amongus/AmongUsCrewmate';
 import emitersSeal from '../../assets/logo/emiters-seal.png';
 import mitLogo from '../../assets/logo/mit-mysore-logo.png';
-import heroCharacter from '../../assets/playful/hero_character.png';
+import haxlr8CrownLogo from '../../assets/logo/haxlr8-crown-3.0.png';
 import { resolveDomain } from '../../lib/domainUtils';
 import { getProblemById } from '../../data/problemStatementsCatalog';
 import { getTeamSelection, fetchAllProblemSelections, isDemoEmail, isDemoId, getDemoAccount, DEMO_ACCOUNTS } from '../../lib/problemStatementsService';
@@ -337,7 +337,7 @@ export default function TicketTab({
             <div className="ticket-header" style={{
               background: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #0f172a 100%)',
               color: '#ffffff',
-              padding: '24px 30px',
+              padding: '20px 28px',
               borderBottom: '4px solid #ea580c'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
@@ -349,19 +349,21 @@ export default function TicketTab({
                   </div>
                 </div>
 
-                {/* Center Among Us Mascot & Title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-                  <img src={heroCharacter} alt="Among Us Pilot" style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
+                {/* Center Crowned HAXLR8 3.0 Logo & Title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, textAlign: 'center' }}>
+                  <div style={{ background: '#ffffff', padding: '6px 14px', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.18)' }}>
+                    <img src={haxlr8CrownLogo} alt="HAXLR8 3.0" style={{ height: 46, width: 'auto', objectFit: 'contain' }} />
+                  </div>
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                       <span style={{ fontSize: 10, fontWeight: 900, background: '#ea580c', color: '#ffffff', padding: '2px 8px', borderRadius: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                         MISSION BOARDING PASS
                       </span>
                       <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800 }}>
-                        HAXLR8 3.0 &bull; GRAND FINALE
+                        FLIGHT: Haxlr8 -2026
                       </span>
                     </div>
-                    <h1 style={{ fontSize: 24, fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                    <h1 style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                       HAXLR8 3.0 &bull; OFFICIAL FLIGHT TICKET
                     </h1>
                     <div style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600, marginTop: 2 }}>
@@ -379,7 +381,7 @@ export default function TicketTab({
               </div>
 
               {/* Department Subtitle Banner */}
-              <div className="ticket-header-sub" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: '#e2e8f0', fontWeight: 600 }}>
+              <div className="ticket-header-sub" style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', fontSize: 11.5, color: '#e2e8f0', fontWeight: 600 }}>
                 Department of Electronics &amp; Communication Engineering &bull; Maharaja Institute of Technology Mysore
               </div>
             </div>
@@ -394,12 +396,12 @@ export default function TicketTab({
               gap: 12
             }}>
               <div>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>FLIGHT NO</span>
-                <strong style={{ fontSize: 16, fontWeight: 900, color: '#ea580c', fontFamily: 'monospace' }}>HX-3026</strong>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>FLIGHT NAME</span>
+                <strong style={{ fontSize: 15, fontWeight: 900, color: '#ea580c', fontFamily: 'monospace' }}>Haxlr8 -2026</strong>
               </div>
               <div>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>GATE</span>
-                <strong style={{ fontSize: 13.5, fontWeight: 900, color: '#0f172a' }}>GATE 01 &bull; CIVIL HALL</strong>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>VENUE / GATE</span>
+                <strong style={{ fontSize: 13, fontWeight: 900, color: '#0f172a' }}>MAIN GATE &bull; NEW LIBRARY</strong>
               </div>
               <div>
                 <span style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block' }}>DATE</span>
@@ -416,7 +418,7 @@ export default function TicketTab({
             </div>
 
             {/* ══ TICKET BODY ══ */}
-            <div className="ticket-body" style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div className="ticket-body" style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
               
               {/* Squad Name & Domain Banner */}
               <div className="ticket-squad-row" style={{
@@ -575,13 +577,13 @@ export default function TicketTab({
                       OFFICIAL REPORTING VENUE &amp; LOCATION
                     </div>
                     <div className="ticket-venue-title" style={{ fontSize: 17, fontWeight: 900, color: '#0f172a', marginTop: 2 }}>
-                      Maharaja Institute of Technology Mysore (MIT Mysore)
+                      Main Gate &amp; New Library &bull; Maharaja Institute of Technology Mysore (MIT Mysore)
                     </div>
                     <div className="ticket-venue-sub" style={{ fontSize: 13, color: '#334155', marginTop: 3, fontWeight: 600 }}>
                       Belawadi, PB No. 28, Srirangapatna Taluk, Mandya / Mysuru, Karnataka - 571477
                     </div>
                     <div className="ticket-venue-desk" style={{ fontSize: 12.5, color: '#0284c7', marginTop: 4, fontWeight: 700 }}>
-                      🏛️ Check-in Desk: Civil Seminar Hall (Ground Floor) &bull; Department of Electronics &amp; Communication Engineering
+                      🏛️ Check-in Desk: Main Gate &amp; New Library &bull; Department of Electronics &amp; Communication Engineering
                     </div>
                   </div>
                 </div>
@@ -659,73 +661,22 @@ export default function TicketTab({
                 </div>
               </div>
 
-              {/* ══ PROTOCOL & COORDINATORS META GRID ══ */}
-              <div className="ticket-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
-                {/* ══ MANDATORY PROTOCOL ══ */}
-                <div className="ticket-protocol-box" style={{
-                  background: '#f1f5f9',
-                  borderLeft: '4px solid #ea580c',
-                  borderRadius: 12,
-                  padding: '14px 18px',
-                  fontSize: 12.5,
-                  lineHeight: 1.6,
-                  color: '#334155'
-                }}>
-                  <strong style={{ color: '#0f172a', display: 'block', marginBottom: 4, fontSize: 13 }}>
-                    ⚠️ Mandatory Check-in Protocol:
-                  </strong>
-                  <div>&bull; <strong>Print this Flight Ticket:</strong> Bring physical printout or saved PDF.</div>
-                  <div>&bull; <strong>Original College ID Card:</strong> All members must present valid physical college ID.</div>
-                  <div>&bull; <strong>Hardware / Tech:</strong> Bring laptops, cords &amp; multi-plugs. (Hardware prototypes optional).</div>
-                  <div>&bull; <strong>Direct Entry Pass:</strong> No screening elimination; 24h sprint starts Nov 6.</div>
-                </div>
-
-                {/* ══ STUDENT COORDINATORS SUPPORT ══ */}
-                <div className="ticket-support-box" style={{
-                  padding: '14px 18px',
-                  background: '#f0f9ff',
-                  borderRadius: 14,
-                  border: '1.5px solid #bae6fd',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  gap: 10
-                }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      STUDENT COORDINATORS SUPPORT
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#475569', fontWeight: 600, marginTop: 1 }}>
-                      For campus arrival queries or registration directions:
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-                        <Phone size={13} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Yashwanth H B</div>
-                        <a href="tel:8050614849" style={{ fontSize: 11.5, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-                          8050614849
-                        </a>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
-                        <Phone size={13} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a' }}>Chethan Kumar B</div>
-                        <a href="tel:9945507099" style={{ fontSize: 11.5, fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-                          99455 07099
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* ══ MANDATORY PROTOCOL ══ */}
+              <div className="ticket-protocol-box" style={{
+                background: '#f1f5f9',
+                borderLeft: '4px solid #ea580c',
+                borderRadius: 14,
+                padding: '14px 18px',
+                fontSize: 12.5,
+                lineHeight: 1.6,
+                color: '#334155'
+              }}>
+                <strong style={{ color: '#0f172a', display: 'block', marginBottom: 4, fontSize: 13 }}>
+                  ⚠️ Mandatory Check-in Protocol:
+                </strong>
+                <div>&bull; <strong>Print this Flight Ticket:</strong> Bring physical printout or saved PDF to the registration desk.</div>
+                <div>&bull; <strong>Original College Student ID Card:</strong> All members must present valid physical college ID cards for campus entry.</div>
+                <div>&bull; <strong>Hardware / Tech:</strong> Bring your laptops, power cords, and multi-plugs. (Hardware prototypes are optional; software and AI projects are fully eligible).</div>
               </div>
 
               {/* ══ AIRLINE BARCODE STUB ══ */}
@@ -746,7 +697,7 @@ export default function TicketTab({
                   ||||| ||| |||||| ||||| ||||||| |||| ||||| |||||| |||
                 </div>
                 <div className="ticket-barcode-text" style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800, color: '#64748b', marginTop: 6, letterSpacing: '0.08em' }}>
-                  {barcodeId} &bull; UTR: {paymentRecord?.transaction_id || 'VERIFIED'}
+                  Haxlr8 -2026 &bull; {barcodeId} &bull; UTR: {paymentRecord?.transaction_id || 'VERIFIED'}
                 </div>
               </div>
 
@@ -766,10 +717,10 @@ export default function TicketTab({
               gap: 8
             }}>
               <div style={{ color: '#cbd5e1' }}>
-                🚀 HAXLR8 3.0 Space Flight Command &bull; Direct Entry Pass
+                🚀 Haxlr8 -2026 Flight Command &bull; Boarding Pass
               </div>
               <div style={{ color: '#fb923c', fontWeight: 800 }}>
-                Bring printed pass or PDF to MIT Mysore Check-in Desk
+                Bring printed pass or PDF to Main Gate &amp; New Library Check-in Desk
               </div>
             </div>
 
@@ -922,26 +873,13 @@ export default function TicketTab({
             font-size: 9px !important;
           }
 
-          .ticket-meta-grid {
-            display: grid !important;
-            grid-template-columns: 1.15fr 0.85fr !important;
-            gap: 6px !important;
-          }
           .ticket-protocol-box {
-            padding: 5px 8px !important;
+            padding: 5px 10px !important;
             font-size: 8.5px !important;
             line-height: 1.3 !important;
             border-radius: 8px !important;
           }
           .ticket-protocol-box strong {
-            font-size: 9px !important;
-          }
-          .ticket-support-box {
-            padding: 5px 8px !important;
-            gap: 4px !important;
-            border-radius: 8px !important;
-          }
-          .ticket-support-box div, .ticket-support-box a {
             font-size: 9px !important;
           }
 
