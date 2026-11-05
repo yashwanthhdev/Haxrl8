@@ -505,9 +505,6 @@ export default function TicketTab({
                           OFFICIALLY LOCKED CHALLENGE &bull; #{lockedProblem.num || 1} ({lockedProblem.domain})
                         </span>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: 8 }}>
-                        ✓ Quota Locked (1/3 Max Squads)
-                      </span>
                     </div>
 
                     <div className="ticket-problem-title" style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1.4, marginTop: 6 }}>
