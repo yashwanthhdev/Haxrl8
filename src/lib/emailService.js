@@ -1559,7 +1559,7 @@ export function generateFlightTicketEmailHtml({
               </div>
               ${problemStatementDesc ? `<div style="font-size: 12.5px; color: #475569; margin-top: 6px; line-height: 1.5;">${problemStatementDesc.slice(0, 220)}...</div>` : ''}
               <div style="margin-top: 10px; font-size: 11.5px; color: #15803d; font-weight: 700;">
-                ✓ Verified &amp; Claimed &bull; Allocated 1 of 3 Available Track Slots
+                ✓ Verified &amp; Confirmed Challenge
               </div>
             </td>
           </tr>

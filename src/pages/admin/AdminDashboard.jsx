@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { isOrganizerAuthorized } from './adminAuth';
-import { Users, Flag, FileText, CheckSquare, Shield, Search, ChevronDown, Megaphone, ChevronRight, Mail, Send, CheckCircle2, RefreshCw, Sliders } from 'lucide-react';
+import { Users, Flag, FileText, CheckSquare, Shield, Search, ChevronDown, Megaphone, ChevronRight, Mail, Send, CheckCircle2, RefreshCw, Sliders, Trophy } from 'lucide-react';
 import { getEmailDispatchLogs, HAXLR8_HOST_EMAIL } from '../../lib/emailService';
 import { syncLocalDataToSupabase } from '../../lib/syncService';
 import { resolveDomain } from '../../lib/domainUtils';
 import CrewSquadronsModal from '../../components/admin/CrewSquadronsModal';
+import Round1ResultsSection from '../../components/admin/Round1ResultsSection';
 
 // Style constants
 const S = {
@@ -296,6 +297,24 @@ export default function AdminDashboard() {
               <Sliders size={13} style={{ color: '#6366f1' }} />
               <span>Counter Settings</span>
             </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById('round1-results');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                display:'flex', alignItems:'center', gap:6,
+                background:'#FFF7ED', border:'1.5px solid #FED7AA', borderRadius:10,
+                padding:'8px 13px', fontSize:12.5, fontWeight:800, color:'#EA580C',
+                cursor: 'pointer',
+                transition:'all 0.2s',
+                boxShadow:'0 1px 2px rgba(234, 88, 12, 0.08)'
+              }}
+              title="Jump to Official Round 1 Evaluation Results"
+            >
+              <Trophy size={14} style={{ color: '#EA580C' }} />
+              <span>Round 1 Top 3</span>
+            </button>
             <div 
               onClick={() => setShowEmail(!showEmail)}
               style={{ display:'flex', alignItems:'center', gap:10, borderLeft:'1px solid '+S.border, paddingLeft:14, cursor:'pointer' }}
@@ -437,6 +456,11 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* ROUND 1 EVALUATION LEADERBOARD & TOP 3 PODIUM */}
+            <div id="round1-results" style={{ scrollMarginTop: 80 }}>
+              <Round1ResultsSection />
+            </div>
+
             {/* BOTTOM ROW */}
             <div className="admin-bottom-grid" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:S.gap }}>
               {/* Recent Squads */}
@@ -491,6 +515,7 @@ export default function AdminDashboard() {
                 <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 16px' }}>Quick Actions</h3>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
+                    { Icon: Trophy, label:'Round 1 Results', color:'#EA580C', bg:'#FFEDD5', onClick: () => navigate(`${basePath}/round1`) },
                     { Icon: Flag, label:'Squads', color:'#059669', bg:'#D1FAE5', onClick: () => navigate(`${basePath}/teams`) },
                     { Icon: Users, label:'Participants', color:'#2563EB', bg:'#DBEAFE', onClick: () => navigate(`${basePath}/users`) },
                     { Icon: FileText, label:'Payments', color:'#D97706', bg:'#FEF3C7', onClick: () => navigate(`${basePath}/submissions`) },

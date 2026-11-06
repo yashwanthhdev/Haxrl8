@@ -33,6 +33,7 @@ const AdminMoments = lazy(() => import('./pages/admin/AdminMoments'));
 const AdminCoordinators = lazy(() => import('./pages/admin/AdminCoordinators'));
 const AdminDocuments = lazy(() => import('./pages/admin/AdminDocuments'));
 const AdminProblemStatements = lazy(() => import('./pages/admin/AdminProblemStatements'));
+const AdminRound1 = lazy(() => import('./pages/admin/AdminRound1'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const ShortlistedPage = lazy(() => import('./pages/ShortlistedPage'));
@@ -139,6 +140,8 @@ function App() {
             <Route path="submissions" element={<AdminSubmissions />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="round1" element={<AdminRound1 />} />
+            <Route path="round-1-results" element={<AdminRound1 />} />
           </Route>
 
           <Route path="/udview" element={<AdminLayout />}>
@@ -157,6 +160,8 @@ function App() {
             <Route path="submissions" element={<AdminSubmissions />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="round1" element={<AdminRound1 />} />
+            <Route path="round-1-results" element={<AdminRound1 />} />
           </Route>
 
           {/* Protected redirects to prevent unauthorized public uploads */}

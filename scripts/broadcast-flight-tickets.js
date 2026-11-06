@@ -133,7 +133,7 @@ async function main() {
     console.log(`${idx + 1}. [${st.problemStatementId}] ${st.teamName} (${st.domain}) - Capt: ${st.leaderName} (${st.leaderEmail}) [${st.members.length} Crew]`);
   });
 
-  if (!isConfirmed && !singleTarget) {
+  if (!isConfirmed && !singleTarget && !isDryRun) {
     console.log('\n═════════════════════════════════════════════════════════════════════');
     console.log('⚠️ SAFETY HOLD: Bulk broadcast has NOT been sent.');
     console.log('Per user instructions, waiting for organizer approval on sample email.');
@@ -142,16 +142,21 @@ async function main() {
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: hostEmail,
-      pass: hostPassword
-    }
-  });
+  let transporter = null;
+  if (!isDryRun) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: hostEmail,
+        pass: hostPassword
+      }
+    });
 
-  await transporter.verify();
-  console.log('\n✓ SMTP connection verified. Beginning dispatch sequence...\n');
+    await transporter.verify();
+    console.log('\n✓ SMTP connection verified. Beginning dispatch sequence...\n');
+  } else {
+    console.log('\n🔍 DRY RUN SIMULATION MODE: Scanning all recipient squads...\n');
+  }
 
   let successCount = 0;
   let failCount = 0;
