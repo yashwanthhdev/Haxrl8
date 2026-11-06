@@ -14,7 +14,7 @@ const S = {
 
 const navItems = [
   { icon: Home, label: 'Command Deck', subPath: '' },
-  { icon: Trophy, label: 'Round 1 Results', subPath: '/round1' },
+  { icon: Trophy, label: 'Final Results (R1+R2)', subPath: '/round1' },
   { icon: Flag, label: 'Squads & Teams', subPath: '/teams' },
   { icon: Target, label: 'Problem Statements', subPath: '/problem-statements' },
   { icon: Shield, label: 'Access Whitelist', subPath: '/whitelist' },

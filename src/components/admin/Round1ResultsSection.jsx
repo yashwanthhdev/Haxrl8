@@ -21,9 +21,17 @@ import {
   Copy,
   Check,
   ExternalLink,
-  FileText
+  Flame,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
-import { ROUND_1_RESULTS, getDomainTop3 } from '../../data/round1Results';
+import { 
+  COMBINED_RESULTS, 
+  getDomainTop3Combined, 
+  getDomainTop3Round1, 
+  getDomainTop3Round2, 
+  getEvaluationSummary 
+} from '../../data/round1Results';
 
 const DOMAIN_STYLES = {
   'Healthcare': {
@@ -54,7 +62,10 @@ const DOMAIN_STYLES = {
 
 export default function Round1ResultsSection() {
   const [selectedDomain, setSelectedDomain] = useState('All');
-  const [viewMode, setViewMode] = useState('top3'); // 'top3' or 'all'
+  // evaluationMode: 'combined' (R1+R2 /30) | 'r2' (R2 /20) | 'r1' (R1 /10)
+  const [evaluationMode, setEvaluationMode] = useState('combined');
+  // viewMode: 'all' (all 52 squads) or 'top3' (qualifiers)
+  const [viewMode, setViewMode] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSquad, setSelectedSquad] = useState(null);
   const [copiedField, setCopiedField] = useState('');
@@ -68,17 +79,34 @@ export default function Round1ResultsSection() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const domainTop3 = useMemo(() => getDomainTop3(), []);
+  const summary = useMemo(() => getEvaluationSummary(), []);
 
-  // Filter teams based on domain, viewMode and search query
+  // Top 3 for active evaluation mode
+  const domainTop3 = useMemo(() => {
+    if (evaluationMode === 'r1') return getDomainTop3Round1();
+    if (evaluationMode === 'r2') return getDomainTop3Round2();
+    return getDomainTop3Combined();
+  }, [evaluationMode]);
+
+  // Filtered & sorted teams
   const filteredTeams = useMemo(() => {
-    let list = ROUND_1_RESULTS;
+    let list = [...COMBINED_RESULTS];
     if (selectedDomain !== 'All') {
       list = list.filter(item => item.domain === selectedDomain);
     }
+
+    // Filter by active rank if top3 mode selected
     if (viewMode === 'top3') {
-      list = list.filter(item => item.rank <= 3);
+      if (evaluationMode === 'r1') {
+        list = list.filter(item => item.round1Rank <= 3);
+      } else if (evaluationMode === 'r2') {
+        list = list.filter(item => item.round2Rank <= 3);
+      } else {
+        list = list.filter(item => item.finalRank <= 3);
+      }
     }
+
+    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(item => 
@@ -94,11 +122,19 @@ export default function Round1ResultsSection() {
         ))
       );
     }
+
+    // Sort based on active evaluation mode
     return list.sort((a, b) => {
       if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
-      return a.rank - b.rank || b.average - a.average;
+      if (evaluationMode === 'r1') {
+        return a.round1Rank - b.round1Rank || b.round1 - a.round1;
+      }
+      if (evaluationMode === 'r2') {
+        return a.round2Rank - b.round2Rank || b.round2 - a.round2;
+      }
+      return a.finalRank - b.finalRank || b.finalScore - a.finalScore;
     });
-  }, [selectedDomain, viewMode, searchQuery]);
+  }, [selectedDomain, viewMode, evaluationMode, searchQuery]);
 
   // Copy helper
   const handleCopy = (text, fieldId) => {
@@ -108,16 +144,19 @@ export default function Round1ResultsSection() {
     setTimeout(() => setCopiedField(''), 2000);
   };
 
-  // Export to CSV with full team details
+  // Export to CSV with full team details and combined scores
   const handleExportCSV = () => {
     const headers = [
       'Sl',
-      'Rank',
+      'Combined Final Rank',
       'Team Name',
       'Domain',
-      'Average Score (/10)',
-      'Judge 1 - Dr. Akshath (/10)',
-      'Judge 2 - Vijay Kumar (/10)',
+      'Final Combined Score (/30)',
+      'Round 1 Average (/10)',
+      'Round 2 Total (/20)',
+      'R1 Judge 1 - Dr. Akshath (/10)',
+      'R1 Judge 2 - Vijay Kumar (/10)',
+      'Round 1 Rank',
       'Captain Name',
       'Captain Phone',
       'Captain Email',
@@ -132,12 +171,15 @@ export default function Round1ResultsSection() {
       const memberNames = (r.members || []).map(m => `${m.name} (${m.phone || 'No phone'})`).join('; ');
       return [
         idx + 1,
-        r.rank,
+        r.finalRank,
         `"${r.teamName}"`,
         `"${r.domain}"`,
-        r.average,
-        r.judge1,
-        r.judge2,
+        r.finalScore,
+        r.round1,
+        r.round2,
+        r.round1Judge1,
+        r.round1Judge2,
+        r.round1Rank,
         `"${r.leader?.name || ''}"`,
         `"${r.leader?.phone || ''}"`,
         `"${r.leader?.email || ''}"`,
@@ -153,10 +195,16 @@ export default function Round1ResultsSection() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `HAXLR8_Round_1_Results_With_Team_Details_${selectedDomain.replace(/\s+/g, '_')}.csv`);
+    link.setAttribute('download', `HAXLR8_3.0_Combined_Final_Results_${selectedDomain.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getActiveRank = (team) => {
+    if (evaluationMode === 'r1') return team.round1Rank;
+    if (evaluationMode === 'r2') return team.round2Rank;
+    return team.finalRank;
   };
 
   const getRankBadge = (rank) => {
@@ -233,16 +281,16 @@ export default function Round1ResultsSection() {
   return (
     <div style={{
       background: '#ffffff',
-      borderRadius: 18,
+      borderRadius: 20,
       border: '2px solid #fed7aa',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.05)',
       overflow: 'hidden',
       fontFamily: "'Plus Jakarta Sans', sans-serif"
     }}>
-      {/* ── HEADER RIBBON ── */}
+      {/* ── HEADER BANNER ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 60%, #0f172a 100%)',
-        padding: '22px 28px',
+        background: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 55%, #0f172a 100%)',
+        padding: '24px 28px',
         borderBottom: '4px solid #ea580c',
         color: '#ffffff',
         display: 'flex',
@@ -253,20 +301,20 @@ export default function Round1ResultsSection() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
-            width: 50,
-            height: 50,
+            width: 52,
+            height: 52,
             borderRadius: 14,
             background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#ffffff',
-            boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)'
+            boxShadow: '0 4px 16px rgba(234, 88, 12, 0.45)'
           }}>
-            <Trophy size={26} />
+            <Trophy size={28} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
               <span style={{
                 background: '#ea580c',
                 color: '#ffffff',
@@ -277,17 +325,17 @@ export default function Round1ResultsSection() {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase'
               }}>
-                ADMIN EXCLUSIVE TELEMETRY
+                INTERNAL ORGANIZER DECK
               </span>
               <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800 }}>
                 HAXLR8 3.0 &bull; 24H FINALE
               </span>
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
-              Round 1 Evaluation Results &bull; Domain-Wise Top 3 &amp; Team Details
+            <h2 style={{ fontSize: 21, fontWeight: 900, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+              Final Evaluation Leaderboard: Round 1 + Round 2 Combined
             </h2>
-            <div style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600, marginTop: 3 }}>
-              Official Combined Marks &bull; Evaluated by Dr. Akshath M.J &amp; Vijay Kumar M S &bull; Full Squad &amp; Captain Details Included
+            <div style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600, marginTop: 4 }}>
+              Combined Marks = Round 1 (/10) + Round 2 (/20) = Out of 30 &bull; Equal scores share rank &bull; All 52 Squads
             </div>
           </div>
         </div>
@@ -298,33 +346,126 @@ export default function Round1ResultsSection() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            padding: '10px 18px',
+            padding: '11px 20px',
             borderRadius: 12,
             background: '#ffffff',
             color: '#0f172a',
-            fontSize: 12.5,
+            fontSize: 13,
             fontWeight: 800,
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
             transition: 'transform 0.15s ease'
           }}
-          title="Export CSV containing all scores, ranks, and team contact details"
+          title="Download complete marksheet with Round 1, Round 2, Final Score, and Crew contacts"
         >
-          <Download size={15} color="#ea580c" />
-          <span>Export All Scores &amp; Details (CSV)</span>
+          <Download size={16} color="#ea580c" />
+          <span>Export All 52 Squads (CSV)</span>
         </button>
       </div>
 
-      {/* ── TOP 3 DOMAIN PODIUM DISPLAY CARDS WITH TEAM DETAILS ── */}
-      <div style={{ padding: '24px 28px 16px', background: '#fafafa', borderBottom: '1.5px solid #f1f5f9' }}>
+      {/* ── ROUND SWITCHER TABS (COMBINED vs R2 vs R1) ── */}
+      <div style={{
+        padding: '14px 28px',
+        background: '#fff7ed',
+        borderBottom: '1.5px solid #fed7aa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Evaluation Stage:
+          </span>
+          <div style={{ display: 'inline-flex', background: '#ffffff', padding: 4, borderRadius: 12, border: '1.5px solid #fed7aa' }}>
+            <button
+              onClick={() => setEvaluationMode('combined')}
+              style={{
+                padding: '7px 16px',
+                borderRadius: 9,
+                fontSize: 12.5,
+                fontWeight: 900,
+                border: 'none',
+                background: evaluationMode === 'combined' ? 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)' : 'transparent',
+                color: evaluationMode === 'combined' ? '#ffffff' : '#64748b',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: evaluationMode === 'combined' ? '0 2px 6px rgba(234, 88, 12, 0.3)' : 'none',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Flame size={14} />
+              <span>Combined Final (R1 + R2 / 30)</span>
+            </button>
+
+            <button
+              onClick={() => setEvaluationMode('r2')}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 9,
+                fontSize: 12.5,
+                fontWeight: 800,
+                border: 'none',
+                background: evaluationMode === 'r2' ? '#0f172a' : 'transparent',
+                color: evaluationMode === 'r2' ? '#ffffff' : '#64748b',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s'
+              }}
+            >
+              <Award size={14} />
+              <span>Round 2 Demo (/ 20)</span>
+            </button>
+
+            <button
+              onClick={() => setEvaluationMode('r1')}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 9,
+                fontSize: 12.5,
+                fontWeight: 800,
+                border: 'none',
+                background: evaluationMode === 'r1' ? '#0f172a' : 'transparent',
+                color: evaluationMode === 'r1' ? '#ffffff' : '#64748b',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s'
+              }}
+            >
+              <CheckCircle2 size={14} />
+              <span>Round 1 Review (/ 10)</span>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 12, color: '#9a3412', fontWeight: 700 }}>
+          {evaluationMode === 'combined' && '🏆 Showing Official Final Ranking (Round 1 + Round 2)'}
+          {evaluationMode === 'r2' && '⚡ Showing Round 2 Demo Evaluation (/ 20)'}
+          {evaluationMode === 'r1' && '📋 Showing Round 1 Evaluator Marks (/ 10)'}
+        </div>
+      </div>
+
+      {/* ── TOP 3 PODIUM DISPLAY CARDS WITH TIE HANDLING ── */}
+      <div style={{ padding: '24px 28px 18px', background: '#fafafa', borderBottom: '1.5px solid #f1f5f9' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Sparkles size={16} color="#ea580c" />
-            <span>Top 3 Rank Holders By Domain (Ties Share Same Rank &bull; Click For Squad Details)</span>
+            <span>
+              {evaluationMode === 'combined' ? 'Combined Final Top 3 Podium (Out of 30 Marks)' :
+               evaluationMode === 'r2' ? 'Round 2 Top 3 Podium (Out of 20 Marks)' :
+               'Round 1 Top 3 Podium (Out of 10 Marks)'}
+            </span>
           </div>
           <span style={{ fontSize: 11.5, color: '#64748b', fontWeight: 700 }}>
-            52 Total Evaluated Squads
+            Ties Share Same Rank &bull; Click Squad To Inspect Dossier
           </span>
         </div>
 
@@ -333,473 +474,137 @@ export default function Round1ResultsSection() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
           gap: 16
         }}>
-          {/* Healthcare Card */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            border: '1.5px solid #fecdd3',
-            padding: '18px 20px',
-            boxShadow: '0 2px 10px rgba(225, 29, 72, 0.04)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20 }}>🩺</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: '#e11d48' }}>Healthcare</span>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 800, background: '#fff1f2', color: '#e11d48', padding: '3px 8px', borderRadius: 6, border: '1px solid #fecdd3' }}>
-                19 Squads
-              </span>
-            </div>
+          {['Healthcare', 'Smart City', 'Agriculture'].map(domain => {
+            const domStyle = DOMAIN_STYLES[domain];
+            const topTeams = domainTop3[domain] || [];
+            const count = COMBINED_RESULTS.filter(t => t.domain === domain).length;
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-              {/* Rank 1 */}
-              {ROUND_1_RESULTS.filter(t => t.domain === 'Healthcare' && t.rank === 1).map(team => (
-                <div 
-                  key={team.teamName} 
-                  onClick={() => setSelectedSquad(team)}
-                  style={{
-                    padding: '12px 14px',
-                    background: '#fefce8',
-                    borderRadius: 12,
-                    border: '1.5px solid #fef08a',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  title="Click to view full team roster & contact details"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>🥇</span>
-                      <div>
-                        <strong style={{ fontSize: 14, color: '#854d0e', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {team.teamName}
-                          <Eye size={12} color="#a16207" />
-                        </strong>
-                        <span style={{ fontSize: 11, color: '#a16207' }}>J1: {team.judge1} | J2: {team.judge2}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: 16, color: '#854d0e', fontWeight: 900 }}>{team.average.toFixed(1)}</strong>
-                      <span style={{ fontSize: 10, color: '#a16207', display: 'block', fontWeight: 800 }}>Rank 1</span>
-                    </div>
+            return (
+              <div 
+                key={domain}
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 16,
+                  border: `1.5px solid ${domStyle.border}`,
+                  padding: '18px 20px',
+                  boxShadow: `0 2px 10px rgba(0, 0, 0, 0.03)`,
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                {/* Domain Card Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 20 }}>{domStyle.icon}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: domStyle.color }}>{domain}</span>
                   </div>
-                  {/* Team details snippet */}
-                  <div style={{ background: '#ffffff', borderRadius: 8, padding: '6px 10px', fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3, border: '1px solid #fef08a' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <User size={11} color="#854d0e" />
-                      <strong style={{ color: '#0f172a' }}>Capt: {team.leader?.name}</strong>
-                      <span style={{ color: '#64748b' }}>&bull; {team.leader?.phone}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b' }}>
-                      <GraduationCap size={11} />
-                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team.leader?.college}</span>
-                    </div>
-                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 800, background: domStyle.bg, color: domStyle.color, padding: '3px 8px', borderRadius: 6, border: `1px solid ${domStyle.border}` }}>
+                    {count} Squads
+                  </span>
                 </div>
-              ))}
 
-              {/* Rank 2 */}
-              {ROUND_1_RESULTS.filter(t => t.domain === 'Healthcare' && t.rank === 2).map(team => (
-                <div 
-                  key={team.teamName} 
-                  onClick={() => setSelectedSquad(team)}
-                  style={{
-                    padding: '12px 14px',
-                    background: '#f8fafc',
-                    borderRadius: 12,
-                    border: '1.5px solid #e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  title="Click to view full team roster & contact details"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>🥈</span>
-                      <div>
-                        <strong style={{ fontSize: 14, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {team.teamName}
-                          <Eye size={12} color="#64748b" />
-                        </strong>
-                        <span style={{ fontSize: 11, color: '#64748b' }}>J1: {team.judge1} | J2: {team.judge2}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: 16, color: '#0f172a', fontWeight: 900 }}>{team.average.toFixed(1)}</strong>
-                      <span style={{ fontSize: 10, color: '#64748b', display: 'block', fontWeight: 800 }}>Rank 2</span>
-                    </div>
-                  </div>
-                  {/* Team details snippet */}
-                  <div style={{ background: '#ffffff', borderRadius: 8, padding: '6px 10px', fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3, border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <User size={11} color="#334155" />
-                      <strong style={{ color: '#0f172a' }}>Capt: {team.leader?.name}</strong>
-                      <span style={{ color: '#64748b' }}>&bull; {team.leader?.phone}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b' }}>
-                      <GraduationCap size={11} />
-                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team.leader?.college}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                {/* Top 3 Ranks Grouped */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                  {[1, 2, 3].map(rankNum => {
+                    const teamsInRank = topTeams.filter(t => getActiveRank(t) === rankNum);
+                    if (teamsInRank.length === 0) return null;
 
-              {/* Rank 3 (3-Way Tie) */}
-              <div style={{ padding: '12px 14px', background: '#fff7ed', borderRadius: 12, border: '1.5px solid #ffedd5' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🥉</span>
-                    <strong style={{ fontSize: 12, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Rank 3 (3-Way Tie &bull; Avg 9.0)
-                    </strong>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: '#c2410c', fontWeight: 700 }}>Click squad to inspect</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {ROUND_1_RESULTS.filter(t => t.domain === 'Healthcare' && t.rank === 3).map(team => (
-                    <div 
-                      key={team.teamName}
-                      onClick={() => setSelectedSquad(team)}
-                      style={{
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: '#ffffff',
-                        border: '1px solid #fed7aa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                      title="Click to view full team roster & contact details"
-                    >
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#9a3412', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span>{team.teamName}</span>
-                          <Eye size={11} color="#ea580c" />
+                    const isRank1 = rankNum === 1;
+                    const isRank2 = rankNum === 2;
+                    const cardBg = isRank1 ? '#fefce8' : isRank2 ? '#f8fafc' : '#fff7ed';
+                    const cardBorder = isRank1 ? '#fef08a' : isRank2 ? '#e2e8f0' : '#fed7aa';
+                    const medalEmoji = isRank1 ? '🥇' : isRank2 ? '🥈' : '🥉';
+                    const rankColor = isRank1 ? '#854d0e' : isRank2 ? '#334155' : '#9a3412';
+
+                    return (
+                      <div 
+                        key={rankNum}
+                        style={{
+                          padding: '12px 14px',
+                          background: cardBg,
+                          borderRadius: 12,
+                          border: `1.5px solid ${cardBorder}`
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 16 }}>{medalEmoji}</span>
+                            <strong style={{ fontSize: 12, color: rankColor, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Rank {rankNum} {teamsInRank.length > 1 ? `(${teamsInRank.length}-Way Tie)` : ''}
+                            </strong>
+                          </div>
+                          {teamsInRank.length === 1 && (
+                            <span style={{ fontSize: 14, fontWeight: 900, color: rankColor }}>
+                              {evaluationMode === 'combined' ? `${teamsInRank[0].finalScore} / 30` :
+                               evaluationMode === 'r2' ? `${teamsInRank[0].round2} / 20` :
+                               `${teamsInRank[0].round1} / 10`}
+                            </span>
+                          )}
                         </div>
-                        <div style={{ fontSize: 10.5, color: '#64748b' }}>
-                          Capt: {team.leader?.name} &bull; {team.leader?.college?.split(' ')[0]}
+
+                        {/* List of squads in this rank (handles single squad or ties) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {teamsInRank.map(team => (
+                            <div
+                              key={team.teamName}
+                              onClick={() => setSelectedSquad(team)}
+                              style={{
+                                padding: '8px 10px',
+                                background: '#ffffff',
+                                borderRadius: 8,
+                                border: `1px solid ${cardBorder}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title="Click to view complete squad dossier & crew details"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <strong style={{ fontSize: 13, color: '#0f172a' }}>{team.teamName}</strong>
+                                  <Eye size={12} color="#0284c7" />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  {evaluationMode === 'combined' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <span style={{ fontSize: 10, color: '#64748b' }}>R1: {team.round1} | R2: {team.round2}</span>
+                                      <span style={{ fontSize: 12, fontWeight: 900, color: '#ea580c', background: '#fff7ed', padding: '1px 6px', borderRadius: 6, border: '1px solid #fed7aa' }}>
+                                        {team.finalScore} / 30
+                                      </span>
+                                    </div>
+                                  )}
+                                  {evaluationMode === 'r2' && (
+                                    <span style={{ fontSize: 12, fontWeight: 900, color: '#0f172a' }}>
+                                      {team.round2} / 20
+                                    </span>
+                                  )}
+                                  {evaluationMode === 'r1' && (
+                                    <span style={{ fontSize: 12, fontWeight: 900, color: '#0f172a' }}>
+                                      {team.round1} / 10
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div style={{ fontSize: 10.5, color: '#64748b', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span>Capt: <strong>{team.leader?.name}</strong></span>
+                                <span>&bull;</span>
+                                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: 160 }}>
+                                  {team.leader?.college?.split(' ')[0]}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#9a3412', background: '#fff7ed', padding: '2px 6px', borderRadius: 6, border: '1px solid #fed7aa' }}>
-                        9.0
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Smart City Card */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            border: '1.5px solid #7dd3fc',
-            padding: '18px 20px',
-            boxShadow: '0 2px 10px rgba(2, 132, 199, 0.04)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20 }}>🏙️</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: '#0284c7' }}>Smart City</span>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 800, background: '#e0f2fe', color: '#0284c7', padding: '3px 8px', borderRadius: 6, border: '1px solid #7dd3fc' }}>
-                19 Squads
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-              {/* Rank 1 Tie (2 squads) */}
-              <div style={{ padding: '12px 14px', background: '#fefce8', borderRadius: 12, border: '1.5px solid #fef08a' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🥇</span>
-                    <strong style={{ fontSize: 12, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Rank 1 (2-Way Tie &bull; Avg 9.0)
-                    </strong>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: '#a16207', fontWeight: 700 }}>Click to inspect</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {ROUND_1_RESULTS.filter(t => t.domain === 'Smart City' && t.rank === 1).map(team => (
-                    <div 
-                      key={team.teamName}
-                      onClick={() => setSelectedSquad(team)}
-                      style={{
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: '#ffffff',
-                        border: '1px solid #fef08a',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                      title="Click to view full team roster & contact details"
-                    >
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#854d0e', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span>{team.teamName}</span>
-                          <Eye size={11} color="#a16207" />
-                        </div>
-                        <div style={{ fontSize: 10.5, color: '#64748b' }}>
-                          Capt: {team.leader?.name} &bull; {team.leader?.college?.slice(0, 24)}...
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#854d0e', background: '#fefce8', padding: '2px 6px', borderRadius: 6, border: '1px solid #fef08a' }}>
-                        9.0
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Rank 2 Tie (7 squads) */}
-              <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 12, border: '1.5px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🥈</span>
-                    <strong style={{ fontSize: 12, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Rank 2 (7-Way Tie &bull; Avg 8.5)
-                    </strong>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: '#64748b', fontWeight: 700 }}>7 Squads Tied</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {ROUND_1_RESULTS.filter(t => t.domain === 'Smart City' && t.rank === 2).map(team => (
-                    <button
-                      key={team.teamName}
-                      onClick={() => setSelectedSquad(team)}
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: 6,
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
-                        fontSize: 11.5,
-                        fontWeight: 800,
-                        color: '#0f172a',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                      title={`Capt: ${team.leader?.name} (${team.leader?.college})`}
-                    >
-                      <span>{team.teamName}</span>
-                      <Eye size={10} color="#64748b" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Rank 3 Tie (3 squads) */}
-              <div style={{ padding: '12px 14px', background: '#fff7ed', borderRadius: 12, border: '1.5px solid #ffedd5' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🥉</span>
-                    <strong style={{ fontSize: 12, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Rank 3 (3-Way Tie &bull; Avg 8.0)
-                    </strong>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: '#c2410c', fontWeight: 700 }}>3 Squads Tied</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {ROUND_1_RESULTS.filter(t => t.domain === 'Smart City' && t.rank === 3).map(team => (
-                    <button
-                      key={team.teamName}
-                      onClick={() => setSelectedSquad(team)}
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: 6,
-                        background: '#ffffff',
-                        border: '1px solid #fed7aa',
-                        fontSize: 11.5,
-                        fontWeight: 800,
-                        color: '#9a3412',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                      title={`Capt: ${team.leader?.name} (${team.leader?.college})`}
-                    >
-                      <span>{team.teamName}</span>
-                      <Eye size={10} color="#ea580c" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Agriculture Card */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 16,
-            border: '1.5px solid #86efac',
-            padding: '18px 20px',
-            boxShadow: '0 2px 10px rgba(22, 163, 74, 0.04)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20 }}>🌾</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: '#16a34a' }}>Agriculture</span>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 800, background: '#f0fdf4', color: '#16a34a', padding: '3px 8px', borderRadius: 6, border: '1px solid #86efac' }}>
-                14 Squads
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-              {/* Rank 1 */}
-              {ROUND_1_RESULTS.filter(t => t.domain === 'Agriculture' && t.rank === 1).map(team => (
-                <div 
-                  key={team.teamName} 
-                  onClick={() => setSelectedSquad(team)}
-                  style={{
-                    padding: '12px 14px',
-                    background: '#fefce8',
-                    borderRadius: 12,
-                    border: '1.5px solid #fef08a',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  title="Click to view full team roster & contact details"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>🥇</span>
-                      <div>
-                        <strong style={{ fontSize: 14, color: '#854d0e', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {team.teamName}
-                          <Eye size={12} color="#a16207" />
-                        </strong>
-                        <span style={{ fontSize: 11, color: '#a16207' }}>J1: {team.judge1} | J2: {team.judge2}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: 16, color: '#854d0e', fontWeight: 900 }}>{team.average.toFixed(1)}</strong>
-                      <span style={{ fontSize: 10, color: '#a16207', display: 'block', fontWeight: 800 }}>Rank 1</span>
-                    </div>
-                  </div>
-                  {/* Team details snippet */}
-                  <div style={{ background: '#ffffff', borderRadius: 8, padding: '6px 10px', fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3, border: '1px solid #fef08a' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <User size={11} color="#854d0e" />
-                      <strong style={{ color: '#0f172a' }}>Capt: {team.leader?.name}</strong>
-                      <span style={{ color: '#64748b' }}>&bull; {team.leader?.phone}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b' }}>
-                      <GraduationCap size={11} />
-                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team.leader?.college}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Rank 2 */}
-              {ROUND_1_RESULTS.filter(t => t.domain === 'Agriculture' && t.rank === 2).map(team => (
-                <div 
-                  key={team.teamName} 
-                  onClick={() => setSelectedSquad(team)}
-                  style={{
-                    padding: '12px 14px',
-                    background: '#f8fafc',
-                    borderRadius: 12,
-                    border: '1.5px solid #e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  title="Click to view full team roster & contact details"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>🥈</span>
-                      <div>
-                        <strong style={{ fontSize: 14, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {team.teamName}
-                          <Eye size={12} color="#64748b" />
-                        </strong>
-                        <span style={{ fontSize: 11, color: '#64748b' }}>J1: {team.judge1} | J2: {team.judge2}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: 16, color: '#0f172a', fontWeight: 900 }}>{team.average.toFixed(1)}</strong>
-                      <span style={{ fontSize: 10, color: '#64748b', display: 'block', fontWeight: 800 }}>Rank 2</span>
-                    </div>
-                  </div>
-                  {/* Team details snippet */}
-                  <div style={{ background: '#ffffff', borderRadius: 8, padding: '6px 10px', fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3, border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <User size={11} color="#334155" />
-                      <strong style={{ color: '#0f172a' }}>Capt: {team.leader?.name}</strong>
-                      <span style={{ color: '#64748b' }}>&bull; {team.leader?.phone}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b' }}>
-                      <GraduationCap size={11} />
-                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{team.leader?.college}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Rank 3 Tie (3 squads) */}
-              <div style={{ padding: '12px 14px', background: '#fff7ed', borderRadius: 12, border: '1.5px solid #ffedd5' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🥉</span>
-                    <strong style={{ fontSize: 12, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Rank 3 (3-Way Tie &bull; Avg 7.0)
-                    </strong>
-                  </div>
-                  <span style={{ fontSize: 10.5, color: '#c2410c', fontWeight: 700 }}>Click to inspect</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {ROUND_1_RESULTS.filter(t => t.domain === 'Agriculture' && t.rank === 3).map(team => (
-                    <div 
-                      key={team.teamName}
-                      onClick={() => setSelectedSquad(team)}
-                      style={{
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: '#ffffff',
-                        border: '1px solid #fed7aa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                      title="Click to view full team roster & contact details"
-                    >
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#9a3412', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span>{team.teamName}</span>
-                          <Eye size={11} color="#ea580c" />
-                        </div>
-                        <div style={{ fontSize: 10.5, color: '#64748b' }}>
-                          Capt: {team.leader?.name} &bull; {team.leader?.college?.split(' ')[0]}
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: '#9a3412', background: '#fff7ed', padding: '2px 6px', borderRadius: 6, border: '1px solid #fed7aa' }}>
-                        7.0
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── CONTROLS & FILTERS ── */}
+      {/* ── CONTROLS, SEARCH & FILTER BAR ── */}
       <div style={{
         padding: '16px 28px',
         display: 'flex',
@@ -814,6 +619,7 @@ export default function Round1ResultsSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {['All', 'Healthcare', 'Smart City', 'Agriculture'].map(dom => {
             const isSelected = selectedDomain === dom;
+            const count = dom === 'All' ? COMBINED_RESULTS.length : COMBINED_RESULTS.filter(t => t.domain === dom).length;
             return (
               <button
                 key={dom}
@@ -834,25 +640,23 @@ export default function Round1ResultsSection() {
                 }}
               >
                 <span>{dom}</span>
-                {dom !== 'All' && (
-                  <span style={{
-                    fontSize: 11,
-                    background: isSelected ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
-                    color: isSelected ? '#ffffff' : '#64748b',
-                    padding: '1px 6px',
-                    borderRadius: 6
-                  }}>
-                    {ROUND_1_RESULTS.filter(t => t.domain === dom).length}
-                  </span>
-                )}
+                <span style={{
+                  fontSize: 11,
+                  background: isSelected ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+                  color: isSelected ? '#ffffff' : '#64748b',
+                  padding: '1px 6px',
+                  borderRadius: 6
+                }}>
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* View Mode & Search */}
+        {/* View Mode (All 52 vs Top 3) & Search Input */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {/* Top 3 Qualifiers Only vs All View Toggle */}
+          {/* Roster View Toggle */}
           <div style={{
             display: 'inline-flex',
             background: '#f1f5f9',
@@ -860,6 +664,22 @@ export default function Round1ResultsSection() {
             borderRadius: 10,
             border: '1px solid #e2e8f0'
           }}>
+            <button
+              onClick={() => setViewMode('all')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 800,
+                border: 'none',
+                background: viewMode === 'all' ? '#ffffff' : 'transparent',
+                color: viewMode === 'all' ? '#0f172a' : '#64748b',
+                boxShadow: viewMode === 'all' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                cursor: 'pointer'
+              }}
+            >
+              All 52 Results
+            </button>
             <button
               onClick={() => setViewMode('top3')}
               style={{
@@ -878,23 +698,7 @@ export default function Round1ResultsSection() {
               }}
             >
               <Trophy size={13} />
-              <span>Top 3 Qualifiers ({ROUND_1_RESULTS.filter(t => t.rank <= 3).length})</span>
-            </button>
-            <button
-              onClick={() => setViewMode('all')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 800,
-                border: 'none',
-                background: viewMode === 'all' ? '#ffffff' : 'transparent',
-                color: viewMode === 'all' ? '#0f172a' : '#64748b',
-                boxShadow: viewMode === 'all' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                cursor: 'pointer'
-              }}
-            >
-              Full Roster (52)
+              <span>Top 3 Qualifiers</span>
             </button>
           </div>
 
@@ -903,7 +707,7 @@ export default function Round1ResultsSection() {
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
               type="text"
-              placeholder="Search squad, leader, college..."
+              placeholder="Search squad, captain, college..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -923,46 +727,52 @@ export default function Round1ResultsSection() {
         </div>
       </div>
 
-      {/* ── LEADERBOARD DATA TABLE WITH FULL TEAM DETAILS ── */}
+      {/* ── COMPLETE RESULTS TABLE (ALL 52 SQUADS) ── */}
       <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: 12 }}>
+        <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#64748b', textAlign: 'left' }}>
               <th style={{ padding: '12px 18px', fontWeight: 800, width: 85 }}>Rank</th>
               <th style={{ padding: '12px 18px', fontWeight: 800 }}>Squad &amp; Domain</th>
-              <th style={{ padding: '12px 18px', fontWeight: 800 }}>Captain / Leader</th>
-              <th style={{ padding: '12px 18px', fontWeight: 800 }}>College / Institution</th>
-              <th style={{ padding: '12px 18px', fontWeight: 800, textAlign: 'center', width: 90 }}>Crew</th>
-              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 80 }}>J1 (/10)</th>
-              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 80 }}>J2 (/10)</th>
-              <th style={{ padding: '12px 16px', fontWeight: 800, textAlign: 'center', width: 95 }}>Average</th>
-              <th style={{ padding: '12px 18px', fontWeight: 800, textAlign: 'center', width: 110 }}>Roster</th>
+              <th style={{ padding: '12px 18px', fontWeight: 800 }}>Commander / Captain</th>
+              <th style={{ padding: '12px 18px', fontWeight: 800 }}>Institution / College</th>
+              <th style={{ padding: '12px 16px', fontWeight: 800, textAlign: 'center', width: 85 }}>Crew</th>
+              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 95 }}>R1 (/10)</th>
+              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 95 }}>R2 (/20)</th>
+              <th style={{ padding: '12px 18px', fontWeight: 900, textAlign: 'center', width: 120, background: '#fff7ed', color: '#ea580c' }}>
+                Final (/30)
+              </th>
+              <th style={{ padding: '12px 18px', fontWeight: 800, textAlign: 'center', width: 100 }}>Dossier</th>
             </tr>
           </thead>
           <tbody>
             {filteredTeams.map((team, idx) => {
               const domStyle = DOMAIN_STYLES[team.domain] || DOMAIN_STYLES['Smart City'];
-              const isTop3 = team.rank <= 3;
+              const currentRank = getActiveRank(team);
+              const isTop3 = currentRank <= 3;
+
               return (
                 <tr 
                   key={team.teamName + idx} 
                   style={{ 
                     borderBottom: '1px solid #f1f5f9',
-                    background: isTop3 ? (team.rank === 1 ? '#fefce8' : team.rank === 2 ? '#fafafa' : '#fff7ed') : '#ffffff',
+                    background: isTop3 
+                      ? (currentRank === 1 ? '#fefce8' : currentRank === 2 ? '#fafafa' : '#fff7ed') 
+                      : '#ffffff',
                     transition: 'background 0.15s ease'
                   }}
                 >
                   {/* Rank */}
                   <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                    {getRankBadge(team.rank)}
+                    {getRankBadge(currentRank)}
                   </td>
 
                   {/* Squad Name & Domain */}
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
-                        width: 34,
-                        height: 34,
+                        width: 36,
+                        height: 36,
                         borderRadius: 10,
                         background: domStyle.bg,
                         color: domStyle.color,
@@ -996,7 +806,7 @@ export default function Round1ResultsSection() {
                     </div>
                   </td>
 
-                  {/* Captain / Leader Details */}
+                  {/* Commander / Captain */}
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <strong style={{ fontSize: 12.5, color: '#0f172a' }}>
@@ -1025,7 +835,7 @@ export default function Round1ResultsSection() {
                     </div>
                   </td>
 
-                  {/* College / Institution */}
+                  {/* Institution / College */}
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ color: '#334155', fontWeight: 600, fontSize: 12, lineHeight: 1.4 }}>
                       {team.leader?.college || 'N/A'}
@@ -1038,7 +848,7 @@ export default function Round1ResultsSection() {
                   </td>
 
                   {/* Crew Size */}
-                  <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -1056,28 +866,38 @@ export default function Round1ResultsSection() {
                     </span>
                   </td>
 
-                  {/* Judge 1 */}
-                  <td style={{ padding: '14px 14px', textAlign: 'center', color: '#475569', fontWeight: 700 }}>
-                    {team.judge1}
+                  {/* Round 1 (/10) */}
+                  <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 13 }}>
+                      {team.round1}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: '#94a3b8' }}>
+                      J1:{team.round1Judge1} | J2:{team.round1Judge2}
+                    </div>
                   </td>
 
-                  {/* Judge 2 */}
-                  <td style={{ padding: '14px 14px', textAlign: 'center', color: '#475569', fontWeight: 700 }}>
-                    {team.judge2}
-                  </td>
-
-                  {/* Average */}
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <span style={{
-                      fontSize: 14,
-                      fontWeight: 900,
-                      color: isTop3 ? '#ea580c' : '#0f172a'
-                    }}>
-                      {team.average.toFixed(1)}
+                  {/* Round 2 (/20) */}
+                  <td style={{ padding: '14px 14px', textAlign: 'center' }}>
+                    <span style={{ fontWeight: 800, color: '#0f172a', fontSize: 13 }}>
+                      {team.round2}
                     </span>
                   </td>
 
-                  {/* Action / View Squad Roster */}
+                  {/* Final Combined (/30) */}
+                  <td style={{ padding: '14px 18px', textAlign: 'center', background: isTop3 ? 'rgba(234, 88, 12, 0.08)' : '#fffaf3' }}>
+                    <span style={{
+                      fontSize: 15,
+                      fontWeight: 900,
+                      color: isTop3 ? '#ea580c' : '#0f172a'
+                    }}>
+                      {team.finalScore}
+                    </span>
+                    <span style={{ fontSize: 10.5, color: '#c2410c', display: 'block', fontWeight: 700 }}>
+                      / 30
+                    </span>
+                  </td>
+
+                  {/* Action / Inspect Dossier */}
                   <td style={{ padding: '14px 18px', textAlign: 'center' }}>
                     <button
                       onClick={() => setSelectedSquad(team)}
@@ -1095,10 +915,10 @@ export default function Round1ResultsSection() {
                         gap: 4,
                         transition: 'all 0.15s ease'
                       }}
-                      title="Inspect complete crew members, emails, phones & college"
+                      title="Inspect complete crew members, emails, phones & marks"
                     >
                       <Eye size={12} />
-                      <span>Details</span>
+                      <span>Dossier</span>
                     </button>
                   </td>
                 </tr>
@@ -1110,7 +930,7 @@ export default function Round1ResultsSection() {
 
       {/* ── FOOTER STATS ── */}
       <div style={{
-        padding: '14px 28px',
+        padding: '16px 28px',
         background: '#f8fafc',
         borderTop: '1px solid #e2e8f0',
         display: 'flex',
@@ -1124,10 +944,10 @@ export default function Round1ResultsSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span>Showing <strong>{filteredTeams.length}</strong> of 52 squads</span>
           <span>&bull;</span>
-          <span>Total Round 1 Participants: <strong>205 Crew Members</strong></span>
+          <span>Total Round 1 + Round 2 Participants: <strong>205 Crew Members</strong></span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: '#059669', fontWeight: 800 }}>✓ Official Evaluation Complete</span>
+          <span style={{ color: '#059669', fontWeight: 800 }}>✓ Official Round 1 &amp; Round 2 Combined</span>
         </div>
       </div>
 
@@ -1157,10 +977,9 @@ export default function Round1ResultsSection() {
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
               border: '2px solid #fed7aa',
-              position: 'relative',
-              animation: 'fadeIn 0.2s ease-out'
+              position: 'relative'
             }}
           >
             {/* Modal Header */}
@@ -1177,7 +996,7 @@ export default function Round1ResultsSection() {
             }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  {getRankBadge(selectedSquad.rank)}
+                  {getRankBadge(selectedSquad.finalRank)}
                   <span style={{
                     fontSize: 11,
                     fontWeight: 800,
@@ -1217,7 +1036,7 @@ export default function Round1ResultsSection() {
               </button>
             </div>
 
-            {/* Scorecard Strip */}
+            {/* Scorecard Strip (R1 + R2 + Combined) */}
             <div style={{
               background: '#f8fafc',
               borderBottom: '1px solid #e2e8f0',
@@ -1228,16 +1047,33 @@ export default function Round1ResultsSection() {
               textAlign: 'center'
             }}>
               <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Judge 1: Dr. Akshath</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{selectedSquad.judge1} <span style={{ fontSize: 11, color: '#94a3b8' }}>/ 10</span></div>
+                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Round 1 (/10)</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
+                  {selectedSquad.round1} <span style={{ fontSize: 10.5, color: '#94a3b8' }}>/ 10</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
+                  J1: {selectedSquad.round1Judge1} | J2: {selectedSquad.round1Judge2}
+                </div>
               </div>
+
               <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Judge 2: Vijay Kumar</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>{selectedSquad.judge2} <span style={{ fontSize: 11, color: '#94a3b8' }}>/ 10</span></div>
+                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Round 2 (/20)</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
+                  {selectedSquad.round2} <span style={{ fontSize: 10.5, color: '#94a3b8' }}>/ 20</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
+                  Demo &amp; Architecture
+                </div>
               </div>
+
               <div style={{ background: '#fff7ed', padding: '10px 12px', borderRadius: 10, border: '1px solid #fed7aa' }}>
-                <div style={{ fontSize: 11, color: '#c2410c', fontWeight: 700 }}>Official Average</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#ea580c' }}>{selectedSquad.average.toFixed(1)} <span style={{ fontSize: 11, color: '#c2410c' }}>/ 10</span></div>
+                <div style={{ fontSize: 11, color: '#c2410c', fontWeight: 800 }}>Combined Total</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#ea580c' }}>
+                  {selectedSquad.finalScore} <span style={{ fontSize: 11, color: '#c2410c' }}>/ 30</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#ea580c', fontWeight: 700, marginTop: 2 }}>
+                  Final Rank {selectedSquad.finalRank}
+                </div>
               </div>
             </div>
 

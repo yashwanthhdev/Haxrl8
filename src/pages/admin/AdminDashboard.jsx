@@ -310,10 +310,10 @@ export default function AdminDashboard() {
                 transition:'all 0.2s',
                 boxShadow:'0 1px 2px rgba(234, 88, 12, 0.08)'
               }}
-              title="Jump to Official Round 1 Evaluation Results"
+              title="Jump to Official Combined Evaluation Results (Round 1 + Round 2)"
             >
               <Trophy size={14} style={{ color: '#EA580C' }} />
-              <span>Round 1 Top 3</span>
+              <span>Final Results (R1+R2)</span>
             </button>
             <div 
               onClick={() => setShowEmail(!showEmail)}
@@ -515,7 +515,7 @@ export default function AdminDashboard() {
                 <h3 style={{ fontSize:15, fontWeight:700, margin:'0 0 16px' }}>Quick Actions</h3>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
-                    { Icon: Trophy, label:'Round 1 Results', color:'#EA580C', bg:'#FFEDD5', onClick: () => navigate(`${basePath}/round1`) },
+                    { Icon: Trophy, label:'Final Results', color:'#EA580C', bg:'#FFEDD5', onClick: () => navigate(`${basePath}/round1`) },
                     { Icon: Flag, label:'Squads', color:'#059669', bg:'#D1FAE5', onClick: () => navigate(`${basePath}/teams`) },
                     { Icon: Users, label:'Participants', color:'#2563EB', bg:'#DBEAFE', onClick: () => navigate(`${basePath}/users`) },
                     { Icon: FileText, label:'Payments', color:'#D97706', bg:'#FEF3C7', onClick: () => navigate(`${basePath}/submissions`) },

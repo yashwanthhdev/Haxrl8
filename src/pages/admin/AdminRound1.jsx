@@ -22,12 +22,12 @@ export default function AdminRound1() {
       >
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111827' }}>
-            Round 1 Evaluation Leaderboard
+            Final Evaluation Leaderboard (Round 1 + Round 2)
           </h1>
           <div style={{ fontSize: 11, fontWeight: 500, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
             <span>Home</span>
             <ChevronRight size={12} />
-            <span style={{ color: '#111827' }}>Round 1 Results</span>
+            <span style={{ color: '#111827' }}>Final Results (R1 + R2)</span>
           </div>
         </div>
       </header>
