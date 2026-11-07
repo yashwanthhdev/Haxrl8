@@ -23,13 +23,19 @@ import {
   ExternalLink,
   Flame,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Star
 } from 'lucide-react';
 import { 
   COMBINED_RESULTS, 
+  getDomainTop2Combined,
+  getDomainTop2Round3,
+  getDomainTop2GrandTotal,
   getDomainTop3Combined, 
   getDomainTop3Round1, 
-  getDomainTop3Round2, 
+  getDomainTop3Round2,
+  getDomainTop3Round3,
+  getDomainTop3GrandTotal,
   getEvaluationSummary 
 } from '../../data/round1Results';
 
@@ -40,7 +46,8 @@ const DOMAIN_STYLES = {
     border: '#fecdd3',
     icon: '🩺',
     badgeBg: '#ffe4e6',
-    borderStrong: '#fda4af'
+    borderStrong: '#fda4af',
+    accent: '#be123c'
   },
   'Smart City': {
     color: '#0284c7',
@@ -48,7 +55,8 @@ const DOMAIN_STYLES = {
     border: '#7dd3fc',
     icon: '🏙️',
     badgeBg: '#bae6fd',
-    borderStrong: '#38bdf8'
+    borderStrong: '#38bdf8',
+    accent: '#0369a1'
   },
   'Agriculture': {
     color: '#16a34a',
@@ -56,15 +64,18 @@ const DOMAIN_STYLES = {
     border: '#86efac',
     icon: '🌾',
     badgeBg: '#bbf7d0',
-    borderStrong: '#4ade80'
+    borderStrong: '#4ade80',
+    accent: '#15803d'
   }
 };
 
 export default function Round1ResultsSection() {
   const [selectedDomain, setSelectedDomain] = useState('All');
-  // evaluationMode: 'combined' (R1+R2 /30) | 'r2' (R2 /20) | 'r1' (R1 /10)
-  const [evaluationMode, setEvaluationMode] = useState('combined');
-  // viewMode: 'all' (all 52 squads) or 'top3' (qualifiers)
+  // evaluationMode: 'r1_r2' (Round 1+2 Combined /30) | 'r3' (Round 3 /70) | 'grand' (Grand Total /100)
+  const [evaluationMode, setEvaluationMode] = useState('r1_r2');
+  // podiumLimit: 2 (Top 2 from each domain) or 3 (Top 3)
+  const [podiumLimit, setPodiumLimit] = useState(2);
+  // viewMode: 'all' (All 52 squads) or 'top' (Qualifiers only)
   const [viewMode, setViewMode] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSquad, setSelectedSquad] = useState(null);
@@ -81,32 +92,59 @@ export default function Round1ResultsSection() {
 
   const summary = useMemo(() => getEvaluationSummary(), []);
 
-  // Top 3 for active evaluation mode
-  const domainTop3 = useMemo(() => {
-    if (evaluationMode === 'r1') return getDomainTop3Round1();
-    if (evaluationMode === 'r2') return getDomainTop3Round2();
-    return getDomainTop3Combined();
-  }, [evaluationMode]);
+  // Get active rank number for a squad based on evaluationMode
+  const getActiveRank = (team) => {
+    if (evaluationMode === 'r1_r2') return team.r1_2_Rank;
+    if (evaluationMode === 'r3') return team.round3Rank;
+    return team.grandRank;
+  };
 
-  // Filtered & sorted teams
+  // Get active score for a squad based on evaluationMode
+  const getActiveScore = (team) => {
+    if (evaluationMode === 'r1_r2') return team.r1_2_Combined;
+    if (evaluationMode === 'r3') return team.round3Average;
+    return team.grandTotal;
+  };
+
+  const getActiveScoreMax = () => {
+    if (evaluationMode === 'r1_r2') return 30;
+    if (evaluationMode === 'r3') return 70;
+    return 100;
+  };
+
+  // Top qualifiers for active evaluation mode by domain
+  const domainQualifiers = useMemo(() => {
+    const domains = ['Healthcare', 'Smart City', 'Agriculture'];
+    const res = {};
+
+    domains.forEach(domain => {
+      const domTeams = COMBINED_RESULTS.filter(t => t.domain === domain);
+      if (evaluationMode === 'r1_r2') {
+        domTeams.sort((a, b) => a.r1_2_Rank - b.r1_2_Rank || b.r1_2_Combined - a.r1_2_Combined);
+        res[domain] = domTeams.filter(t => t.r1_2_Rank <= podiumLimit);
+      } else if (evaluationMode === 'r3') {
+        domTeams.sort((a, b) => a.round3Rank - b.round3Rank || b.round3Average - a.round3Average);
+        res[domain] = domTeams.filter(t => t.round3Rank <= podiumLimit);
+      } else {
+        domTeams.sort((a, b) => a.grandRank - b.grandRank || b.grandTotal - a.grandTotal);
+        res[domain] = domTeams.filter(t => t.grandRank <= podiumLimit);
+      }
+    });
+
+    return res;
+  }, [evaluationMode, podiumLimit]);
+
+  // Filtered & sorted squads for the full table
   const filteredTeams = useMemo(() => {
     let list = [...COMBINED_RESULTS];
     if (selectedDomain !== 'All') {
       list = list.filter(item => item.domain === selectedDomain);
     }
 
-    // Filter by active rank if top3 mode selected
-    if (viewMode === 'top3') {
-      if (evaluationMode === 'r1') {
-        list = list.filter(item => item.round1Rank <= 3);
-      } else if (evaluationMode === 'r2') {
-        list = list.filter(item => item.round2Rank <= 3);
-      } else {
-        list = list.filter(item => item.finalRank <= 3);
-      }
+    if (viewMode === 'top') {
+      list = list.filter(item => getActiveRank(item) <= podiumLimit);
     }
 
-    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(item => 
@@ -123,18 +161,14 @@ export default function Round1ResultsSection() {
       );
     }
 
-    // Sort based on active evaluation mode
     return list.sort((a, b) => {
       if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
-      if (evaluationMode === 'r1') {
-        return a.round1Rank - b.round1Rank || b.round1 - a.round1;
-      }
-      if (evaluationMode === 'r2') {
-        return a.round2Rank - b.round2Rank || b.round2 - a.round2;
-      }
-      return a.finalRank - b.finalRank || b.finalScore - a.finalScore;
+      const rankA = getActiveRank(a);
+      const rankB = getActiveRank(b);
+      if (rankA !== rankB) return rankA - rankB;
+      return getActiveScore(b) - getActiveScore(a);
     });
-  }, [selectedDomain, viewMode, evaluationMode, searchQuery]);
+  }, [selectedDomain, viewMode, evaluationMode, podiumLimit, searchQuery]);
 
   // Copy helper
   const handleCopy = (text, fieldId) => {
@@ -144,19 +178,22 @@ export default function Round1ResultsSection() {
     setTimeout(() => setCopiedField(''), 2000);
   };
 
-  // Export to CSV with full team details and combined scores
+  // Export comprehensive CSV containing all 3 rounds and Grand Total
   const handleExportCSV = () => {
     const headers = [
       'Sl',
-      'Combined Final Rank',
       'Team Name',
       'Domain',
-      'Final Combined Score (/30)',
-      'Round 1 Average (/10)',
+      'R1+R2 Rank',
+      'R1+R2 Combined (/30)',
+      'Round 1 Avg (/10)',
       'Round 2 Total (/20)',
-      'R1 Judge 1 - Dr. Akshath (/10)',
-      'R1 Judge 2 - Vijay Kumar (/10)',
-      'Round 1 Rank',
+      'Round 3 Rank',
+      'Round 3 Avg (/70)',
+      'Round 3 Judge 1 (/70)',
+      'Round 3 Judge 2 (/70)',
+      'Grand Total (/100)',
+      'Grand Rank (Domain)',
       'Captain Name',
       'Captain Phone',
       'Captain Email',
@@ -171,15 +208,18 @@ export default function Round1ResultsSection() {
       const memberNames = (r.members || []).map(m => `${m.name} (${m.phone || 'No phone'})`).join('; ');
       return [
         idx + 1,
-        r.finalRank,
         `"${r.teamName}"`,
         `"${r.domain}"`,
-        r.finalScore,
+        r.r1_2_Rank,
+        r.r1_2_Combined,
         r.round1,
         r.round2,
-        r.round1Judge1,
-        r.round1Judge2,
-        r.round1Rank,
+        r.round3Rank,
+        r.round3Average,
+        r.round3Judge1,
+        r.round3Judge2,
+        r.grandTotal,
+        r.grandRank,
         `"${r.leader?.name || ''}"`,
         `"${r.leader?.phone || ''}"`,
         `"${r.leader?.email || ''}"`,
@@ -195,16 +235,10 @@ export default function Round1ResultsSection() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `HAXLR8_3.0_Combined_Final_Results_${selectedDomain.replace(/\s+/g, '_')}.csv`);
+    link.setAttribute('download', `HAXLR8_3.0_Evaluation_R1_R2_R3_GrandTotal_${selectedDomain.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const getActiveRank = (team) => {
-    if (evaluationMode === 'r1') return team.round1Rank;
-    if (evaluationMode === 'r2') return team.round2Rank;
-    return team.finalRank;
   };
 
   const getRankBadge = (rank) => {
@@ -325,17 +359,17 @@ export default function Round1ResultsSection() {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase'
               }}>
-                INTERNAL ORGANIZER DECK
+                OFFICIAL EVALUATION DECK
               </span>
               <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 800 }}>
-                HAXLR8 3.0 &bull; 24H FINALE
+                HAXLR8 3.0 &bull; GRAND FINALE
               </span>
             </div>
             <h2 style={{ fontSize: 21, fontWeight: 900, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
-              Final Evaluation Leaderboard: Round 1 + Round 2 Combined
+              Final Evaluation Results &bull; Top 2 By Domain &bull; All 52 Squads
             </h2>
             <div style={{ fontSize: 12, color: '#cbd5e1', fontWeight: 600, marginTop: 4 }}>
-              Combined Marks = Round 1 (/10) + Round 2 (/20) = Out of 30 &bull; Equal scores share rank &bull; All 52 Squads
+              Round 1+2 Combined (/30) &bull; Round 3 (/70) &bull; Grand Total (/100) &bull; Full Squad &amp; Captain Contacts
             </div>
           </div>
         </div>
@@ -357,14 +391,14 @@ export default function Round1ResultsSection() {
             boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
             transition: 'transform 0.15s ease'
           }}
-          title="Download complete marksheet with Round 1, Round 2, Final Score, and Crew contacts"
+          title="Download master marksheet including R1, R2, R3, Grand Total, and contact details"
         >
           <Download size={16} color="#ea580c" />
-          <span>Export All 52 Squads (CSV)</span>
+          <span>Export Master Roster (CSV)</span>
         </button>
       </div>
 
-      {/* ── ROUND SWITCHER TABS (COMBINED vs R2 vs R1) ── */}
+      {/* ── STAGE SELECTOR (R1+R2 /30 vs R3 /70 vs GRAND TOTAL /100) ── */}
       <div style={{
         padding: '14px 28px',
         background: '#fff7ed',
@@ -375,97 +409,133 @@ export default function Round1ResultsSection() {
         flexWrap: 'wrap',
         gap: 12
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 12, fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Evaluation Stage:
           </span>
           <div style={{ display: 'inline-flex', background: '#ffffff', padding: 4, borderRadius: 12, border: '1.5px solid #fed7aa' }}>
+            {/* R1 + R2 Combined */}
             <button
-              onClick={() => setEvaluationMode('combined')}
+              onClick={() => setEvaluationMode('r1_r2')}
               style={{
                 padding: '7px 16px',
                 borderRadius: 9,
                 fontSize: 12.5,
                 fontWeight: 900,
                 border: 'none',
-                background: evaluationMode === 'combined' ? 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)' : 'transparent',
-                color: evaluationMode === 'combined' ? '#ffffff' : '#64748b',
+                background: evaluationMode === 'r1_r2' ? 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)' : 'transparent',
+                color: evaluationMode === 'r1_r2' ? '#ffffff' : '#64748b',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                boxShadow: evaluationMode === 'combined' ? '0 2px 6px rgba(234, 88, 12, 0.3)' : 'none',
+                boxShadow: evaluationMode === 'r1_r2' ? '0 2px 6px rgba(234, 88, 12, 0.3)' : 'none',
                 transition: 'all 0.15s'
               }}
             >
               <Flame size={14} />
-              <span>Combined Final (R1 + R2 / 30)</span>
+              <span>R1 + R2 Combined (/ 30)</span>
             </button>
 
+            {/* Round 3 Only */}
             <button
-              onClick={() => setEvaluationMode('r2')}
+              onClick={() => setEvaluationMode('r3')}
               style={{
-                padding: '7px 14px',
+                padding: '7px 15px',
                 borderRadius: 9,
                 fontSize: 12.5,
-                fontWeight: 800,
+                fontWeight: 900,
                 border: 'none',
-                background: evaluationMode === 'r2' ? '#0f172a' : 'transparent',
-                color: evaluationMode === 'r2' ? '#ffffff' : '#64748b',
+                background: evaluationMode === 'r3' ? '#0f172a' : 'transparent',
+                color: evaluationMode === 'r3' ? '#ffffff' : '#64748b',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
+                boxShadow: evaluationMode === 'r3' ? '0 2px 6px rgba(15, 23, 42, 0.3)' : 'none',
                 transition: 'all 0.15s'
               }}
             >
               <Award size={14} />
-              <span>Round 2 Demo (/ 20)</span>
+              <span>Round 3 Review (/ 70)</span>
             </button>
 
+            {/* Grand Total All 3 Rounds */}
             <button
-              onClick={() => setEvaluationMode('r1')}
+              onClick={() => setEvaluationMode('grand')}
               style={{
-                padding: '7px 14px',
+                padding: '7px 16px',
                 borderRadius: 9,
                 fontSize: 12.5,
-                fontWeight: 800,
+                fontWeight: 900,
                 border: 'none',
-                background: evaluationMode === 'r1' ? '#0f172a' : 'transparent',
-                color: evaluationMode === 'r1' ? '#ffffff' : '#64748b',
+                background: evaluationMode === 'grand' ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : 'transparent',
+                color: evaluationMode === 'grand' ? '#ffffff' : '#64748b',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
+                boxShadow: evaluationMode === 'grand' ? '0 2px 6px rgba(22, 163, 74, 0.3)' : 'none',
                 transition: 'all 0.15s'
               }}
             >
-              <CheckCircle2 size={14} />
-              <span>Round 1 Review (/ 10)</span>
+              <Star size={14} />
+              <span>Grand Total: All 3 Rounds (/ 100)</span>
             </button>
           </div>
         </div>
 
-        <div style={{ fontSize: 12, color: '#9a3412', fontWeight: 700 }}>
-          {evaluationMode === 'combined' && '🏆 Showing Official Final Ranking (Round 1 + Round 2)'}
-          {evaluationMode === 'r2' && '⚡ Showing Round 2 Demo Evaluation (/ 20)'}
-          {evaluationMode === 'r1' && '📋 Showing Round 1 Evaluator Marks (/ 10)'}
+        {/* Podium size toggle: Top 2 vs Top 3 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11.5, color: '#9a3412', fontWeight: 800 }}>Podium Cutoff:</span>
+          <div style={{ display: 'inline-flex', background: '#ffffff', padding: 2, borderRadius: 8, border: '1px solid #fed7aa' }}>
+            <button
+              onClick={() => setPodiumLimit(2)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontSize: 11.5,
+                fontWeight: 900,
+                border: 'none',
+                background: podiumLimit === 2 ? '#ea580c' : 'transparent',
+                color: podiumLimit === 2 ? '#ffffff' : '#64748b',
+                cursor: 'pointer'
+              }}
+            >
+              Top 2 Finalists
+            </button>
+            <button
+              onClick={() => setPodiumLimit(3)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 6,
+                fontSize: 11.5,
+                fontWeight: 900,
+                border: 'none',
+                background: podiumLimit === 3 ? '#ea580c' : 'transparent',
+                color: podiumLimit === 3 ? '#ffffff' : '#64748b',
+                cursor: 'pointer'
+              }}
+            >
+              Top 3 Podium
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── TOP 3 PODIUM DISPLAY CARDS WITH TIE HANDLING ── */}
+      {/* ── DOMAIN PODIUM DISPLAY CARDS (TOP 2 FINALISTS BY DEFAULT) ── */}
       <div style={{ padding: '24px 28px 18px', background: '#fafafa', borderBottom: '1.5px solid #f1f5f9' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Sparkles size={16} color="#ea580c" />
             <span>
-              {evaluationMode === 'combined' ? 'Combined Final Top 3 Podium (Out of 30 Marks)' :
-               evaluationMode === 'r2' ? 'Round 2 Top 3 Podium (Out of 20 Marks)' :
-               'Round 1 Top 3 Podium (Out of 10 Marks)'}
+              {evaluationMode === 'r1_r2' && `Round 1 + Round 2 Combined Top ${podiumLimit} By Domain (/ 30)`}
+              {evaluationMode === 'r3' && `Round 3 Evaluation Top ${podiumLimit} By Domain (/ 70)`}
+              {evaluationMode === 'grand' && `Grand Finale Top ${podiumLimit} Championship By Domain (/ 100)`}
             </span>
           </div>
           <span style={{ fontSize: 11.5, color: '#64748b', fontWeight: 700 }}>
-            Ties Share Same Rank &bull; Click Squad To Inspect Dossier
+            Ties Share Exact Same Rank Position &bull; Click Card To Inspect Crew
           </span>
         </div>
 
@@ -476,7 +546,7 @@ export default function Round1ResultsSection() {
         }}>
           {['Healthcare', 'Smart City', 'Agriculture'].map(domain => {
             const domStyle = DOMAIN_STYLES[domain];
-            const topTeams = domainTop3[domain] || [];
+            const domainTeams = domainQualifiers[domain] || [];
             const count = COMBINED_RESULTS.filter(t => t.domain === domain).length;
 
             return (
@@ -492,7 +562,7 @@ export default function Round1ResultsSection() {
                   flexDirection: 'column'
                 }}
               >
-                {/* Domain Card Header */}
+                {/* Domain Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 20 }}>{domStyle.icon}</span>
@@ -503,18 +573,17 @@ export default function Round1ResultsSection() {
                   </span>
                 </div>
 
-                {/* Top 3 Ranks Grouped */}
+                {/* Qualifiers Ranks Grouped */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
-                  {[1, 2, 3].map(rankNum => {
-                    const teamsInRank = topTeams.filter(t => getActiveRank(t) === rankNum);
+                  {[1, 2, 3].slice(0, podiumLimit).map(rankNum => {
+                    const teamsInRank = domainTeams.filter(t => getActiveRank(t) === rankNum);
                     if (teamsInRank.length === 0) return null;
 
                     const isRank1 = rankNum === 1;
-                    const isRank2 = rankNum === 2;
-                    const cardBg = isRank1 ? '#fefce8' : isRank2 ? '#f8fafc' : '#fff7ed';
-                    const cardBorder = isRank1 ? '#fef08a' : isRank2 ? '#e2e8f0' : '#fed7aa';
-                    const medalEmoji = isRank1 ? '🥇' : isRank2 ? '🥈' : '🥉';
-                    const rankColor = isRank1 ? '#854d0e' : isRank2 ? '#334155' : '#9a3412';
+                    const cardBg = isRank1 ? '#fefce8' : rankNum === 2 ? '#f8fafc' : '#fff7ed';
+                    const cardBorder = isRank1 ? '#fef08a' : rankNum === 2 ? '#e2e8f0' : '#fed7aa';
+                    const medalEmoji = isRank1 ? '🥇' : rankNum === 2 ? '🥈' : '🥉';
+                    const rankColor = isRank1 ? '#854d0e' : rankNum === 2 ? '#334155' : '#9a3412';
 
                     return (
                       <div 
@@ -535,9 +604,7 @@ export default function Round1ResultsSection() {
                           </div>
                           {teamsInRank.length === 1 && (
                             <span style={{ fontSize: 14, fontWeight: 900, color: rankColor }}>
-                              {evaluationMode === 'combined' ? `${teamsInRank[0].finalScore} / 30` :
-                               evaluationMode === 'r2' ? `${teamsInRank[0].round2} / 20` :
-                               `${teamsInRank[0].round1} / 10`}
+                              {getActiveScore(teamsInRank[0])} / {getActiveScoreMax()}
                             </span>
                           )}
                         </div>
@@ -564,23 +631,29 @@ export default function Round1ResultsSection() {
                                   <Eye size={12} color="#0284c7" />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  {evaluationMode === 'combined' && (
+                                  {evaluationMode === 'r1_r2' && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                      <span style={{ fontSize: 10, color: '#64748b' }}>R1: {team.round1} | R2: {team.round2}</span>
+                                      <span style={{ fontSize: 10, color: '#64748b' }}>R1:{team.round1} | R2:{team.round2}</span>
                                       <span style={{ fontSize: 12, fontWeight: 900, color: '#ea580c', background: '#fff7ed', padding: '1px 6px', borderRadius: 6, border: '1px solid #fed7aa' }}>
-                                        {team.finalScore} / 30
+                                        {team.r1_2_Combined} / 30
                                       </span>
                                     </div>
                                   )}
-                                  {evaluationMode === 'r2' && (
-                                    <span style={{ fontSize: 12, fontWeight: 900, color: '#0f172a' }}>
-                                      {team.round2} / 20
-                                    </span>
+                                  {evaluationMode === 'r3' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <span style={{ fontSize: 10, color: '#64748b' }}>J1:{team.round3Judge1} | J2:{team.round3Judge2}</span>
+                                      <span style={{ fontSize: 12, fontWeight: 900, color: '#0f172a', background: '#f1f5f9', padding: '1px 6px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                                        {team.round3Average} / 70
+                                      </span>
+                                    </div>
                                   )}
-                                  {evaluationMode === 'r1' && (
-                                    <span style={{ fontSize: 12, fontWeight: 900, color: '#0f172a' }}>
-                                      {team.round1} / 10
-                                    </span>
+                                  {evaluationMode === 'grand' && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <span style={{ fontSize: 10, color: '#64748b' }}>R1+2:{team.r1_2_Combined} | R3:{team.round3Average}</span>
+                                      <span style={{ fontSize: 12, fontWeight: 900, color: '#16a34a', background: '#f0fdf4', padding: '1px 6px', borderRadius: 6, border: '1px solid #86efac' }}>
+                                        {team.grandTotal} / 100
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -654,9 +727,9 @@ export default function Round1ResultsSection() {
           })}
         </div>
 
-        {/* View Mode (All 52 vs Top 3) & Search Input */}
+        {/* View Mode (All 52 vs Top Qualifiers) & Search Input */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {/* Roster View Toggle */}
+          {/* Table View Mode Toggle */}
           <div style={{
             display: 'inline-flex',
             background: '#f1f5f9',
@@ -678,19 +751,19 @@ export default function Round1ResultsSection() {
                 cursor: 'pointer'
               }}
             >
-              All 52 Results
+              All 52 Squads
             </button>
             <button
-              onClick={() => setViewMode('top3')}
+              onClick={() => setViewMode('top')}
               style={{
                 padding: '6px 12px',
                 borderRadius: 8,
                 fontSize: 12,
                 fontWeight: 800,
                 border: 'none',
-                background: viewMode === 'top3' ? '#ffffff' : 'transparent',
-                color: viewMode === 'top3' ? '#ea580c' : '#64748b',
-                boxShadow: viewMode === 'top3' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                background: viewMode === 'top' ? '#ffffff' : 'transparent',
+                color: viewMode === 'top' ? '#ea580c' : '#64748b',
+                boxShadow: viewMode === 'top' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -698,7 +771,7 @@ export default function Round1ResultsSection() {
               }}
             >
               <Trophy size={13} />
-              <span>Top 3 Qualifiers</span>
+              <span>Top {podiumLimit} Finalists Only</span>
             </button>
           </div>
 
@@ -727,36 +800,42 @@ export default function Round1ResultsSection() {
         </div>
       </div>
 
-      {/* ── COMPLETE RESULTS TABLE (ALL 52 SQUADS) ── */}
+      {/* ── COMPLETE RESULTS TABLE (ALL 52 SQUADS WITH R1, R2, R3 & GRAND TOTAL) ── */}
       <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <table style={{ width: '100%', minWidth: 1040, borderCollapse: 'collapse', fontSize: 12 }}>
+        <table style={{ width: '100%', minWidth: 1120, borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', color: '#64748b', textAlign: 'left' }}>
               <th style={{ padding: '12px 18px', fontWeight: 800, width: 85 }}>Rank</th>
               <th style={{ padding: '12px 18px', fontWeight: 800 }}>Squad &amp; Domain</th>
               <th style={{ padding: '12px 18px', fontWeight: 800 }}>Commander / Captain</th>
               <th style={{ padding: '12px 18px', fontWeight: 800 }}>Institution / College</th>
-              <th style={{ padding: '12px 16px', fontWeight: 800, textAlign: 'center', width: 85 }}>Crew</th>
-              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 95 }}>R1 (/10)</th>
-              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 95 }}>R2 (/20)</th>
-              <th style={{ padding: '12px 18px', fontWeight: 900, textAlign: 'center', width: 120, background: '#fff7ed', color: '#ea580c' }}>
-                Final (/30)
+              <th style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'center', width: 75 }}>Crew</th>
+              <th style={{ padding: '12px 12px', fontWeight: 800, textAlign: 'center', width: 75 }}>R1 (/10)</th>
+              <th style={{ padding: '12px 12px', fontWeight: 800, textAlign: 'center', width: 75 }}>R2 (/20)</th>
+              <th style={{ padding: '12px 16px', fontWeight: 900, textAlign: 'center', width: 95, background: '#fff7ed', color: '#c2410c' }}>
+                R1+R2 (/30)
               </th>
-              <th style={{ padding: '12px 18px', fontWeight: 800, textAlign: 'center', width: 100 }}>Dossier</th>
+              <th style={{ padding: '12px 16px', fontWeight: 900, textAlign: 'center', width: 110, background: '#eff6ff', color: '#0369a1' }}>
+                Round 3 (/70)
+              </th>
+              <th style={{ padding: '12px 18px', fontWeight: 900, textAlign: 'center', width: 120, background: '#f0fdf4', color: '#15803d' }}>
+                Grand Total (/100)
+              </th>
+              <th style={{ padding: '12px 18px', fontWeight: 800, textAlign: 'center', width: 95 }}>Dossier</th>
             </tr>
           </thead>
           <tbody>
             {filteredTeams.map((team, idx) => {
               const domStyle = DOMAIN_STYLES[team.domain] || DOMAIN_STYLES['Smart City'];
               const currentRank = getActiveRank(team);
-              const isTop3 = currentRank <= 3;
+              const isTopRank = currentRank <= podiumLimit;
 
               return (
                 <tr 
                   key={team.teamName + idx} 
                   style={{ 
                     borderBottom: '1px solid #f1f5f9',
-                    background: isTop3 
+                    background: isTopRank 
                       ? (currentRank === 1 ? '#fefce8' : currentRank === 2 ? '#fafafa' : '#fff7ed') 
                       : '#ffffff',
                     transition: 'background 0.15s ease'
@@ -848,7 +927,7 @@ export default function Round1ResultsSection() {
                   </td>
 
                   {/* Crew Size */}
-                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                  <td style={{ padding: '14px 14px', textAlign: 'center' }}>
                     <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -867,33 +946,54 @@ export default function Round1ResultsSection() {
                   </td>
 
                   {/* Round 1 (/10) */}
-                  <td style={{ padding: '14px 14px', textAlign: 'center' }}>
-                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 13 }}>
-                      {team.round1}
-                    </div>
-                    <div style={{ fontSize: 9.5, color: '#94a3b8' }}>
-                      J1:{team.round1Judge1} | J2:{team.round1Judge2}
-                    </div>
+                  <td style={{ padding: '14px 12px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
+                    {team.round1}
                   </td>
 
                   {/* Round 2 (/20) */}
-                  <td style={{ padding: '14px 14px', textAlign: 'center' }}>
-                    <span style={{ fontWeight: 800, color: '#0f172a', fontSize: 13 }}>
-                      {team.round2}
+                  <td style={{ padding: '14px 12px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
+                    {team.round2}
+                  </td>
+
+                  {/* R1 + R2 Combined (/30) */}
+                  <td style={{ padding: '14px 16px', textAlign: 'center', background: '#fffaf3' }}>
+                    <span style={{
+                      fontSize: 13.5,
+                      fontWeight: 900,
+                      color: '#ea580c'
+                    }}>
+                      {team.r1_2_Combined}
+                    </span>
+                    <span style={{ fontSize: 9.5, color: '#c2410c', display: 'block', fontWeight: 700 }}>
+                      Rank {team.r1_2_Rank}
                     </span>
                   </td>
 
-                  {/* Final Combined (/30) */}
-                  <td style={{ padding: '14px 18px', textAlign: 'center', background: isTop3 ? 'rgba(234, 88, 12, 0.08)' : '#fffaf3' }}>
+                  {/* Round 3 (/70) */}
+                  <td style={{ padding: '14px 16px', textAlign: 'center', background: '#f8fafc' }}>
+                    <span style={{
+                      fontSize: 13.5,
+                      fontWeight: 900,
+                      color: '#0284c7'
+                    }}>
+                      {team.round3Average}
+                    </span>
+                    <span style={{ fontSize: 9.5, color: '#64748b', display: 'block' }}>
+                      J1:{team.round3Judge1} | J2:{team.round3Judge2}
+                    </span>
+                  </td>
+
+                  {/* Grand Total (/100) */}
+                  <td style={{ padding: '14px 18px', textAlign: 'center', background: isTopRank ? '#f0fdf4' : '#fafafa' }}>
                     <span style={{
                       fontSize: 15,
                       fontWeight: 900,
-                      color: isTop3 ? '#ea580c' : '#0f172a'
+                      color: '#15803d'
                     }}>
-                      {team.finalScore}
+                      {team.grandTotal}
                     </span>
-                    <span style={{ fontSize: 10.5, color: '#c2410c', display: 'block', fontWeight: 700 }}>
-                      / 30
+                    <span style={{ fontSize: 10, color: '#15803d', display: 'block', fontWeight: 700 }}>
+                      / 100
                     </span>
                   </td>
 
@@ -915,7 +1015,7 @@ export default function Round1ResultsSection() {
                         gap: 4,
                         transition: 'all 0.15s ease'
                       }}
-                      title="Inspect complete crew members, emails, phones & marks"
+                      title="Inspect full 3-round scorecard & crew member contacts"
                     >
                       <Eye size={12} />
                       <span>Dossier</span>
@@ -944,10 +1044,10 @@ export default function Round1ResultsSection() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span>Showing <strong>{filteredTeams.length}</strong> of 52 squads</span>
           <span>&bull;</span>
-          <span>Total Round 1 + Round 2 Participants: <strong>205 Crew Members</strong></span>
+          <span>Total Grand Finale Participants: <strong>205 Crew Members</strong></span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: '#059669', fontWeight: 800 }}>✓ Official Round 1 &amp; Round 2 Combined</span>
+          <span style={{ color: '#059669', fontWeight: 800 }}>✓ Official Round 1, Round 2 &amp; Round 3 Evaluated</span>
         </div>
       </div>
 
@@ -973,7 +1073,7 @@ export default function Round1ResultsSection() {
             style={{
               background: '#ffffff',
               borderRadius: 20,
-              maxWidth: 720,
+              maxWidth: 740,
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
@@ -996,7 +1096,7 @@ export default function Round1ResultsSection() {
             }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  {getRankBadge(selectedSquad.finalRank)}
+                  {getRankBadge(getActiveRank(selectedSquad))}
                   <span style={{
                     fontSize: 11,
                     fontWeight: 800,
@@ -1036,43 +1136,57 @@ export default function Round1ResultsSection() {
               </button>
             </div>
 
-            {/* Scorecard Strip (R1 + R2 + Combined) */}
+            {/* Scorecard Strip (R1, R2, R1+R2, R3, Grand Total) */}
             <div style={{
               background: '#f8fafc',
               borderBottom: '1px solid #e2e8f0',
-              padding: '14px 24px',
+              padding: '14px 20px',
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 12,
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 10,
               textAlign: 'center'
             }}>
-              <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Round 1 (/10)</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
-                  {selectedSquad.round1} <span style={{ fontSize: 10.5, color: '#94a3b8' }}>/ 10</span>
+              {/* R1 */}
+              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 600 }}>Round 1</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>
+                  {selectedSquad.round1} <span style={{ fontSize: 10, color: '#94a3b8' }}>/ 10</span>
                 </div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
-                  J1: {selectedSquad.round1Judge1} | J2: {selectedSquad.round1Judge2}
-                </div>
-              </div>
-
-              <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Round 2 (/20)</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
-                  {selectedSquad.round2} <span style={{ fontSize: 10.5, color: '#94a3b8' }}>/ 20</span>
-                </div>
-                <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>
-                  Demo &amp; Architecture
+                <div style={{ fontSize: 9.5, color: '#64748b' }}>
+                  J1:{selectedSquad.round1Judge1} J2:{selectedSquad.round1Judge2}
                 </div>
               </div>
 
-              <div style={{ background: '#fff7ed', padding: '10px 12px', borderRadius: 10, border: '1px solid #fed7aa' }}>
-                <div style={{ fontSize: 11, color: '#c2410c', fontWeight: 800 }}>Combined Total</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#ea580c' }}>
-                  {selectedSquad.finalScore} <span style={{ fontSize: 11, color: '#c2410c' }}>/ 30</span>
+              {/* R2 */}
+              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: 10.5, color: '#64748b', fontWeight: 600 }}>Round 2</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>
+                  {selectedSquad.round2} <span style={{ fontSize: 10, color: '#94a3b8' }}>/ 20</span>
                 </div>
-                <div style={{ fontSize: 10, color: '#ea580c', fontWeight: 700, marginTop: 2 }}>
-                  Final Rank {selectedSquad.finalRank}
+                <div style={{ fontSize: 9.5, color: '#ea580c', fontWeight: 700 }}>
+                  R1+R2: {selectedSquad.r1_2_Combined} / 30
+                </div>
+              </div>
+
+              {/* R3 */}
+              <div style={{ background: '#eff6ff', padding: '8px 10px', borderRadius: 10, border: '1px solid #bfdbfe' }}>
+                <div style={{ fontSize: 10.5, color: '#0369a1', fontWeight: 700 }}>Round 3</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#0284c7' }}>
+                  {selectedSquad.round3Average} <span style={{ fontSize: 10, color: '#0369a1' }}>/ 70</span>
+                </div>
+                <div style={{ fontSize: 9.5, color: '#0369a1' }}>
+                  J1:{selectedSquad.round3Judge1} J2:{selectedSquad.round3Judge2}
+                </div>
+              </div>
+
+              {/* Grand Total */}
+              <div style={{ background: '#f0fdf4', padding: '8px 10px', borderRadius: 10, border: '1px solid #86efac' }}>
+                <div style={{ fontSize: 10.5, color: '#15803d', fontWeight: 800 }}>Grand Total</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#15803d' }}>
+                  {selectedSquad.grandTotal} <span style={{ fontSize: 10, color: '#15803d' }}>/ 100</span>
+                </div>
+                <div style={{ fontSize: 9.5, color: '#15803d', fontWeight: 700 }}>
+                  Rank {selectedSquad.grandRank} in {selectedSquad.domain}
                 </div>
               </div>
             </div>
