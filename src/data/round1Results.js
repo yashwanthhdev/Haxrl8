@@ -162,7 +162,7 @@ export const COMBINED_RESULTS = [
       }
     ],
     "grandRank": 2,
-    "overallGrandRank": 8
+    "overallGrandRank": 9
   },
   {
     "sl": 3,
@@ -2524,80 +2524,6 @@ export const COMBINED_RESULTS = [
   },
   {
     "sl": 35,
-    "teamName": "Innovative",
-    "domain": "Smart City",
-    "teamId": "28ba81f5-573b-43ab-b559-54ed7fd250b4",
-    "projectTitle": "Innovative - Smart City",
-    "category": "Smart City",
-    "sdgGoal": "Smart City",
-    "round1": 9.0,
-    "round1Judge1": 10.0,
-    "round1Judge2": 8.0,
-    "round1Rank": 1,
-    "round2": 14.0,
-    "round2Rank": 5,
-    "r1_2_Combined": 23.0,
-    "r1_2_Rank": 2,
-    "round3Judge1": 49.0,
-    "round3Judge2": 52.0,
-    "round3Average": 50.5,
-    "round3Rank": 3,
-    "grandTotal": 73.5,
-    "leader": {
-      "name": "Yuvaraj Gowda",
-      "email": "gowdayuvaraj464@gmail.com",
-      "phone": "6361634490",
-      "college": "Mit mysure",
-      "dept": "Electronics and Communication",
-      "year": "2 Year"
-    },
-    "members": [
-      {
-        "id": "22e7c8b3-d6cd-4b25-8ad6-622494ceec56",
-        "name": "Yuvaraj Gowda",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "6361634490",
-        "college": "Mit mysure",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": true
-      },
-      {
-        "id": "0ccb2b0b-37d0-473c-b797-ba73cb1c3279",
-        "name": "Preetham gowda s",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9916283320",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      },
-      {
-        "id": "f41b53e4-5873-448f-9fa3-ce219bb36a0c",
-        "name": "Preetham W",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9199162846",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      },
-      {
-        "id": "f64df609-3d2c-4274-bc0f-701378d1180f",
-        "name": "Nikhil  L",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9163621655",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      }
-    ],
-    "grandRank": 2,
-    "overallGrandRank": 7
-  },
-  {
-    "sl": 36,
     "teamName": "Vincer",
     "domain": "Smart City",
     "teamId": "9a74163a-916f-4f3a-b2be-acf97671eaa8",
@@ -2612,11 +2538,11 @@ export const COMBINED_RESULTS = [
     "round2Rank": 3,
     "r1_2_Combined": 21.0,
     "r1_2_Rank": 5,
-    "round3Judge1": 53.0,
-    "round3Judge2": 49.0,
-    "round3Average": 51.0,
+    "round3Judge1": 54.0,
+    "round3Judge2": 53.0,
+    "round3Average": 53.5,
     "round3Rank": 2,
-    "grandTotal": 72.0,
+    "grandTotal": 74.5,
     "leader": {
       "name": "Jeshva U K",
       "email": "jeshvaganith@gmail.com",
@@ -2667,8 +2593,82 @@ export const COMBINED_RESULTS = [
         "isLeader": false
       }
     ],
+    "grandRank": 2,
+    "overallGrandRank": 7
+  },
+  {
+    "sl": 36,
+    "teamName": "Innovative",
+    "domain": "Smart City",
+    "teamId": "28ba81f5-573b-43ab-b559-54ed7fd250b4",
+    "projectTitle": "Innovative - Smart City",
+    "category": "Smart City",
+    "sdgGoal": "Smart City",
+    "round1": 9.0,
+    "round1Judge1": 10.0,
+    "round1Judge2": 8.0,
+    "round1Rank": 1,
+    "round2": 14.0,
+    "round2Rank": 5,
+    "r1_2_Combined": 23.0,
+    "r1_2_Rank": 2,
+    "round3Judge1": 53.0,
+    "round3Judge2": 49.0,
+    "round3Average": 51.0,
+    "round3Rank": 3,
+    "grandTotal": 74.0,
+    "leader": {
+      "name": "Yuvaraj Gowda",
+      "email": "gowdayuvaraj464@gmail.com",
+      "phone": "6361634490",
+      "college": "Mit mysure",
+      "dept": "Electronics and Communication",
+      "year": "2 Year"
+    },
+    "members": [
+      {
+        "id": "22e7c8b3-d6cd-4b25-8ad6-622494ceec56",
+        "name": "Yuvaraj Gowda",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "6361634490",
+        "college": "Mit mysure",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": true
+      },
+      {
+        "id": "0ccb2b0b-37d0-473c-b797-ba73cb1c3279",
+        "name": "Preetham gowda s",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9916283320",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": false
+      },
+      {
+        "id": "f41b53e4-5873-448f-9fa3-ce219bb36a0c",
+        "name": "Preetham W",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9199162846",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": false
+      },
+      {
+        "id": "f64df609-3d2c-4274-bc0f-701378d1180f",
+        "name": "Nikhil  L",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9163621655",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": false
+      }
+    ],
     "grandRank": 3,
-    "overallGrandRank": 9
+    "overallGrandRank": 8
   },
   {
     "sl": 37,
@@ -2689,7 +2689,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 50.0,
     "round3Judge2": 51.0,
     "round3Average": 50.5,
-    "round3Rank": 3,
+    "round3Rank": 4,
     "grandTotal": 70.0,
     "leader": {
       "name": "Anusha M S",
@@ -2763,7 +2763,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 50.0,
     "round3Judge2": 48.0,
     "round3Average": 49.0,
-    "round3Rank": 4,
+    "round3Rank": 5,
     "grandTotal": 69.5,
     "leader": {
       "name": "Vinay M L",
@@ -2837,7 +2837,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 44.0,
     "round3Judge2": 44.0,
     "round3Average": 44.0,
-    "round3Rank": 5,
+    "round3Rank": 6,
     "grandTotal": 65.0,
     "leader": {
       "name": "vinyas v",
@@ -2911,7 +2911,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 42.0,
     "round3Judge2": 45.0,
     "round3Average": 43.5,
-    "round3Rank": 6,
+    "round3Rank": 7,
     "grandTotal": 64.0,
     "leader": {
       "name": "Vijayeendra M D",
@@ -2985,7 +2985,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 39.0,
     "round3Judge2": 38.0,
     "round3Average": 38.5,
-    "round3Rank": 7,
+    "round3Rank": 8,
     "grandTotal": 60.0,
     "leader": {
       "name": "Tejas D N",
@@ -3059,7 +3059,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 34.0,
     "round3Judge2": 32.0,
     "round3Average": 33.0,
-    "round3Rank": 8,
+    "round3Rank": 9,
     "grandTotal": 54.5,
     "leader": {
       "name": "Uruchintala Noorunnisa",
@@ -3133,7 +3133,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 34.0,
     "round3Judge2": 32.0,
     "round3Average": 33.0,
-    "round3Rank": 8,
+    "round3Rank": 9,
     "grandTotal": 54.5,
     "leader": {
       "name": "SUBHASH CHANDRU",
@@ -3197,7 +3197,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 33.0,
     "round3Judge2": 31.0,
     "round3Average": 32.0,
-    "round3Rank": 9,
+    "round3Rank": 10,
     "grandTotal": 54.0,
     "leader": {
       "name": "Shreeja",
@@ -3271,7 +3271,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 29.0,
     "round3Judge2": 28.0,
     "round3Average": 28.5,
-    "round3Rank": 10,
+    "round3Rank": 11,
     "grandTotal": 49.0,
     "leader": {
       "name": "Dheeraj M R",
@@ -3345,7 +3345,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 24.0,
     "round3Judge2": 24.0,
     "round3Average": 24.0,
-    "round3Rank": 11,
+    "round3Rank": 12,
     "grandTotal": 45.0,
     "leader": {
       "name": "vinyas v",
@@ -3419,7 +3419,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 23.0,
     "round3Judge2": 23.0,
     "round3Average": 23.0,
-    "round3Rank": 12,
+    "round3Rank": 13,
     "grandTotal": 41.0,
     "leader": {
       "name": "Annapoorna N",
@@ -3493,7 +3493,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 21.0,
     "round3Judge2": 23.0,
     "round3Average": 22.0,
-    "round3Rank": 13,
+    "round3Rank": 14,
     "grandTotal": 40.0,
     "leader": {
       "name": "Ravi.B.V",
@@ -3567,7 +3567,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 21.0,
     "round3Judge2": 21.0,
     "round3Average": 21.0,
-    "round3Rank": 14,
+    "round3Rank": 15,
     "grandTotal": 40.0,
     "leader": {
       "name": "ABHINAV YADAV",
@@ -3631,7 +3631,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 18.0,
     "round3Judge2": 17.0,
     "round3Average": 17.5,
-    "round3Rank": 15,
+    "round3Rank": 16,
     "grandTotal": 38.5,
     "leader": {
       "name": "S Dhanush Gowda",
@@ -3705,7 +3705,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 17.0,
     "round3Judge2": 13.0,
     "round3Average": 15.0,
-    "round3Rank": 16,
+    "round3Rank": 17,
     "grandTotal": 36.5,
     "leader": {
       "name": "YASHWANTH  S U",
@@ -3779,7 +3779,7 @@ export const COMBINED_RESULTS = [
     "round3Judge1": 16.0,
     "round3Judge2": 13.0,
     "round3Average": 14.5,
-    "round3Rank": 17,
+    "round3Rank": 18,
     "grandTotal": 34.0,
     "leader": {
       "name": "Hithishi P",
