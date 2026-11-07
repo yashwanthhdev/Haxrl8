@@ -2524,10 +2524,10 @@ export const COMBINED_RESULTS = [
   },
   {
     "sl": 35,
-    "teamName": "Innovative",
+    "teamName": "Vincer",
     "domain": "Smart City",
-    "teamId": "28ba81f5-573b-43ab-b559-54ed7fd250b4",
-    "projectTitle": "Innovative - Smart City",
+    "teamId": "9a74163a-916f-4f3a-b2be-acf97671eaa8",
+    "projectTitle": "Vincer - Smart City",
     "category": "Smart City",
     "sdgGoal": "Smart City",
     "round1": 9.0,
@@ -2543,80 +2543,6 @@ export const COMBINED_RESULTS = [
     "round3Average": 51.0,
     "round3Rank": 2,
     "grandTotal": 74.0,
-    "leader": {
-      "name": "Yuvaraj Gowda",
-      "email": "gowdayuvaraj464@gmail.com",
-      "phone": "6361634490",
-      "college": "Mit mysure",
-      "dept": "Electronics and Communication",
-      "year": "2 Year"
-    },
-    "members": [
-      {
-        "id": "22e7c8b3-d6cd-4b25-8ad6-622494ceec56",
-        "name": "Yuvaraj Gowda",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "6361634490",
-        "college": "Mit mysure",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": true
-      },
-      {
-        "id": "0ccb2b0b-37d0-473c-b797-ba73cb1c3279",
-        "name": "Preetham gowda s",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9916283320",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      },
-      {
-        "id": "f41b53e4-5873-448f-9fa3-ce219bb36a0c",
-        "name": "Preetham W",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9199162846",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      },
-      {
-        "id": "f64df609-3d2c-4274-bc0f-701378d1180f",
-        "name": "Nikhil  L",
-        "email": "gowdayuvaraj464@gmail.com",
-        "phone": "9163621655",
-        "college": "Mit mysore",
-        "dept": "Electronics and Communication",
-        "year": "2 Year",
-        "isLeader": false
-      }
-    ],
-    "grandRank": 2,
-    "overallGrandRank": 7
-  },
-  {
-    "sl": 36,
-    "teamName": "Vincer",
-    "domain": "Smart City",
-    "teamId": "9a74163a-916f-4f3a-b2be-acf97671eaa8",
-    "projectTitle": "Vincer - Smart City",
-    "category": "Smart City",
-    "sdgGoal": "Smart City",
-    "round1": 9.0,
-    "round1Judge1": 9,
-    "round1Judge2": 9,
-    "round1Rank": 1,
-    "round2": 12.0,
-    "round2Rank": 5,
-    "r1_2_Combined": 21.0,
-    "r1_2_Rank": 5,
-    "round3Judge1": 49.0,
-    "round3Judge2": 52.0,
-    "round3Average": 50.5,
-    "round3Rank": 3,
-    "grandTotal": 71.5,
     "leader": {
       "name": "Jeshva U K",
       "email": "jeshvaganith@gmail.com",
@@ -2664,6 +2590,80 @@ export const COMBINED_RESULTS = [
         "college": "VIT vellore",
         "dept": "Data Science",
         "year": "4 Year",
+        "isLeader": false
+      }
+    ],
+    "grandRank": 2,
+    "overallGrandRank": 7
+  },
+  {
+    "sl": 36,
+    "teamName": "Innovative",
+    "domain": "Smart City",
+    "teamId": "28ba81f5-573b-43ab-b559-54ed7fd250b4",
+    "projectTitle": "Innovative - Smart City",
+    "category": "Smart City",
+    "sdgGoal": "Smart City",
+    "round1": 9.0,
+    "round1Judge1": 9,
+    "round1Judge2": 9,
+    "round1Rank": 1,
+    "round2": 12.0,
+    "round2Rank": 5,
+    "r1_2_Combined": 21.0,
+    "r1_2_Rank": 5,
+    "round3Judge1": 49.0,
+    "round3Judge2": 52.0,
+    "round3Average": 50.5,
+    "round3Rank": 3,
+    "grandTotal": 71.5,
+    "leader": {
+      "name": "Yuvaraj Gowda",
+      "email": "gowdayuvaraj464@gmail.com",
+      "phone": "6361634490",
+      "college": "Mit mysure",
+      "dept": "Electronics and Communication",
+      "year": "2 Year"
+    },
+    "members": [
+      {
+        "id": "22e7c8b3-d6cd-4b25-8ad6-622494ceec56",
+        "name": "Yuvaraj Gowda",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "6361634490",
+        "college": "Mit mysure",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": true
+      },
+      {
+        "id": "0ccb2b0b-37d0-473c-b797-ba73cb1c3279",
+        "name": "Preetham gowda s",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9916283320",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": false
+      },
+      {
+        "id": "f41b53e4-5873-448f-9fa3-ce219bb36a0c",
+        "name": "Preetham W",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9199162846",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
+        "isLeader": false
+      },
+      {
+        "id": "f64df609-3d2c-4274-bc0f-701378d1180f",
+        "name": "Nikhil  L",
+        "email": "gowdayuvaraj464@gmail.com",
+        "phone": "9163621655",
+        "college": "Mit mysore",
+        "dept": "Electronics and Communication",
+        "year": "2 Year",
         "isLeader": false
       }
     ],
